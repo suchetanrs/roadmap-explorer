@@ -1,0 +1,38 @@
+frontierSearch:
+  min_frontier_cluster_size: 1
+  max_frontier_cluster_size: 20
+  max_frontier_distance: 50.0 # This should be equal to the parameter max_frontier_distance in frontier_roadmap_node
+  lethal_threshold: 160 # >= is lethal, < is free space.
+
+costCalculator:
+  max_camera_depth: 2.0
+  delta_theta: 0.10
+  camera_fov: 1.04
+
+costAssigner:
+  alpha: 0.25 #set to 1.0 for maximum weight to arrival information and 0.0 for maximum weight to frontier path distance.
+  beta: 1.0 #set to 1.0 for maximum weight to u1 and 0.0 for maximum weight to information on path.
+  N_best_for_u2: 100000 #set to -1 for considering all the frontier for path computation (this will make the algorithm very time instensive!)
+  planner_allow_unknown: true
+  add_heading_cost: true
+  vx_max: 0.5 # max linear speed of the robot. m/s (required if heading cost is added)
+  wz_max: 0.5 # max angular speed of the robot. rad/s (required if heading cost is added)
+
+frontierRoadmap:
+  max_frontier_distance: 25.1
+  grid_cell_size: 1.0                           # Assuming each cell is 1x1 in size
+  keyframe_grid_cell_size: 2.5                  # KF grid cell size
+  radius_to_decide_edges: 6.1                   # a node within this radius of another node is considered a child of the other node.
+  min_distance_between_two_frontier_nodes: 0.25  # minimum distance between any node in the graph and the frontier node that will be added.
+  min_distance_between_robot_pose_and_node: 0.25 # minimum distance between any nodes in the graph and the robot pose that is going to be added.
+
+goalHysteresis:
+  use_euclidean_distance: false
+  use_roadmap_planner_distance: true
+
+explorationBT:
+  bt_sleep_ms: 70
+  recover_on_blacklist: true
+
+fisherInformation:
+  fisher_information_threshold: 550

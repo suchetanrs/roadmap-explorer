@@ -1,0 +1,9 @@
+<root BTCPP_format="4">
+    <BehaviorTree ID="RecoveryDebug">
+        <Sequence name="root">
+            <WaitForCurrent/>
+            <UpdateBoundaryPolygon />
+            <ExecuteRecoveryMove />
+        </Sequence>
+    </BehaviorTree>
+</root>

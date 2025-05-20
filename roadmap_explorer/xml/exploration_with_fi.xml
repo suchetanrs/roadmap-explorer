@@ -1,0 +1,43 @@
+<root BTCPP_format="4">
+    <BehaviorTree ID="MainTree">
+        <Sequence name="root">
+            <InitializationSequence/>
+            <WaitForCurrent/>
+            <UpdateBoundaryPolygon />
+            <Fallback>
+                <SearchForFrontiers frontier_list="{the_frontier_list}" every_frontier="{the_every_frontier}" increment_search_distance_by="10.0"/>
+                <ExecuteRecoveryMove backward_only="false"/>
+            </Fallback>
+            <Inverter>
+                <CleanupRoadmap frontier_list="{the_frontier_list}" time_between_cleanup="5.0" correct_loop_closure="true"/>
+            </Inverter>
+            <UpdateFrontierRoadmap frontier_list="{the_frontier_list}" add_robot_pose_to_roadmap="true"/>
+            <ProcessFrontierCosts frontier_list="{the_frontier_list}" every_frontier="{the_every_frontier}" robot_name="/robot_0" frontier_costs_result="{the_frontier_costs}"/>
+            <!-- You can choose to either optimize the full 
+            path of send the immediete next goal to nav2 -->
+            <Fallback>
+                <OptimizeFullPath frontier_costs_result="{the_frontier_costs}" allocated_frontier="{the_allocated_frontier}" use_fisher_information="true" increment_search_distance_by="30.0" number_retries_fi="3"/>
+                <!-- <GetAllocatedGoal frontier_costs_result="{the_frontier_costs}" allocated_frontier="{the_allocated_frontier}"/> -->
+                <Inverter>
+                    <CleanupRoadmap frontier_list="{the_frontier_list}" time_between_cleanup="0.0" correct_loop_closure="true"/>
+                </Inverter>
+                <!-- <ExecuteRecoveryMove backward_only="true"/> -->
+            </Fallback>
+            <HysterisisControl allocated_frontier="{the_allocated_frontier}" allocated_frontier_after_hysterisis="{the_allocated_frontier_after_hysterisis}"/>
+            
+            <ReactiveSequence>
+                <Inverter>
+                    <CheckIfGoalMapped allocated_frontier="{the_allocated_frontier_after_hysterisis}"/>
+                </Inverter>
+                <!-- <Inverter>
+                    <ReplanTimeoutComplete allocated_frontier="{the_allocated_frontier_after_hysterisis}" timeout_value="1.5"/>
+                </Inverter> -->
+                <Fallback>
+                    <SendNav2Goal allocated_frontier="{the_allocated_frontier_after_hysterisis}" timeout_value="0.3"/>
+                    <!-- <RecoveryMoveBack move_back_duration="2.0"/> -->
+                    <ExecuteRecoveryMove backward_only="false"/>
+                </Fallback>
+            </ReactiveSequence>
+        </Sequence>
+    </BehaviorTree>
+</root>
