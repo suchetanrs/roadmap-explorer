@@ -40,7 +40,8 @@ def generate_launch_description():
             'params_file',
             default_value=os.path.join(explore_pkg, 'params', 'exploration_params.yaml'),
             description='Full path to the ROS2 parameters file to use for all launched nodes')
-        
+        xml_file = os.path.join(explore_pkg, 'xml', 'exploration.xml')
+        print("XML file: " + xml_file)
         base_frame = ""
         if(context.launch_configurations['robot_namespace'] == ""):
             base_frame = ""
@@ -50,7 +51,7 @@ def generate_launch_description():
         param_substitutions = {
             'robot_base_frame': base_frame + 'base_footprint',
             'use_sim_time': context.launch_configurations['use_sim_time'],
-            'bt_xml_path': "/root/dev_ws/src/roadmap_explorer/roadmap_explorer/xml/exploration_without_fi.xml"
+            'bt_xml_path': xml_file
             }
 
         configured_params = RewrittenYaml(
@@ -68,30 +69,8 @@ def generate_launch_description():
             namespace=context.launch_configurations['robot_namespace'],
             parameters=[configured_params])
 
-# Comparision scripts
-
-        exploration_path_followed = Node(
-            package='roadmap_explorer',
-            executable='exploration_path_followed',
-            output='screen',
-            # prefix=['gdbserver localhost:3000'],
-            # emulate_tty=True,
-            namespace=context.launch_configurations['robot_namespace'],
-            parameters=[configured_params])
-
-        explored_map_counter = Node(
-            package='roadmap_explorer',
-            executable='explored_map_counter',
-            output='screen',
-            # prefix=['gdbserver localhost:3000'],
-            # emulate_tty=True,
-            namespace=context.launch_configurations['robot_namespace'],
-            parameters=[configured_params])
-
         return [declare_params_file_cmd, 
-                explore_server, 
-                exploration_path_followed, 
-                explored_map_counter
+                explore_server
                 ]
 
     opaque_function = OpaqueFunction(function=all_nodes_launch)

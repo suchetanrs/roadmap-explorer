@@ -3,13 +3,6 @@ bt_exploration_node:
     use_sim_time: True
     # config: ["48.0", "60.0", "48.0", "1.25", "1.25", "1.25", "1.25", "60.0"]
     config: ["310.0", "260.0", "310.0", "-120.0", "-70.0", "-120.0", "-70.0", "260.0"]
-    # robot_namespaces: ['/scout_1', '/scout_2']
-    # robot_namespaces: ['/robot_0']
-    robot_namespaces: ['']
-    # robot_namespaces: ['/scout_1', '/scout_2', '/scout_3']
-    # robot_namespaces: ['/scout_1', '/scout_2', '/scout_3', '/scout_4']
-    # robot_namespaces: ['/scout_1', '/scout_2', '/scout_3', '/scout_4', '/scout_5']
-    process_other_robots: true
     bt_xml_path: "/root/dev_ws/src/roadmap_explorer/roadmap_explorer/xml/exploration_with_fi.xml"
 
 explore_costmap:
@@ -24,16 +17,9 @@ explore_costmap:
       robot_radius: 0.60
       track_unknown_space: true
       plugins: ["static_layer", "inflation_layer"]
-      # plugins: ["static_layer"]
-      # lethal_cost_threshold: 50
-      # unknown_cost_value: -1
-      # trinary_costmap: false
       static_layer:
         plugin: "nav2_costmap_2d::StaticLayer"
-        # map_topic: /robot_0/traversability_thresholded
-        # map_topic: /simulation_costmap
-        map_topic: /traversability_thresholded
-        # map_topic: /global_traversability_map
+        map_topic: /map
         map_subscribe_transient_local: True
         enabled: True
       inflation_layer:

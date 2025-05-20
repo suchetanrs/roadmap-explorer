@@ -72,7 +72,9 @@ nav_msgs::msg::Path FrontierRoadmapPlanner::linearInterpolation(
     pa.poses.push_back(p1);
 
     auto pt2 = raw_path.poses[j + 1];
-    double distance = std::hypot(pt2.pose.position.x - pt1.pose.position.x, pt2.pose.position.y - pt1.pose.position.y);
+    double distance = std::hypot(
+      pt2.pose.position.x - pt1.pose.position.x,
+      pt2.pose.position.y - pt1.pose.position.y);
     int loops = static_cast<int>(distance / dist_bw_points);
     double sin_alpha = (pt2.pose.position.y - pt1.pose.position.y) / distance;
     double cos_alpha = (pt2.pose.position.x - pt1.pose.position.x) / distance;

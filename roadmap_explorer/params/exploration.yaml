@@ -8,15 +8,11 @@ costCalculator:
   max_camera_depth: 2.0
   delta_theta: 0.10
   camera_fov: 1.04
+  factor_of_max_is_min: 0.70
 
 costAssigner:
-  alpha: 0.25 #set to 1.0 for maximum weight to arrival information and 0.0 for maximum weight to frontier path distance.
-  beta: 1.0 #set to 1.0 for maximum weight to u1 and 0.0 for maximum weight to information on path.
-  N_best_for_u2: 100000 #set to -1 for considering all the frontier for path computation (this will make the algorithm very time instensive!)
   planner_allow_unknown: true
   add_heading_cost: true
-  vx_max: 0.5 # max linear speed of the robot. m/s (required if heading cost is added)
-  wz_max: 0.5 # max angular speed of the robot. rad/s (required if heading cost is added)
 
 frontierRoadmap:
   max_frontier_distance: 25.1

@@ -63,7 +63,7 @@ protected:
   nav_msgs::msg::Path latest_plan_;
 
   static nav_msgs::msg::Path linearInterpolation(
-    const nav_msgs::msg::Path& raw_path,
+    const nav_msgs::msg::Path & raw_path,
     const double & dist_bw_points);
 };
 }   //  namespace nav2_roadmap_explorer

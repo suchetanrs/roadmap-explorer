@@ -31,51 +31,51 @@ class QLineEdit;
 namespace rviz_plugin
 {
 
-    class FrontierExplorationPanel : public rviz_common::Panel
-    {
-        Q_OBJECT
+class FrontierExplorationPanel : public rviz_common::Panel
+{
+  Q_OBJECT
 
-    public:
-        explicit FrontierExplorationPanel(QWidget *parent = 0);
+public:
+  explicit FrontierExplorationPanel(QWidget * parent = 0);
 
-        void topicCallback(std_msgs::msg::String::SharedPtr msg);
+  void topicCallback(std_msgs::msg::String::SharedPtr msg);
 
-        void topic2Callback(std_msgs::msg::String::SharedPtr msg);
+  void topic2Callback(std_msgs::msg::String::SharedPtr msg);
 
-        void threadFunction(std::shared_ptr<rclcpp::executors::MultiThreadedExecutor> ptr)
-        {
-            ptr->spin();
-        }
+  void threadFunction(std::shared_ptr<rclcpp::executors::MultiThreadedExecutor> ptr)
+  {
+    ptr->spin();
+  }
 
-    protected Q_SLOTS:
-        void onPauseClicked();
+protected Q_SLOTS:
+  void onPauseClicked();
 
-        void onPlayClicked();
+  void onPlayClicked();
 
-    protected:
-        rclcpp::Node::SharedPtr fitslam_panel_node_;
-        rclcpp::Subscription<std_msgs::msg::String>::SharedPtr subscription_;
-        rclcpp::Subscription<std_msgs::msg::String>::SharedPtr subscription2_;
-        rclcpp::Publisher<std_msgs::msg::Int32>::SharedPtr exploration_state_publisher_;
-        std::shared_ptr<rclcpp::executors::MultiThreadedExecutor> fitslam_panel_executor_;
-        QHBoxLayout *topic_layout = new QHBoxLayout;
-        QHBoxLayout *topic_layout2 = new QHBoxLayout;
-        QHBoxLayout *topic_layout3 = new QHBoxLayout;
-        QHBoxLayout *topic_layout4 = new QHBoxLayout;
-        QHBoxLayout *topic_layout5 = new QHBoxLayout;
-        QHBoxLayout *topic_layout6 = new QHBoxLayout;
-        QHBoxLayout *topic_layout7 = new QHBoxLayout;
-        QHBoxLayout *topic_layout8 = new QHBoxLayout;
+protected:
+  rclcpp::Node::SharedPtr fitslam_panel_node_;
+  rclcpp::Subscription<std_msgs::msg::String>::SharedPtr subscription_;
+  rclcpp::Subscription<std_msgs::msg::String>::SharedPtr subscription2_;
+  rclcpp::Publisher<std_msgs::msg::Int32>::SharedPtr exploration_state_publisher_;
+  std::shared_ptr<rclcpp::executors::MultiThreadedExecutor> fitslam_panel_executor_;
+  QHBoxLayout * topic_layout = new QHBoxLayout;
+  QHBoxLayout * topic_layout2 = new QHBoxLayout;
+  QHBoxLayout * topic_layout3 = new QHBoxLayout;
+  QHBoxLayout * topic_layout4 = new QHBoxLayout;
+  QHBoxLayout * topic_layout5 = new QHBoxLayout;
+  QHBoxLayout * topic_layout6 = new QHBoxLayout;
+  QHBoxLayout * topic_layout7 = new QHBoxLayout;
+  QHBoxLayout * topic_layout8 = new QHBoxLayout;
 
-        QLabel *topic_name1 = new QLabel("PLACEHOLDER_1");
-        QLabel *topic_name2 = new QLabel("PLACEHOLDER_2");
-        QLabel *topic_name3 = new QLabel("PLACEHOLDER_3");
-        QLabel *topic_name4 = new QLabel("PLACEHOLDER_4");
-        QLabel *topic_name5 = new QLabel("PLACEHOLDER_5");
-        QLabel *topic_name6 = new QLabel("PLACEHOLDER_6");
-        QPushButton *topic_button1 = new QPushButton("PAUSE EXPLORATION");
-        QPushButton *topic_button2 = new QPushButton("PLAY EXPLORATION");
-    };
+  QLabel * topic_name1 = new QLabel("PLACEHOLDER_1");
+  QLabel * topic_name2 = new QLabel("PLACEHOLDER_2");
+  QLabel * topic_name3 = new QLabel("PLACEHOLDER_3");
+  QLabel * topic_name4 = new QLabel("PLACEHOLDER_4");
+  QLabel * topic_name5 = new QLabel("PLACEHOLDER_5");
+  QLabel * topic_name6 = new QLabel("PLACEHOLDER_6");
+  QPushButton * topic_button1 = new QPushButton("PAUSE EXPLORATION");
+  QPushButton * topic_button2 = new QPushButton("PLAY EXPLORATION");
+};
 
 } // end namespace rviz_plugin
 

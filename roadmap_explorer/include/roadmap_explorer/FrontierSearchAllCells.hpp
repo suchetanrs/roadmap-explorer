@@ -17,27 +17,31 @@
 
 namespace roadmap_explorer
 {
-     
-    class FrontierSearchAllCells
-    {
-    public:
-        FrontierSearchAllCells(nav2_costmap_2d::Costmap2D &costmap, int min_frontier_cluster_size, int max_frontier_cluster_size);
 
-        std::vector<FrontierPtr> searchAllCells();
+class FrontierSearchAllCells
+{
+public:
+  FrontierSearchAllCells(
+    nav2_costmap_2d::Costmap2D & costmap, int min_frontier_cluster_size,
+    int max_frontier_cluster_size);
 
-        std::vector<std::vector<double>> getAllFrontiers();
+  std::vector<FrontierPtr> searchAllCells();
 
-    private:
-        nav2_costmap_2d::Costmap2D &costmap_;
-        unsigned char *map_;
-        unsigned int size_x_, size_y_;
-        std::vector<std::vector<double>> every_frontier_list;
-        int min_frontier_cluster_size_;
-        int max_frontier_cluster_size_;
+  std::vector<std::vector<double>> getAllFrontiers();
 
-        bool isNewFrontierCell(unsigned int idx, const std::vector<bool> &frontier_flag);
+private:
+  nav2_costmap_2d::Costmap2D & costmap_;
+  unsigned char * map_;
+  unsigned int size_x_, size_y_;
+  std::vector<std::vector<double>> every_frontier_list;
+  int min_frontier_cluster_size_;
+  int max_frontier_cluster_size_;
 
-        std::vector<FrontierPtr> buildNewFrontier(unsigned int initial_cell, std::vector<bool> &frontier_flag);
-    };
+  bool isNewFrontierCell(unsigned int idx, const std::vector<bool> & frontier_flag);
+
+  std::vector<FrontierPtr> buildNewFrontier(
+    unsigned int initial_cell,
+    std::vector<bool> & frontier_flag);
+};
 }
 #endif

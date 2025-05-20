@@ -99,7 +99,7 @@ install(TARGETS explore_server
 DESTINATION lib/${PROJECT_NAME}
 )
 
-install(DIRECTORY launch params include
+install(DIRECTORY launch params include xml
 DESTINATION share/${PROJECT_NAME}
 )
 

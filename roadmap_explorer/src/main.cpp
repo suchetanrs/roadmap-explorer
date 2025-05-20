@@ -1,24 +1,22 @@
 #include "rclcpp/rclcpp.hpp"
 #include <roadmap_explorer/ExplorationBT.hpp>
 
-void threadFunction(std::shared_ptr<rclcpp::executors::MultiThreadedExecutor> ptr)
+int main(int argc, char ** argv)
 {
-    ptr->spin();
-}
+  rclcpp::init(argc, argv);
+  auto node = rclcpp::Node::make_shared("bt_exploration_node");
+  auto exploration_server = std::make_shared<roadmap_explorer::FrontierExplorationServer>(node);
 
-int main(int argc, char **argv)
-{
-    rclcpp::init(argc, argv);
-    auto node = rclcpp::Node::make_shared("bt_exploration_node");
-    auto serverObject = std::make_shared<roadmap_explorer::FrontierExplorationServer>(node);
+  auto executor = std::make_shared<rclcpp::executors::MultiThreadedExecutor>();
+  executor->add_node(node);
+  std::thread(
+    [executor]() {
+      executor->spin();
+    }).detach();
 
-    auto executor = std::make_shared<rclcpp::executors::MultiThreadedExecutor>();
-    executor->add_node(node);
-    std::thread t1(threadFunction, executor);
-    t1.detach();
-    serverObject->makeBTNodes();
-    // serverObject->run();
+  exploration_server->makeBTNodes();
+  // exploration_server->run();
 
-    rclcpp::shutdown();
-    return 0;
+  rclcpp::shutdown();
+  return 0;
 }

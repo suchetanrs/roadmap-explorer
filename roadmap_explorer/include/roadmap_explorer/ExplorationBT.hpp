@@ -29,75 +29,76 @@
 
 namespace roadmap_explorer
 {
-     
-    struct RobotActiveGoals
-    {
-        std::mutex mutex;
-        std::map<std::string, std::shared_ptr<geometry_msgs::msg::PoseStamped>> goals;
-    };
 
-    enum class CurrentGoalStatus
-    {
-        RUNNING,
-        COMPLETE
-    };
+struct RobotActiveGoals
+{
+  std::mutex mutex;
+  std::map<std::string, std::shared_ptr<geometry_msgs::msg::PoseStamped>> goals;
+};
 
-    class FrontierExplorationServer
-    {
-    public:
+enum class CurrentGoalStatus
+{
+  RUNNING,
+  COMPLETE
+};
 
-        FrontierExplorationServer(rclcpp::Node::SharedPtr node);
+class FrontierExplorationServer
+{
+public:
+  FrontierExplorationServer(rclcpp::Node::SharedPtr node);
 
-        ~FrontierExplorationServer();
+  ~FrontierExplorationServer();
 
-        void buildBoundaryAndCenter();
+  void buildBoundaryAndCenter();
 
-        void makeBTNodes();
+  void makeBTNodes();
 
-        void rvizControl(std_msgs::msg::Int32 rvizControlValue);
+  void run();
 
-    private:
-        // ROS Internal
-        rclcpp::Node::SharedPtr bt_node_;
-        rclcpp::CallbackGroup::SharedPtr explore_server_callback_group_;
-        rclcpp::CallbackGroup::SharedPtr multirobot_service_callback_group_;
-        rclcpp::CallbackGroup::SharedPtr rviz_control_callback_group_;
+  void rvizControl(std_msgs::msg::Int32 rvizControlValue);
 
-        std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros_;
-        std::unique_ptr<nav2_util::NodeThread> explore_costmap_thread_;
+private:
+  // ROS Internal
+  rclcpp::Node::SharedPtr bt_node_;
+  rclcpp::CallbackGroup::SharedPtr explore_server_callback_group_;
+  rclcpp::CallbackGroup::SharedPtr multirobot_service_callback_group_;
+  rclcpp::CallbackGroup::SharedPtr rviz_control_callback_group_;
 
-        rclcpp::Subscription<std_msgs::msg::Int32>::SharedPtr exploration_rviz_sub_;
+  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros_;
+  std::unique_ptr<nav2_util::NodeThread> explore_costmap_thread_;
 
-        // Nav2 related
-        int nav2WaitTime_;
-        std::mutex process_active_goals_lock_;
-        std::shared_ptr<Nav2Interface> nav2_interface_;
+  rclcpp::Subscription<std_msgs::msg::Int32>::SharedPtr exploration_rviz_sub_;
 
-        // Exploration related
-        geometry_msgs::msg::PolygonStamped explore_boundary_;
-        geometry_msgs::msg::PointStamped explore_center_;
-        std::vector<std::string> config_;
+  // Nav2 related
+  int nav2WaitTime_;
+  std::mutex process_active_goals_lock_;
+  std::shared_ptr<Nav2Interface> nav2_interface_;
 
-        // BT related
-        BT::BehaviorTreeFactory factory;
-        BT::Blackboard::Ptr blackboard;
-        BT::Tree behaviour_tree;
+  // Exploration related
+  geometry_msgs::msg::PolygonStamped explore_boundary_;
+  geometry_msgs::msg::PointStamped explore_center_;
+  std::vector<std::string> config_;
 
-        std::shared_ptr<FrontierSearch> frontierSearchPtr_;
-        std::shared_ptr<CostAssigner> bel_ptr_;
-        std::shared_ptr<FullPathOptimizer> full_path_optimizer_;
+  // BT related
+  BT::BehaviorTreeFactory factory;
+  BT::Blackboard::Ptr blackboard;
+  BT::Tree behaviour_tree;
 
-        int retry_;
-        std::vector<std::string> robot_namespaces_;
-        bool use_custom_sim_;
-        bool process_other_robots_;
-        bool exploration_active_;
-        std::vector<FrontierPtr> blacklisted_frontiers_; // these are the frontiers traversed by this robot.
-        RobotActiveGoals robot_active_goals_;
-        std::shared_ptr<RecoveryController> recovery_controller_;
-        std::shared_ptr<InitCommandVelNode> initialization_controller_;
-        std::string bt_xml_path_;
-    };
+  std::shared_ptr<FrontierSearch> frontierSearchPtr_;
+  std::shared_ptr<CostAssigner> bel_ptr_;
+  std::shared_ptr<FullPathOptimizer> full_path_optimizer_;
+
+  int retry_;
+  std::vector<std::string> robot_namespaces_;
+  bool use_custom_sim_;
+  bool process_other_robots_;
+  bool exploration_active_;
+  std::vector<FrontierPtr> blacklisted_frontiers_;       // these are the frontiers traversed by this robot.
+  RobotActiveGoals robot_active_goals_;
+  std::shared_ptr<RecoveryController> recovery_controller_;
+  std::shared_ptr<InitCommandVelNode> initialization_controller_;
+  std::string bt_xml_path_;
+};
 }
 
 #endif

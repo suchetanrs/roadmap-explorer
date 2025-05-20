@@ -39,69 +39,73 @@
 namespace roadmap_explorer
 {
 
-    struct GetFrontierCostsRequest
-    {
-        geometry_msgs::msg::PoseStamped start_pose;
-        std::vector<FrontierPtr> frontier_list;
-        std::vector<std::vector<double>> every_frontier;
-        std::vector<FrontierPtr> prohibited_frontiers;
-    };
+struct GetFrontierCostsRequest
+{
+  geometry_msgs::msg::PoseStamped start_pose;
+  std::vector<FrontierPtr> frontier_list;
+  std::vector<std::vector<double>> every_frontier;
+  std::vector<FrontierPtr> prohibited_frontiers;
+};
 
-    struct GetFrontierCostsResponse
-    {
-        bool success;
-        std::vector<FrontierPtr> frontier_list;
-        std::vector<double> frontier_distances;
-        std::vector<double> frontier_arrival_information;
-        std::vector<double> frontier_path_information;
-    };
+struct GetFrontierCostsResponse
+{
+  bool success;
+  std::vector<FrontierPtr> frontier_list;
+  std::vector<double> frontier_distances;
+  std::vector<double> frontier_arrival_information;
+  std::vector<double> frontier_path_information;
+};
 
-    class CostAssigner
-    {
-    public:
-        CostAssigner(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros);
+class CostAssigner
+{
+public:
+  CostAssigner(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros);
 
-        ~CostAssigner();
+  ~CostAssigner();
 
-        bool updateBoundaryPolygon(geometry_msgs::msg::PolygonStamped &explore_boundary);
+  bool updateBoundaryPolygon(geometry_msgs::msg::PolygonStamped & explore_boundary);
 
-        bool getFrontierCosts(std::shared_ptr<GetFrontierCostsRequest> requestData, std::shared_ptr<GetFrontierCostsResponse> resultData);
+  bool getFrontierCosts(
+    std::shared_ptr<GetFrontierCostsRequest> requestData,
+    std::shared_ptr<GetFrontierCostsResponse> resultData);
 
-    protected:
-        bool processChosenApproach(
-            std::vector<FrontierPtr> &frontier_list,
-            geometry_msgs::msg::Pose &start_pose_w);
+protected:
+  bool processChosenApproach(
+    std::vector<FrontierPtr> & frontier_list,
+    geometry_msgs::msg::Pose & start_pose_w);
 
-        /**
-         * @param costTypes can take the values
-         * "ArrivalInformation",
-         * "A*PlannerDistance" OR "EuclideanDistance" OR "RoadmapPlannerDistance",
-         *
-         * "RandomCosts",
-         *
-         * "ClosestFrontier"
-         */
-        bool assignCosts(std::vector<FrontierPtr> &frontier_list, std::vector<double> polygon_xy_min_max,
-                         geometry_msgs::msg::Pose start_pose_w, std::vector<std::vector<std::string>> &costTypes);
+  /**
+       * @param costTypes can take the values
+       * "ArrivalInformation",
+       * "A*PlannerDistance" OR "EuclideanDistance" OR "RoadmapPlannerDistance",
+       *
+       * "RandomCosts",
+       *
+       * "ClosestFrontier"
+       */
+  bool assignCosts(
+    std::vector<FrontierPtr> & frontier_list, std::vector<double> polygon_xy_min_max,
+    geometry_msgs::msg::Pose start_pose_w, std::vector<std::vector<std::string>> & costTypes);
 
-        void setFrontierBlacklist(std::vector<FrontierPtr> &blacklist);
+  void setFrontierBlacklist(std::vector<FrontierPtr> & blacklist);
 
-    private:
-        geometry_msgs::msg::Polygon polygon_;
-        std::vector<double> polygon_xy_min_max_;
+private:
+  geometry_msgs::msg::Polygon polygon_;
+  std::vector<double> polygon_xy_min_max_;
 
-        bool planner_allow_unknown_;
-        double frontierDetectRadius_;
-        bool add_heading_cost_;
+  bool planner_allow_unknown_;
+  double frontierDetectRadius_;
+  bool add_heading_cost_;
 
-        nav2_costmap_2d::LayeredCostmap *layered_costmap_;
-        nav2_costmap_2d::Costmap2D *costmap_;
+  nav2_costmap_2d::LayeredCostmap * layered_costmap_;
+  nav2_costmap_2d::Costmap2D * costmap_;
 
-        std::shared_ptr<FrontierCostCalculator> costCalculator_;
+  std::shared_ptr<FrontierCostCalculator> costCalculator_;
 
-        // std::shared_ptr<RosVisualizer> RosVisualizer_;
-        std::unordered_map<FrontierPtr, bool, FrontierHash, FrontierGoalPointEquality> frontier_blacklist_;
-        std::mutex blacklist_mutex_;
-    };
+  // std::shared_ptr<RosVisualizer> RosVisualizer_;
+  std::unordered_map<FrontierPtr, bool, FrontierHash,
+    FrontierGoalPointEquality> frontier_blacklist_;
+  std::mutex blacklist_mutex_;
+};
 }
 #endif

@@ -40,86 +40,96 @@
 namespace roadmap_explorer
 {
 
-    class FrontierCostCalculator
-    {
-    public:
-        FrontierCostCalculator(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros);
+class FrontierCostCalculator
+{
+public:
+  FrontierCostCalculator(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros);
 
-        // ----------------Arrival information related--------------------
-        /**
-         * Sets arrival information to 0 if there is an error occurred.
-         * Sets goal orientation to 0 rad if there is an error occurred.
-         * If successful, sets the values accordingly.
-         */
-        void setArrivalInformationForFrontier(FrontierPtr &goal_point_w, std::vector<double> &polygon_xy_min_max);
+  // ----------------Arrival information related--------------------
+  /**
+       * Sets arrival information to 0 if there is an error occurred.
+       * Sets goal orientation to 0 rad if there is an error occurred.
+       * If successful, sets the values accordingly.
+       */
+  void setArrivalInformationForFrontier(
+    FrontierPtr & goal_point_w,
+    std::vector<double> & polygon_xy_min_max);
 
-        double setArrivalInformationLimits();
+  double setArrivalInformationLimits();
 
-        // ----------------Planning related--------------------
-        void setPlanForFrontier(geometry_msgs::msg::Pose start_pose_w, FrontierPtr &goal_point_w, bool planner_allow_unknown_);
+  // ----------------Planning related--------------------
+  void setPlanForFrontier(
+    geometry_msgs::msg::Pose start_pose_w, FrontierPtr & goal_point_w,
+    bool planner_allow_unknown_);
 
-        void setPlanForFrontierRoadmap(geometry_msgs::msg::Pose start_pose_w, FrontierPtr &goal_point_w, bool planner_allow_unknown_);
+  void setPlanForFrontierRoadmap(
+    geometry_msgs::msg::Pose start_pose_w, FrontierPtr & goal_point_w,
+    bool planner_allow_unknown_);
 
-        void setPlanForFrontierEuclidean(geometry_msgs::msg::Pose start_pose_w, FrontierPtr &goal_point_w, bool planner_allow_unknown_);
+  void setPlanForFrontierEuclidean(
+    geometry_msgs::msg::Pose start_pose_w,
+    FrontierPtr & goal_point_w, bool planner_allow_unknown_);
 
-        // -----------------Random costs--------------
-        double getRandomVal();
+  // -----------------Random costs--------------
+  double getRandomVal();
 
-        void setRandomMetaData(FrontierPtr &goal_point_w);
+  void setRandomMetaData(FrontierPtr & goal_point_w);
 
-        // -----------------For closest frontier implementation-----------------
+  // -----------------For closest frontier implementation-----------------
 
-        void setClosestFrontierMetaData(geometry_msgs::msg::Pose start_pose_w, FrontierPtr &goal_point_w, bool planner_allow_unknown_);
+  void setClosestFrontierMetaData(
+    geometry_msgs::msg::Pose start_pose_w, FrontierPtr & goal_point_w,
+    bool planner_allow_unknown_);
 
-        // --------------Other----------------
-        void recomputeNormalizationFactors(FrontierPtr &frontier);
+  // --------------Other----------------
+  void recomputeNormalizationFactors(FrontierPtr & frontier);
 
-        double getMinPlanDistance()
-        {
-            return min_traversable_distance;
-        };
+  double getMinPlanDistance()
+  {
+    return min_traversable_distance;
+  }
 
-        double getMaxPlanDistance()
-        {
-            return max_traversable_distance;
-        };
+  double getMaxPlanDistance()
+  {
+    return max_traversable_distance;
+  }
 
-        double getMinArrivalInformation()
-        {
-            return min_arrival_info_gt_;
-        };
+  double getMinArrivalInformation()
+  {
+    return min_arrival_info_gt_;
+  }
 
-        double getMaxArrivalInformation()
-        {
-            return max_arrival_info_gt_;
-        };
+  double getMaxArrivalInformation()
+  {
+    return max_arrival_info_gt_;
+  }
 
-        void reset()
-        {
-            min_traversable_distance = std::numeric_limits<double>::max();
-            max_traversable_distance = -1.0 * std::numeric_limits<double>::max();
-            min_arrival_info_per_frontier = std::numeric_limits<double>::max();
-            max_arrival_info_per_frontier = -1.0 * std::numeric_limits<double>::max();
-        };
+  void reset()
+  {
+    min_traversable_distance = std::numeric_limits<double>::max();
+    max_traversable_distance = -1.0 * std::numeric_limits<double>::max();
+    min_arrival_info_per_frontier = std::numeric_limits<double>::max();
+    max_arrival_info_per_frontier = -1.0 * std::numeric_limits<double>::max();
+  }
 
-    private:
-        // Add private methods or member variables if needed
-        nav2_costmap_2d::Costmap2D *exploration_costmap_;
-        // std::shared_ptr<RosVisualizer> RosVisualizer_;
-        double min_traversable_distance = std::numeric_limits<double>::max();
-        double max_traversable_distance = -1.0 * std::numeric_limits<double>::max();
-        double min_arrival_info_per_frontier = std::numeric_limits<double>::max();
-        double max_arrival_info_per_frontier = -1.0 * std::numeric_limits<double>::max();
-        double robot_radius_;
-        double max_arrival_info_gt_ = -1.0 * std::numeric_limits<double>::max();
-        double min_arrival_info_gt_ = std::numeric_limits<double>::max();
-        bool arrival_info_limits_set_ = false;
+private:
+  // Add private methods or member variables if needed
+  nav2_costmap_2d::Costmap2D * exploration_costmap_;
+  // std::shared_ptr<RosVisualizer> RosVisualizer_;
+  double min_traversable_distance = std::numeric_limits<double>::max();
+  double max_traversable_distance = -1.0 * std::numeric_limits<double>::max();
+  double min_arrival_info_per_frontier = std::numeric_limits<double>::max();
+  double max_arrival_info_per_frontier = -1.0 * std::numeric_limits<double>::max();
+  double robot_radius_;
+  double max_arrival_info_gt_ = -1.0 * std::numeric_limits<double>::max();
+  double min_arrival_info_gt_ = std::numeric_limits<double>::max();
+  bool arrival_info_limits_set_ = false;
 
-        double MAX_CAMERA_DEPTH;
-        double DELTA_THETA;
-        double CAMERA_FOV;
-        double factor_of_max_is_min = 0.70;
-    };
+  double MAX_CAMERA_DEPTH;
+  double DELTA_THETA;
+  double CAMERA_FOV;
+  double factor_of_max_is_min = 0.70;
 };
+}
 
 #endif
