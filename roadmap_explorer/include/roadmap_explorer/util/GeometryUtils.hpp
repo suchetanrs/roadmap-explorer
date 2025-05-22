@@ -111,6 +111,13 @@ inline double distanceBetweenPoints(
   return sqrt(pow(f1.x - x2, 2) + pow(f1.y - y2, 2));
 }
 
+inline double distanceBetweenPointsSq(
+  const geometry_msgs::msg::Point & f1, const double x2,
+  const double y2)
+{
+  return ((f1.x - x2)  * (f1.x - x2)) + ((f1.y - y2)  * (f1.y - y2));
+}
+
 inline double sqDistanceBetweenFrontiers(const FrontierPtr & f1, const FrontierPtr & f2)
 {
   return pow(f1->getGoalPoint().x - f2->getGoalPoint().x, 2) + pow(

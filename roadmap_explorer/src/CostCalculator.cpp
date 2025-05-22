@@ -88,7 +88,11 @@ void FrontierCostCalculator::setArrivalInformationForFrontier(
   }       // theta end
 
   unsigned int sxm, sym;
-  exploration_costmap_->worldToMap(sx, sy, sxm, sym);
+  if(!exploration_costmap_->worldToMap(sx, sy, sxm, sym))
+  {
+    LOG_ERROR("The detected frontier is outside the map. What is going on?")
+    throw std::runtime_error("The detected frontier is outside the map. What is going on?");
+  }
   bool footprintInLethalPenalty = isCircleFootprintInLethal(
     exploration_costmap_, sxm, sym, std::ceil(
       robot_radius_ / exploration_costmap_->getResolution()));
@@ -138,14 +142,16 @@ void FrontierCostCalculator::setArrivalInformationForFrontier(
 
 double FrontierCostCalculator::setArrivalInformationLimits()
 {
+  LOG_WARN("Setting arrival information limits.");
   if (arrival_info_limits_set_) {
+    LOG_WARN("Arrival information limits already set.");
     return 0.0;
   }
   double sx, sy;       // sensor x, sensor y, sensor orientation
   double wx, wy;
   unsigned int max_length = MAX_CAMERA_DEPTH / (exploration_costmap_->getResolution());
-  sx = 0.0;
-  sy = 0.0;
+  sx = exploration_costmap_->getOriginX() + (exploration_costmap_->getSizeInMetersX() / 2);
+  sy = exploration_costmap_->getOriginY() + (exploration_costmap_->getSizeInMetersY() / 2);
   std::vector<int> information_along_ray;       // stores the information along each ray in 2PI.
   std::vector<geometry_msgs::msg::Pose> vizpoints;
   // Iterate through each angle in 2PI with DELTA_THETA resolution
@@ -159,6 +165,10 @@ double FrontierCostCalculator::setArrivalInformationLimits()
     wy = sy + (MAX_CAMERA_DEPTH * sin(theta));
 
     if (!getTracedCells(sx, sy, wx, wy, cell_gatherer, max_length, exploration_costmap_)) {
+      LOG_ERROR("Error in raytracing. Cannot set arrival information limits.");
+      LOG_ERROR("Max length is: " << max_length);
+      throw std::runtime_error(
+        "Error in raytracing. Cannot set arrival information limits.");
       return 0;
     }
 

@@ -15,7 +15,7 @@ int main(int argc, char ** argv)
     }).detach();
 
   exploration_server->makeBTNodes();
-  // exploration_server->run();
+  exploration_server->run();
 
   rclcpp::shutdown();
   return 0;

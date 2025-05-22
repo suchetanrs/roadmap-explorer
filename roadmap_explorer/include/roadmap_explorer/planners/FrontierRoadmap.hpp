@@ -182,6 +182,7 @@ private:
 
 
   std::unordered_map<FrontierPtr, std::vector<FrontierPtr>, FrontierHash> roadmap_;
+  std::unordered_map<FrontierPtr, std::vector<FrontierPtr>, FrontierHash> unconnectable_roadmap_;
   std::mutex roadmap_mutex_;
   double max_connection_length_;
   double max_frontier_distance_;

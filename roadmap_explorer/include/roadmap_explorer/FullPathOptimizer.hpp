@@ -75,10 +75,6 @@ public:
     rclcpp::Node::SharedPtr node,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros);
 
-  void publishBlacklistCircles();
-
-  void publishBlacklistPoses();
-
   // new
   void addToMarkerArrayLinePolygon(
     visualization_msgs::msg::MarkerArray & marker_array, std::vector<FrontierPtr> & frontier_list,
@@ -124,65 +120,14 @@ public:
   void clearPlanCache()
   {
     frontier_pair_distances_.clear();
-    pair_path_safe_.clear();
   }
-
-  bool isInBlacklistedRegion(const FrontierPtr & frontier)
-  {
-    // verify that frontier is not in blacklisted zone
-    for (auto & blacklistedZone : circularBlacklistCenters_) {
-      if (distanceBetweenFrontiers(frontier, blacklistedZone) < BLACKLISTING_CIRCLE_RADIUS) {
-        // frontier->setAchievability(false);
-        return true;
-      }
-    }
-    return false;
-  }
-
-  void blacklistFrontier(FrontierPtr & frontier)
-  {
-    circularBlacklistCenters_.push_back(frontier);
-  }
-
-  void blacklistFrontier(geometry_msgs::msg::PoseStamped pose, FrontierPtr & frontier)
-  {
-    auto robotYaw = quatToEuler(pose.pose.orientation)[2];
-    pose.pose.position = frontier->getGoalPoint();
-    pose.pose.position.x += (BLACKLISTING_CIRCLE_RADIUS * cos(robotYaw));
-    pose.pose.position.y += (BLACKLISTING_CIRCLE_RADIUS * sin(robotYaw));
-    robotYaw += M_PI;
-    auto quat = eulerToQuat(0, 0, robotYaw);
-    pose.pose.orientation = quat;
-    poseBlacklists_.poses.push_back(pose.pose);
-  }
-
-  void setExhaustiveSearch(bool value)
-  {
-    exhaustiveLandmarkSearch_ = value;
-  }
-
-  bool getExhaustiveSearch()
-  {
-    return exhaustiveLandmarkSearch_;
-  }
-
-  void blacklistTestCb(const geometry_msgs::msg::PointStamped::SharedPtr msg);
 
 private:
   rclcpp::Node::SharedPtr node_;
+  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros_;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr marker_publisher_;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr local_search_area_publisher_;
-  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr blacklisted_region_publisher_;
-  rclcpp::Publisher<geometry_msgs::msg::PoseArray>::SharedPtr blacklisted_poses_publisher_;
   rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr frontier_nav2_plan_;
-  rclcpp::Subscription<geometry_msgs::msg::PointStamped>::SharedPtr subscription_;
-  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros_;
   std::unordered_map<FrontierPair, RoadmapPlanResult, FrontierPairHash> frontier_pair_distances_;
-  std::unordered_map<FrontierPair, bool, FrontierPairHash> pair_path_safe_;
-  std::vector<FrontierPtr> circularBlacklistCenters_;
-  geometry_msgs::msg::PoseArray poseBlacklists_;
-  bool blacklistNextGoal_;
-  double angle_for_fov_overlap_;
-  bool exhaustiveLandmarkSearch_;
 };
 }

@@ -319,22 +319,42 @@ void FrontierRoadMap::constructNewEdges(const std::vector<FrontierPtr> & frontie
       if (roadmap_.find(closestNode) == roadmap_.end()) {
         roadmap_[closestNode] = {};
       }
-      // add if only it does not already exist.
+      // skip if edge exists already
       auto & addition1 = roadmap_[closestFrontier];
       auto & addition2 = roadmap_[closestNode];
-      if (std::find(
-          addition1.begin(), addition1.end(),
-          closestNode) != addition1.end() ||
+      if (
+        std::find(addition1.begin(), addition1.end(), closestNode) != addition1.end() ||
         std::find(addition2.begin(), addition2.end(), closestFrontier) != addition2.end())
       {
         roadmap_mutex_.unlock();
         continue;
       }
+
+      // skip if edge does not exist but it was already determined to be unconnectable
+      auto & addition3 = unconnectable_roadmap_[closestFrontier];
+      auto & addition4 = unconnectable_roadmap_[closestNode];
+      if (
+        std::find(addition3.begin(), addition3.end(), closestNode) != addition3.end() ||
+        std::find(addition4.begin(), addition4.end(), closestFrontier) != addition4.end())
+      {
+        roadmap_mutex_.unlock();
+        continue;
+      }
+
+      // an edge does not exist and is not connectable
       if (isConnectable(closestNode, closestFrontier)) {
         roadmap_[closestFrontier].push_back(closestNode);
         roadmap_[closestNode].push_back(closestFrontier);
         numChildren++;
       } else {
+        if(unconnectable_roadmap_.find(closestNode) == unconnectable_roadmap_.end()) {
+          unconnectable_roadmap_[closestNode] = {};
+        }
+        if(unconnectable_roadmap_.find(closestFrontier) == unconnectable_roadmap_.end()) {
+          unconnectable_roadmap_[closestFrontier] = {};
+        }
+        unconnectable_roadmap_[closestFrontier].push_back(closestNode);
+        unconnectable_roadmap_[closestNode].push_back(closestFrontier);
         // LOG_INFO("Not connectable");
       }
       roadmap_mutex_.unlock();
@@ -374,6 +394,7 @@ void FrontierRoadMap::reConstructGraph(bool entireGraph, bool optimizeRoadmap)
   // std::cout << "UnLocking reConstructGraph" << std::endl;
   if (entireGraph) {
     roadmap_.clear();
+    unconnectable_roadmap_.clear();
   }
   for (const auto & pair : spatial_hash_map_) {
     if (!entireGraph) {
@@ -488,19 +509,19 @@ void FrontierRoadMap::getClosestNodeInHashmap(
   while (!foundClosestNode) {
     int searchRadius = GRID_CELL_SIZE * searchRadiusMultiplier;
     if (searchRadius > 10) {
-      LOG_CRITICAL("Cannot find closest node within 10m. This is not ok.")
-      for (int dx = -searchRadius; dx <= searchRadius; ++dx) {
-        for (int dy = -searchRadius; dy <= searchRadius; ++dy) {
-          auto neighbor_cell = std::make_pair(grid_cell.first + dx, grid_cell.second + dy);
-          // LOG_INFO("Neighbour cell at x: " << neighbor_cell.first << " and y: " << neighbor_cell.second);
-          if (spatial_hash_map_.count(neighbor_cell) > 0) {
-            for (const auto & existing_frontier : spatial_hash_map_[neighbor_cell]) {
-              double distance = distanceBetweenFrontiers(interestNode, existing_frontier);
-              if (distance < min_distance) {
-                foundClosestNode = true;
-                min_distance = distance;
-                closestNode = existing_frontier;
-              }
+      LOG_CRITICAL("Cannot find closest node within 10m in hashmap. This is not ok.")
+    }
+    for (int dx = -searchRadius; dx <= searchRadius; ++dx) {
+      for (int dy = -searchRadius; dy <= searchRadius; ++dy) {
+        auto neighbor_cell = std::make_pair(grid_cell.first + dx, grid_cell.second + dy);
+        // LOG_INFO("Neighbour cell at x: " << neighbor_cell.first << " and y: " << neighbor_cell.second);
+        if (spatial_hash_map_.count(neighbor_cell) > 0) {
+          for (const auto & existing_frontier : spatial_hash_map_[neighbor_cell]) {
+            double distance = distanceBetweenFrontiers(interestNode, existing_frontier);
+            if (distance < min_distance) {
+              foundClosestNode = true;
+              min_distance = distance;
+              closestNode = existing_frontier;
             }
           }
         }
@@ -524,24 +545,24 @@ void FrontierRoadMap::getClosestNodeInRoadMap(
   while (!foundClosestNode) {
     int searchRadius = GRID_CELL_SIZE * searchRadiusMultiplier;
     if (searchRadius > 10) {
-      LOG_CRITICAL("Cannot find closest node within 10m. This is not ok.")
-      for (int dx = -searchRadius; dx <= searchRadius; ++dx) {
-        for (int dy = -searchRadius; dy <= searchRadius; ++dy) {
-          auto neighbor_cell = std::make_pair(grid_cell.first + dx, grid_cell.second + dy);
-          // LOG_INFO("Neighbour cell at x: " << neighbor_cell.first << " and y: " << neighbor_cell.second);
-          if (spatial_hash_map_.count(neighbor_cell) > 0) {
-            for (const auto & existing_frontier : spatial_hash_map_[neighbor_cell]) {
-              roadmap_mutex_.lock();
-              if (roadmap_.count(existing_frontier) > 0) {
-                double distance = distanceBetweenFrontiers(interestNode, existing_frontier);
-                if (distance < min_distance) {
-                  foundClosestNode = true;
-                  min_distance = distance;
-                  closestNode = existing_frontier;
-                }
+      LOG_CRITICAL("Cannot find closest node within 10m in roadmap. This is not ok.")
+    }
+    for (int dx = -searchRadius; dx <= searchRadius; ++dx) {
+      for (int dy = -searchRadius; dy <= searchRadius; ++dy) {
+        auto neighbor_cell = std::make_pair(grid_cell.first + dx, grid_cell.second + dy);
+        // LOG_INFO("Neighbour cell at x: " << neighbor_cell.first << " and y: " << neighbor_cell.second);
+        if (spatial_hash_map_.count(neighbor_cell) > 0) {
+          for (const auto & existing_frontier : spatial_hash_map_[neighbor_cell]) {
+            roadmap_mutex_.lock();
+            if (roadmap_.count(existing_frontier) > 0) {
+              double distance = distanceBetweenFrontiers(interestNode, existing_frontier);
+              if (distance < min_distance) {
+                foundClosestNode = true;
+                min_distance = distance;
+                closestNode = existing_frontier;
               }
-              roadmap_mutex_.unlock();
             }
+            roadmap_mutex_.unlock();
           }
         }
       }

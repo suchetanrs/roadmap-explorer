@@ -69,7 +69,6 @@ public:
 
   void visualizeFrontierMarker(
     const std::vector<FrontierPtr> & frontier_list,
-    const std::vector<std::vector<double>> & every_frontier,
     std::string globalFrameID);
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
     frontier_marker_array_publisher_;

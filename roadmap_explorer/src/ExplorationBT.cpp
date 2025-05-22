@@ -182,7 +182,7 @@ public:
       double increment_value = 0.1;
       getInput("increment_search_distance_by", increment_value);
       frontierSearchPtr_->incrementSearchDistance(increment_value);
-      LOG_WARN("No frontiers found in search. Incrementing search radius and returning BT Failure.")
+      LOG_WARN("No frontiers found in search. Incrementing search radius and returning BT Failure.");
       EventLoggerInstance.endEvent("SearchForFrontiers", 0);
       explore_costmap_ros_->getCostmap()->getMutex()->unlock();
       return BT::NodeStatus::FAILURE;
@@ -305,6 +305,7 @@ public:
     LOG_FLOW("MODULE UpdateRoadmapBT");
     std::vector<FrontierPtr> frontier_list;
     getInput<std::vector<FrontierPtr>>("frontier_list", frontier_list);
+    LOG_INFO("Recieved " << frontier_list.size() << " frontiers in UpdateRoadmapBT");
     geometry_msgs::msg::PoseStamped robotP;
     if (!config().blackboard->get<geometry_msgs::msg::PoseStamped>("latest_robot_pose", robotP)) {
       // Handle the case when "latest_robot_pose" is not found
@@ -411,6 +412,7 @@ public:
     }
     setOutput("frontier_costs_result", frontierCostsResultPtr->frontier_list);
     EventLoggerInstance.endEvent("ProcessFrontierCosts", 0);
+    RosVisualizer::getInstance().visualizeFrontierMarker(frontierCostsResultPtr->frontier_list, "map");
     return BT::NodeStatus::SUCCESS;
   }
 
@@ -1022,8 +1024,7 @@ FrontierExplorationServer::FrontierExplorationServer(rclcpp::Node::SharedPtr nod
   //--------------------------------------------EXPLORE SERVER RELATED----------------------------
 
   explore_costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
-    "explore_costmap",
-    std::string{bt_node_->get_namespace()}, "explore_costmap");
+    "explore_costmap", "", "explore_costmap");
   explore_costmap_ros_->configure();
   // Launch a thread to run the costmap node
   explore_costmap_thread_ = std::make_unique<nav2_util::NodeThread>(explore_costmap_ros_);

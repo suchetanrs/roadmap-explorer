@@ -133,6 +133,9 @@ bool isCircleFootprintInLethal(
   unsigned int center_y, double radius_in_cells);
 // -------------------------- COSTMAP TOOLS ---------------------------------------------------------
 
+extern std::vector<unsigned int> nhood4_values;
+extern std::vector<unsigned int> nhood8_values;
+
 std::vector<unsigned int> nhood4(unsigned int idx, const nav2_costmap_2d::Costmap2D & costmap);
 
 std::vector<unsigned int> nhood8(unsigned int idx, const nav2_costmap_2d::Costmap2D & costmap);

@@ -150,11 +150,14 @@ void RosVisualizer::visualizeFrontier(
 
 void RosVisualizer::visualizeFrontierMarker(
   const std::vector<FrontierPtr> & frontier_list,
-  const std::vector<std::vector<double>> & every_frontier,
   std::string globalFrameID)
 {
   visualization_msgs::msg::MarkerArray markers;
   int id = 0;
+  
+  if(frontier_marker_array_publisher_->get_subscription_count() == 0) {
+    return;
+  };
 
   for (const auto & frontier : frontier_list) {
     // Create a marker for each frontier
@@ -181,15 +184,16 @@ void RosVisualizer::visualizeFrontierMarker(
     marker.color.g = 1.0;     // Green
     marker.color.b = 1.0;     // Blue
 
+    if(!frontier->isAchievable()) {
+      continue;
+    }
     // Set marker text
     std::stringstream ss;
-    ss << "weighted_cost:" << frontier->getWeightedCost() << "\n dist_ut:" << frontier->getCost(
-      "distance_utility")
-       << "\n path_len:" << frontier->getPathLength() << ", " << frontier->getPathLengthInM() <<
-      "\n path_heading:" << frontier->getPathHeading() * 180 / M_PI
-       << "\n arrival_ut:" << frontier->getCost("arrival_gain_utility") << "\n arrival_info:" <<
-      frontier->getArrivalInformation()
-       << "\n achievability:" << frontier->isAchievable();     // Example: Display weighted cost
+    ss << "arrival_cost:" << frontier->getArrivalInformation() << "\n";
+    ss << "size:" << frontier->getSize() << "\n";
+    ss << "path_length:" << frontier->getPathLength() << "\n";
+    ss << "path_length_m:" << frontier->getPathLengthInM() << "\n";
+    // ss << " achievability:" << frontier->isAchievable();
     marker.text = ss.str();
 
     markers.markers.push_back(marker);

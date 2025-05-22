@@ -4,7 +4,10 @@
 
 namespace roadmap_explorer
 {
-void bresenham2D(
+std::vector<unsigned int> nhood4_values(4);
+std::vector<unsigned int> nhood8_values(8);
+
+  void bresenham2D(
   RayTracedCells & at, unsigned int abs_da, unsigned int abs_db, int error_b,
   int offset_a,
   int offset_b, unsigned int offset,
@@ -38,9 +41,8 @@ bool getTracedCells(
   // Calculate map coordinates
   unsigned int x1, y1;
   unsigned int x0, y0;
-  if (!exploration_costmap_->worldToMap(
-      wx, wy, x1,
-      y1) || !exploration_costmap_->worldToMap(sx, sy, x0, y0))
+  if (!exploration_costmap_->worldToMap(wx, wy, x1, y1) 
+  || !exploration_costmap_->worldToMap(sx, sy, x0, y0))
   {
     std::cerr << "Not world to map" << std::endl;
     return false;
@@ -135,12 +137,17 @@ bool isCircleFootprintInLethal(
   const nav2_costmap_2d::Costmap2D * costmap, unsigned int center_x,
   unsigned int center_y, double radius_in_cells)
 {
+  unsigned int size_x_ = costmap->getSizeInCellsX();
+  unsigned int size_y_ = costmap->getSizeInCellsY();
   for (int dx = -radius_in_cells; dx <= radius_in_cells; ++dx) {
     for (int dy = -radius_in_cells; dy <= radius_in_cells; ++dy) {
       // Check if the point is within the circle
       if (dx * dx + dy * dy <= radius_in_cells * radius_in_cells) {
         unsigned int x = center_x + dx;
         unsigned int y = center_y + dy;
+        if (x >= size_x_ || y >= size_y_) {
+          continue;               // Out of bounds
+        }
         unsigned int cost = costmap->getCost(x, y);
         if (cost == 254) {
           return true;               // Robot does not fit
@@ -162,29 +169,33 @@ bool isCircleFootprintInLethal(
 std::vector<unsigned int> nhood4(unsigned int idx, const nav2_costmap_2d::Costmap2D & costmap)
 {
   // get 4-connected neighbourhood indexes, check for edge of map
-  std::vector<unsigned int> out;
-
   unsigned int size_x_ = costmap.getSizeInCellsX();
   unsigned int size_y_ = costmap.getSizeInCellsY();
 
   if (idx > size_x_ * size_y_ - 1) {
     // std::cout << "Evaluating nhood for offmap point" << std::endl;
-    return out;
+    nhood4_values.clear();
+    return nhood4_values;
+  }
+
+  if(nhood4_values.size() == 0)
+  {
+    nhood4_values.resize(4);
   }
 
   if (idx % size_x_ > 0) {
-    out.push_back(idx - 1);
+    nhood4_values[0] = idx - 1;
   }
   if (idx % size_x_ < size_x_ - 1) {
-    out.push_back(idx + 1);
+    nhood4_values[1] = idx + 1;
   }
   if (idx >= size_x_) {
-    out.push_back(idx - size_x_);
+    nhood4_values[2] = idx - size_x_;
   }
   if (idx < size_x_ * (size_y_ - 1)) {
-    out.push_back(idx + size_x_);
+    nhood4_values[3] = idx + size_x_;
   }
-  return out;
+  return nhood4_values;
 }
 
 /**
@@ -195,30 +206,37 @@ std::vector<unsigned int> nhood4(unsigned int idx, const nav2_costmap_2d::Costma
      */
 std::vector<unsigned int> nhood8(unsigned int idx, const nav2_costmap_2d::Costmap2D & costmap)
 {
-  // get 8-connected neighbourhood indexes, check for edge of map
-  std::vector<unsigned int> out = nhood4(idx, costmap);
-
   unsigned int size_x_ = costmap.getSizeInCellsX();
   unsigned int size_y_ = costmap.getSizeInCellsY();
 
   if (idx > size_x_ * size_y_ - 1) {
-    return out;
+    nhood8_values.clear();
+    return nhood8_values;
   }
+
+  if(nhood8_values.size() == 0)
+  {
+    nhood8_values.resize(4);
+  }
+
+  // get 8-connected neighbourhood indexes, check for edge of map
+  nhood4(idx, costmap);
+  std::copy(nhood4_values.begin(), nhood4_values.end(), nhood8_values.begin());
 
   if (idx % size_x_ > 0 && idx >= size_x_) {
-    out.push_back(idx - 1 - size_x_);
+    nhood8_values[4] = idx - 1 - size_x_;
   }
   if (idx % size_x_ > 0 && idx < size_x_ * (size_y_ - 1)) {
-    out.push_back(idx - 1 + size_x_);
+    nhood8_values[5] = idx - 1 + size_x_;
   }
   if (idx % size_x_ < size_x_ - 1 && idx >= size_x_) {
-    out.push_back(idx + 1 - size_x_);
+    nhood8_values[6] = idx + 1 - size_x_;
   }
   if (idx % size_x_ < size_x_ - 1 && idx < size_x_ * (size_y_ - 1)) {
-    out.push_back(idx + 1 + size_x_);
+    nhood8_values[7] = idx + 1 + size_x_;
   }
 
-  return out;
+  return nhood8_values;
 }
 
 /**
