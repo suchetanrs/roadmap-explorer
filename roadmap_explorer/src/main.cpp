@@ -4,7 +4,7 @@
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
-  auto node = rclcpp::Node::make_shared("bt_exploration_node");
+  auto node = rclcpp::Node::make_shared("roadmap_explorer_node");
   auto exploration_server = std::make_shared<roadmap_explorer::FrontierExplorationServer>(node);
 
   auto executor = std::make_shared<rclcpp::executors::MultiThreadedExecutor>();

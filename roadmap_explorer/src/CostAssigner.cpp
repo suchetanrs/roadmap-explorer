@@ -14,8 +14,8 @@ CostAssigner::CostAssigner(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explor
   LOG_DEBUG("Got costmap pointer");
 
   LOG_INFO("CostAssigner::onInitialize");
-  planner_allow_unknown_ = parameterInstance.getValue<bool>("costAssigner/planner_allow_unknown");
-  add_heading_cost_ = parameterInstance.getValue<bool>("costAssigner/add_heading_cost");
+  planner_allow_unknown_ = parameterInstance.getValue<bool>("costAssigner.planner_allow_unknown");
+  add_heading_cost_ = parameterInstance.getValue<bool>("costAssigner.add_heading_cost");
 
   costCalculator_ = std::make_shared<FrontierCostCalculator>(explore_costmap_ros);
   LOG_DEBUG("Making cost calculator instance");

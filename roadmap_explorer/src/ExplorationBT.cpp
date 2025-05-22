@@ -560,7 +560,7 @@ public:
 
       LOG_DEBUG("Value of min Distance " << minDistance);
       LOG_DEBUG("Reference of min Distance " << &minDistance);
-      if (parameterInstance.getValue<bool>("goalHysteresis/use_euclidean_distance") == true) {
+      if (parameterInstance.getValue<bool>("goalHysteresis.use_euclidean_distance") == true) {
         LOG_INFO("Using Euclidean Distance for hysteresis");
         if (distanceBetweenPoints(
             allocatedFrontier->getGoalPoint(),
@@ -571,7 +571,7 @@ public:
           mostFrequentFrontier = allocatedFrontier;
           LOG_DEBUG("Found a closer one: " << minDistance);
         }
-      } else if (parameterInstance.getValue<bool>("goalHysteresis/use_roadmap_planner_distance") ==
+      } else if (parameterInstance.getValue<bool>("goalHysteresis.use_roadmap_planner_distance") ==
         true)
       {
         FrontierPtr robotPoseFrontier = std::make_shared<Frontier>();
@@ -598,10 +598,10 @@ public:
       getInput<FrontierPtr>("allocated_frontier", allocatedFrontier);
       LOG_INFO("Hysterisis prior: " << allocatedFrontier);
       setOutput<FrontierPtr>("allocated_frontier_after_hysterisis", allocatedFrontier);
-      if (parameterInstance.getValue<bool>("goalHysteresis/use_euclidean_distance") == true) {
+      if (parameterInstance.getValue<bool>("goalHysteresis.use_euclidean_distance") == true) {
         minDistance =
           distanceBetweenPoints(allocatedFrontier->getGoalPoint(), robotP.pose.position);
-      } else if (parameterInstance.getValue<bool>("goalHysteresis/use_roadmap_planner_distance") ==
+      } else if (parameterInstance.getValue<bool>("goalHysteresis.use_roadmap_planner_distance") ==
         true)
       {
         FrontierPtr robotPoseFrontier = std::make_shared<Frontier>();
@@ -998,6 +998,7 @@ FrontierExplorationServer::FrontierExplorationServer(rclcpp::Node::SharedPtr nod
   bt_node_->get_parameter("config", config_);
   bt_node_->get_parameter("process_other_robots", process_other_robots_);
   bt_node_->get_parameter("bt_xml_path", bt_xml_path_);
+  parameterInstance.makeParameters(true, node);
   LOG_TRACE("Declared BT params");
   // //--------------------------------------------NAV2 CLIENT RELATED-------------------------------
   // nav2_interface_ = std::make_shared<Nav2Interface>(bt_node_);
@@ -1006,7 +1007,7 @@ FrontierExplorationServer::FrontierExplorationServer(rclcpp::Node::SharedPtr nod
   //--------------------------------------------EXPLORE SERVER RELATED----------------------------
 
   explore_costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
-    "explore_costmap", "", "explore_costmap");
+    "roadmap_explorer_costmap", "", "roadmap_explorer_costmap");
   explore_costmap_ros_->configure();
   // Launch a thread to run the costmap node
   explore_costmap_thread_ = std::make_unique<nav2_util::NodeThread>(explore_costmap_ros_);
@@ -1174,7 +1175,7 @@ void FrontierExplorationServer::makeBTNodes()
 
 void FrontierExplorationServer::run()
 {
-  int bt_sleep_duration = parameterInstance.getValue<int>("explorationBT/bt_sleep_ms");
+  int bt_sleep_duration = parameterInstance.getValue<int64_t>("explorationBT.bt_sleep_ms");
   while (rclcpp::ok()) {
     if (exploration_active_) {
       behaviour_tree.tickOnce();

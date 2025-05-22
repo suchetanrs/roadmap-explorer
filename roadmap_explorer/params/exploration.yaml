@@ -15,9 +15,8 @@ costAssigner:
   add_heading_cost: true
 
 frontierRoadmap:
-  max_frontier_distance: 25.1
+  max_frontier_distance: 25.0
   grid_cell_size: 1.0                           # Assuming each cell is 1x1 in size
-  keyframe_grid_cell_size: 2.5                  # KF grid cell size
   radius_to_decide_edges: 6.1                   # a node within this radius of another node is considered a child of the other node.
   min_distance_between_two_frontier_nodes: 0.25  # minimum distance between any node in the graph and the frontier node that will be added.
   min_distance_between_robot_pose_and_node: 0.25 # minimum distance between any nodes in the graph and the robot pose that is going to be added.
@@ -28,7 +27,3 @@ goalHysteresis:
 
 explorationBT:
   bt_sleep_ms: 70
-  recover_on_blacklist: true
-
-fisherInformation:
-  fisher_information_threshold: 550

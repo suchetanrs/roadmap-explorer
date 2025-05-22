@@ -18,6 +18,7 @@
 #include <stdexcept>
 #include <yaml-cpp/yaml.h>
 #include <boost/any.hpp>
+#include <rclcpp/rclcpp.hpp>
 #include "ament_index_cpp/get_package_share_directory.hpp"
 
 class ParameterHandler
@@ -25,9 +26,19 @@ class ParameterHandler
 public:
   ParameterHandler();
 
+  void makeParameters(bool use_ros_parameters, rclcpp::Node::SharedPtr node);
+
+  void makeParametersROS(rclcpp::Node::SharedPtr node);
+
+  void makeParametersYAMLcpp();
+
+  void sanityCheckParameters();
+
+  rcl_interfaces::msg::SetParametersResult  dynamicReconfigureCallback(
+    const std::vector<rclcpp::Parameter> & parameters);
+
   static ParameterHandler & getInstance()
   {
-    std::lock_guard<std::mutex> lock(instanceMutex_);
     if (parameterHandlerPtr_ == nullptr) {
       parameterHandlerPtr_.reset(new ParameterHandler());
     }
@@ -37,6 +48,7 @@ public:
   template<typename T>
   T getValue(std::string parameterKey)
   {
+    std::lock_guard<std::recursive_mutex> lock(instanceMutex_);
     if (parameter_map_.find(parameterKey) != parameter_map_.end()) {
       // std::cout << "\e[0;106m" << "Got request for: " << parameterKey << "\e[m" << std::endl;
       // std::cout << "\e[0;106m" << "Returning value " << boost::any_cast<T>(parameter_map_[parameterKey]) << " for parameter " << parameterKey
@@ -51,6 +63,7 @@ public:
   template<typename T>
   void setValue(const std::string & parameterKey, const T & value)
   {
+    std::lock_guard<std::recursive_mutex> lock(instanceMutex_);
     parameter_map_[parameterKey] = value;
   }
 
@@ -58,8 +71,9 @@ private:
   ParameterHandler(const ParameterHandler &) = delete;
   ParameterHandler & operator=(const ParameterHandler &) = delete;
   static std::unique_ptr<ParameterHandler> parameterHandlerPtr_;
-  static std::mutex instanceMutex_;
+  static std::recursive_mutex instanceMutex_;
   std::unordered_map<std::string, boost::any> parameter_map_;
+  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dynamic_param_callback_handle_;
 };
 
 inline ParameterHandler & parameterInstance = ParameterHandler::getInstance();

@@ -5,10 +5,10 @@ namespace roadmap_explorer
 FrontierCostCalculator::FrontierCostCalculator(
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros)
 {
-  MAX_CAMERA_DEPTH = parameterInstance.getValue<double>("costCalculator/max_camera_depth");
-  DELTA_THETA = parameterInstance.getValue<double>("costCalculator/delta_theta");
-  CAMERA_FOV = parameterInstance.getValue<double>("costCalculator/camera_fov");
-  factor_of_max_is_min = parameterInstance.getValue<double>("costCalculator/factor_of_max_is_min");
+  MAX_CAMERA_DEPTH = parameterInstance.getValue<double>("costCalculator.max_camera_depth");
+  DELTA_THETA = parameterInstance.getValue<double>("costCalculator.delta_theta");
+  CAMERA_FOV = parameterInstance.getValue<double>("costCalculator.camera_fov");
+  factor_of_max_is_min = parameterInstance.getValue<double>("costCalculator.factor_of_max_is_min");
   exploration_costmap_ = explore_costmap_ros->getCostmap();
   // RosVisualizerInstance = std::make_shared<RosVisualizer>(node, exploration_costmap_);
   min_traversable_distance = std::numeric_limits<double>::max();

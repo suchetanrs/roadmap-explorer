@@ -1,12 +1,41 @@
-bt_exploration_node:
+roadmap_explorer_node:
   ros__parameters:
     use_sim_time: False
-    # config: ["48.0", "60.0", "48.0", "1.25", "1.25", "1.25", "1.25", "60.0"]
     config: ["310.0", "260.0", "310.0", "-120.0", "-70.0", "-120.0", "-70.0", "260.0"]
     bt_xml_path: "/root/dev_ws/src/roadmap_explorer/roadmap_explorer/xml/exploration_with_fi.xml"
+    
+    frontierSearch:
+      min_frontier_cluster_size: 1.0
+      max_frontier_cluster_size: 20.0
+      max_frontier_distance: 50.0 # This should be equal to the parameter max_frontier_distance in frontier_roadmap_node
+      lethal_threshold: 160 # >= is lethal, < is free space.
 
-explore_costmap:
-  explore_costmap:
+    costCalculator:
+      max_camera_depth: 2.0
+      delta_theta: 0.10
+      camera_fov: 1.04
+      factor_of_max_is_min: 0.70
+
+    costAssigner:
+      planner_allow_unknown: true
+      add_heading_cost: true
+
+    frontierRoadmap:
+      max_frontier_distance: 25.0
+      grid_cell_size: 1.0                           # Assuming each cell is 1x1 in size
+      radius_to_decide_edges: 6.1                   # a node within this radius of another node is considered a child of the other node.
+      min_distance_between_two_frontier_nodes: 0.25  # minimum distance between any node in the graph and the frontier node that will be added.
+      min_distance_between_robot_pose_and_node: 0.25 # minimum distance between any nodes in the graph and the robot pose that is going to be added.
+
+    goalHysteresis:
+      use_euclidean_distance: false
+      use_roadmap_planner_distance: true
+
+    explorationBT:
+      bt_sleep_ms: 70
+
+roadmap_explorer_costmap:
+  roadmap_explorer_costmap:
     ros__parameters:
       update_frequency: 5.0
       publish_frequency: 5.0
@@ -22,11 +51,4 @@ explore_costmap:
         map_topic: /map
         map_subscribe_transient_local: True
         enabled: True
-      # inflation_layer:
-      #   plugin: "nav2_costmap_2d::InflationLayer"
-      #   enabled: True
-      #   inflation_radius: 5.0
-      #   cost_scaling_factor: 1.0
-      #   inflate_unknown: false
-      #   inflate_around_unknown: false
       always_send_full_costmap: True

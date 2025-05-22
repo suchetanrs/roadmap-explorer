@@ -14,14 +14,14 @@ FrontierRoadMap::FrontierRoadMap(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> 
   explore_costmap_ros_(explore_costmap_ros)
 {
   max_frontier_distance_ = parameterInstance.getValue<double>(
-    "frontierRoadmap/max_frontier_distance");
-  GRID_CELL_SIZE = parameterInstance.getValue<double>("frontierRoadmap/grid_cell_size");
+    "frontierRoadmap.max_frontier_distance");
+  GRID_CELL_SIZE = parameterInstance.getValue<double>("frontierRoadmap.grid_cell_size");
   RADIUS_TO_DECIDE_EDGES = parameterInstance.getValue<double>(
-    "frontierRoadmap/radius_to_decide_edges");
+    "frontierRoadmap.radius_to_decide_edges");
   MIN_DISTANCE_BETWEEN_TWO_FRONTIER_NODES = parameterInstance.getValue<double>(
-    "frontierRoadmap/min_distance_between_two_frontier_nodes");
+    "frontierRoadmap.min_distance_between_two_frontier_nodes");
   MIN_DISTANCE_BETWEEN_ROBOT_POSE_AND_NODE = parameterInstance.getValue<double>(
-    "frontierRoadmap/min_distance_between_robot_pose_and_node");
+    "frontierRoadmap.min_distance_between_robot_pose_and_node");
 
   max_connection_length_ = RADIUS_TO_DECIDE_EDGES * 1.5;
   node_ = rclcpp::Node::make_shared("frontier_roadmap_node");

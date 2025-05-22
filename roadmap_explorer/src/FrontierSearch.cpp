@@ -10,16 +10,16 @@ FrontierSearch::FrontierSearch(nav2_costmap_2d::Costmap2D & costmap)
 : costmap_(costmap)
 {
   min_frontier_cluster_size_ = parameterInstance.getValue<double>(
-    "frontierSearch/min_frontier_cluster_size");
+    "frontierSearch.min_frontier_cluster_size");
   max_frontier_cluster_size_ = parameterInstance.getValue<double>(
-    "frontierSearch/max_frontier_cluster_size");
+    "frontierSearch.max_frontier_cluster_size");
   max_frontier_distance_ =
-    parameterInstance.getValue<double>("frontierSearch/max_frontier_distance");
+    parameterInstance.getValue<double>("frontierSearch.max_frontier_distance");
   original_search_distance_ = parameterInstance.getValue<double>(
-    "frontierSearch/max_frontier_distance");
+    "frontierSearch.max_frontier_distance");
   LOG_DEBUG("FrontierSearch::FrontierSearch");
   LOG_INFO("MAX SEARCH DISTANCE: " << max_frontier_distance_);
-  lethal_threshold_ = parameterInstance.getValue<int>("frontierSearch/lethal_threshold");
+  lethal_threshold_ = parameterInstance.getValue<int64_t>("frontierSearch.lethal_threshold");
 }
 
 std::vector<FrontierPtr> FrontierSearch::searchFrom(geometry_msgs::msg::Point position)
