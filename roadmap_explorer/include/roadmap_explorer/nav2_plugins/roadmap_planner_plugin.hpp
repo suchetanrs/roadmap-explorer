@@ -22,7 +22,7 @@
 namespace roadmap_explorer
 {
 
-class FrontierRoadmapPlanner : public nav2_core::GlobalPlanner
+class RoadmapExplorerPlanner : public nav2_core::GlobalPlanner
 {
 public:
   void configure(
@@ -47,7 +47,7 @@ public:
 protected:
   std::shared_ptr<tf2_ros::Buffer> tf_;
   rclcpp::Clock::SharedPtr clock_;
-  rclcpp::Logger Logger_{rclcpp::get_logger("FrontierRoadmapPlanner")};
+  rclcpp::Logger Logger_{rclcpp::get_logger("RoadmapExplorerPlanner")};
   std::string global_frame_, name_;
   bool use_final_approach_orientation_;
 

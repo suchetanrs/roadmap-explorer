@@ -75,34 +75,15 @@ public:
     rclcpp::Node::SharedPtr node,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros);
 
-  // new
-  void addToMarkerArrayLinePolygon(
-    visualization_msgs::msg::MarkerArray & marker_array, std::vector<FrontierPtr> & frontier_list,
-    std::string ns, float r, float g, float b, int id);
-
   void addToMarkerArraySolidPolygon(
     visualization_msgs::msg::MarkerArray & marker_array,
     geometry_msgs::msg::Point center, double radius, std::string ns,
     float r, float g, float b, int id);
 
-  double calculateLengthRobotToGoal(
-    const FrontierPtr & robot, const FrontierPtr & goal,
-    geometry_msgs::msg::PoseStamped & robotP);
-
   double calculatePathLength(std::vector<FrontierPtr> & path);
 
-  bool getBestFullPath(
-    SortedFrontiers & sortedFrontiers, std::vector<FrontierPtr> & bestPath,
-    geometry_msgs::msg::PoseStamped & robotP);
-
-  bool prepareGlobalOptimization(
-    SortedFrontiers & sortedFrontiers,
-    std::vector<FrontierPtr> & bestPath,
-    geometry_msgs::msg::PoseStamped & robotP);
-
-  void getFilteredFrontiersN(
-    std::vector<FrontierPtr> & frontier_list, size_t n,
-    SortedFrontiers & sortedFrontiers,
+  double calculateLengthRobotToGoal(
+    const FrontierPtr & robot, const FrontierPtr & goal,
     geometry_msgs::msg::PoseStamped & robotP);
 
   void getFilteredFrontiers(
@@ -110,10 +91,18 @@ public:
     SortedFrontiers & sortedFrontiers,
     geometry_msgs::msg::PoseStamped & robotP);
 
+  void getFilteredFrontiersN(
+    std::vector<FrontierPtr> & frontier_list, size_t n,
+    SortedFrontiers & sortedFrontiers,
+    geometry_msgs::msg::PoseStamped & robotP);
+
+  bool getBestFullPath(
+    SortedFrontiers & sortedFrontiers, std::vector<FrontierPtr> & bestPath,
+    geometry_msgs::msg::PoseStamped & robotP);
+
   bool getNextGoal(
     std::vector<FrontierPtr> & frontier_list, FrontierPtr & nextFrontier, size_t n,
-    geometry_msgs::msg::PoseStamped & robotP,
-    geometry_msgs::msg::PoseStamped & robotPFI);
+    geometry_msgs::msg::PoseStamped & robotP);
 
   bool refineAndPublishPath(geometry_msgs::msg::PoseStamped & robotP, FrontierPtr & goalFrontier);
 

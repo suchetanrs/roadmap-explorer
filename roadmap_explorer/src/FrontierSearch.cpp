@@ -158,7 +158,6 @@ std::vector<FrontierPtr> FrontierSearch::buildNewFrontier(
 
         if (currentFrontierSize > max_frontier_cluster_size_) {
           FrontierPtr output = std::make_shared<Frontier>();
-#ifdef FRONTIER_POINT_MEDIAN
           LOG_DEBUG("*************");
           LOG_DEBUG("Getting centroid")
           auto cluster_centroid =
@@ -179,7 +178,6 @@ std::vector<FrontierPtr> FrontierSearch::buildNewFrontier(
           }
           LOG_DEBUG("");
           frontier_cell_indices.clear();
-#endif
           output->setUID(generateUID(output));
           LOG_TRACE("1PUSHING NEW FRONTIER TO LIST: UID: " << output->getUID());
           LOG_TRACE("1Size: " << output->getSize());
@@ -199,7 +197,6 @@ std::vector<FrontierPtr> FrontierSearch::buildNewFrontier(
   }
   if (currentFrontierSize > min_frontier_cluster_size_) {
     FrontierPtr output = std::make_shared<Frontier>();
-#ifdef FRONTIER_POINT_MEDIAN
     auto cluster_centroid =
       getCentroidOfCells(frontier_cell_indices, (costmap_.getResolution() * 1.414 * 2));
     SortByMedianFunctor sortFunctor(cluster_centroid);
@@ -217,7 +214,6 @@ std::vector<FrontierPtr> FrontierSearch::buildNewFrontier(
     }
     LOG_DEBUG("");
     frontier_cell_indices.clear();
-#endif
     output->setUID(generateUID(output));
     LOG_TRACE("2PUSHING NEW FRONTIER TO LIST: UID: " << output->getUID());
     LOG_TRACE("2Size: " << output->getSize());

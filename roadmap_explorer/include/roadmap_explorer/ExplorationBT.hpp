@@ -19,7 +19,6 @@
 #include "roadmap_explorer/util/Logger.hpp"
 #include "roadmap_explorer/util/EventLogger.hpp"
 #include "roadmap_explorer/CostAssigner.hpp"
-#include "roadmap_explorer/FrontierSearchAllCells.hpp"
 #include "roadmap_explorer/FrontierSearch.hpp"
 #include "roadmap_explorer/Nav2Interface.hpp"
 #include "roadmap_explorer/Helpers.hpp"

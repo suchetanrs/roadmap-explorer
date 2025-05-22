@@ -2,7 +2,7 @@
 
 namespace roadmap_explorer
 {
-void FrontierRoadmapPlanner::configure(
+void RoadmapExplorerPlanner::configure(
   const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
   std::string name, std::shared_ptr<tf2_ros::Buffer> tf,
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
@@ -16,32 +16,32 @@ void FrontierRoadmapPlanner::configure(
   global_frame_ = costmap_ros->getGlobalFrameID();
   plan_sub_ = node->create_subscription<nav_msgs::msg::Path>(
     "frontier_roadmap_nav2_plan", rclcpp::QoS(10),
-    std::bind(&FrontierRoadmapPlanner::planCallback, this, std::placeholders::_1));
+    std::bind(&RoadmapExplorerPlanner::planCallback, this, std::placeholders::_1));
 }
 
 // Callback function for plan messages
-void FrontierRoadmapPlanner::planCallback(const nav_msgs::msg::Path::SharedPtr msg)
+void RoadmapExplorerPlanner::planCallback(const nav_msgs::msg::Path::SharedPtr msg)
 {
   std::lock_guard<std::mutex> lock(latest_plan_mutex_);
   latest_plan_ = *msg;
 }
 
-void FrontierRoadmapPlanner::cleanup()
+void RoadmapExplorerPlanner::cleanup()
 {
   RCLCPP_INFO(Logger_, "CleaningUp plugin %s of type roadmap_explorer_planner", name_.c_str());
 }
 
-void FrontierRoadmapPlanner::activate()
+void RoadmapExplorerPlanner::activate()
 {
   RCLCPP_INFO(Logger_, "Activating plugin %s of type roadmap_explorer_planner", name_.c_str());
 }
 
-void FrontierRoadmapPlanner::deactivate()
+void RoadmapExplorerPlanner::deactivate()
 {
   RCLCPP_INFO(Logger_, "Deactivating plugin %s of type roadmap_explorer_planner", name_.c_str());
 }
 
-nav_msgs::msg::Path FrontierRoadmapPlanner::createPlan(
+nav_msgs::msg::Path RoadmapExplorerPlanner::createPlan(
   const geometry_msgs::msg::PoseStamped & start,
   const geometry_msgs::msg::PoseStamped & goal)
 {
@@ -59,7 +59,7 @@ nav_msgs::msg::Path FrontierRoadmapPlanner::createPlan(
   return plan;
 }
 
-nav_msgs::msg::Path FrontierRoadmapPlanner::linearInterpolation(
+nav_msgs::msg::Path RoadmapExplorerPlanner::linearInterpolation(
   const nav_msgs::msg::Path & raw_path,
   const double & dist_bw_points)
 {
@@ -91,4 +91,4 @@ nav_msgs::msg::Path FrontierRoadmapPlanner::linearInterpolation(
 }  // namespace roadmap_explorer
 
 #include "pluginlib/class_list_macros.hpp"
-PLUGINLIB_EXPORT_CLASS(roadmap_explorer::FrontierRoadmapPlanner, nav2_core::GlobalPlanner)
+PLUGINLIB_EXPORT_CLASS(roadmap_explorer::RoadmapExplorerPlanner, nav2_core::GlobalPlanner)

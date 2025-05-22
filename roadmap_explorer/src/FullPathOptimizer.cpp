@@ -15,78 +15,81 @@ FullPathOptimizer::FullPathOptimizer(
     10);
   local_search_area_publisher_ = node_->create_publisher<visualization_msgs::msg::MarkerArray>(
     "local_search_area", 10);
-  blacklisted_region_publisher_ = node_->create_publisher<visualization_msgs::msg::MarkerArray>(
-    "blacklisted_region", 10);
-  blacklisted_poses_publisher_ = node_->create_publisher<geometry_msgs::msg::PoseArray>(
-    "posearray_blacklisted_region", 10);
   frontier_nav2_plan_ = node_->create_publisher<nav_msgs::msg::Path>(
     "frontier_roadmap_nav2_plan",
     10);
-  subscription_ = node_->create_subscription<geometry_msgs::msg::PointStamped>(
-    "/blacklist_test", 10,
-    std::bind(&FullPathOptimizer::blacklistTestCb, this, std::placeholders::_1));
-  blacklistNextGoal_ = false;
-  angle_for_fov_overlap_ = 6.6;
-  exhaustiveLandmarkSearch_ = false;
 }
 
-void FullPathOptimizer::blacklistTestCb(const geometry_msgs::msg::PointStamped::SharedPtr msg)
+void FullPathOptimizer::addToMarkerArraySolidPolygon(
+  visualization_msgs::msg::MarkerArray & marker_array, geometry_msgs::msg::Point center,
+  double radius, std::string ns, float r, float g, float b, int id)
 {
-  FrontierPtr blacklist = std::make_shared<Frontier>();
-  blacklist->setAchievability(false);
-  blacklist->setGoalPoint(msg->point);
-  circularBlacklistCenters_.push_back(blacklist);
-  return;
+  visualization_msgs::msg::Marker marker;
+  marker.header.stamp = rclcpp::Clock().now();
+  marker.header.frame_id = "map";       // Set the frame to map
+  marker.ns = ns;
+  marker.id = id;
+  marker.type = visualization_msgs::msg::Marker::CYLINDER;       // Change to CYLINDER
+  marker.action = visualization_msgs::msg::Marker::ADD;
+  marker.pose.position = center;
+  marker.scale.x = radius * 2;       // Ensure this is suitable for a cylinder
+  marker.scale.y = radius * 2;
+  marker.scale.z = 1.0;
+  marker.color.a = 0.15;       // Semi-transparent
+  marker.color.r = r;          // Red color
+  marker.color.g = g;
+  marker.color.b = b;
+  marker_array.markers.push_back(marker);
 }
 
-void FullPathOptimizer::publishBlacklistCircles()
+double FullPathOptimizer::calculatePathLength(std::vector<FrontierPtr> & path)
 {
-  visualization_msgs::msg::MarkerArray marker_array;
-  int id = 0;
-
-  for (const auto & frontier : circularBlacklistCenters_) {
-    geometry_msgs::msg::Point center = frontier->getGoalPoint();
-
-    // Create a marker for the sphere
-    visualization_msgs::msg::Marker marker;
-    marker.header.frame_id = "map";         // Specify the frame
-    marker.header.stamp = node_->now();
-    marker.ns = "blacklist_circles";
-    marker.id = id++;
-    marker.type = visualization_msgs::msg::Marker::SPHERE;         // Use a sphere to represent the circle
-    marker.action = visualization_msgs::msg::Marker::ADD;
-    marker.pose.position = center;
-    marker.pose.position.z = 0.0;         // Keep the circle flat on the ground
-    marker.pose.orientation.x = 0.0;
-    marker.pose.orientation.y = 0.0;
-    marker.pose.orientation.z = 0.0;
-    marker.pose.orientation.w = 1.0;
-
-    // Set the scale of the sphere (diameter is 2*radius)
-    double radius = BLACKLISTING_CIRCLE_RADIUS;         // Circle radius
-    marker.scale.x = 2.0 * radius;                      // Diameter along x-axis
-    marker.scale.y = 2.0 * radius;                      // Diameter along y-axis
-    marker.scale.z = 2.0 * radius;                      // Diameter along z-axis
-
-    // Set the color of the circle (e.g., red)
-    marker.color.r = 1.0;
-    marker.color.g = 0.0;
-    marker.color.b = 0.0;
-    marker.color.a = 0.5;         // Transparency
-
-    // Add the marker to the array
-    marker_array.markers.push_back(marker);
+  double totalLength = 0.0;
+  for (size_t i = 0; i < path.size() - 1; ++i) {
+    // LOG_DEBUG("Inside loop i =" << i << "limit " << path.size());
+    LOG_TRACE("Need distance between: " << path[i] << " , " << path[i + 1]);
+    auto it = frontier_pair_distances_.find(FrontierPair(path[i], path[i + 1]));
+    if (it != frontier_pair_distances_.end()) {
+      LOG_TRACE(
+        "Using cache value bw " << path[i] << " to " << path[i + 1] << ". The value is: " <<
+          it->second.path_length_m);
+      totalLength += it->second.path_length_m;
+      continue;
+    }
+    auto it2 = frontier_pair_distances_.find(FrontierPair(path[i + 1], path[i]));
+    if (it2 != frontier_pair_distances_.end()) {
+      LOG_TRACE(
+        "Using cache value bw " << path[i + 1] << " to " << path[i] << ". The value is: " <<
+          it->second.path_length_m);
+      totalLength += it2->second.path_length_m;
+      continue;
+    }
+    LOG_TRACE("Could not find path in cache. Computing bw " << path[i] << " to " << path[i + 1]);
+    auto current_length = FrontierRoadMap::getInstance().getPlan(path[i], true, path[i + 1], true);
+    // LOG_DEBUG(current_length);
+    if (current_length.path_exists == true) {
+      totalLength += current_length.path_length_m;
+      frontier_pair_distances_[FrontierPair(path[i], path[i + 1])] = current_length;
+      std::reverse(current_length.path.begin(), current_length.path.end());
+      frontier_pair_distances_[FrontierPair(path[i + 1], path[i])] = current_length;
+    } else if (current_length.path_exists == false) {
+      // set it to a large value since path could not be found.
+      totalLength += LOCAL_FRONTIER_SEARCH_RADIUS * 100000;
+      frontier_pair_distances_[FrontierPair(path[i], path[i + 1])] = current_length;
+      std::reverse(current_length.path.begin(), current_length.path.end());
+      frontier_pair_distances_[FrontierPair(path[i + 1], path[i])] = current_length;
+    }
   }
-
-  // Publish the marker array
-  blacklisted_region_publisher_->publish(marker_array);
+  return totalLength;
 }
 
-void FullPathOptimizer::publishBlacklistPoses()
+double FullPathOptimizer::calculateLengthRobotToGoal(
+  const FrontierPtr & robot,
+  const FrontierPtr & goal,
+  geometry_msgs::msg::PoseStamped & robotP)
 {
-  poseBlacklists_.header.stamp = node_->now();
-  poseBlacklists_.header.frame_id = "map";
-  blacklisted_poses_publisher_->publish(poseBlacklists_);
+  std::vector<FrontierPtr> path = {robot, goal};
+  return calculatePathLength(path);
 }
 
 // seperates global and local frontiers.
@@ -99,28 +102,6 @@ void FullPathOptimizer::getFilteredFrontiers(
   // get achievable frontiers
   for (const auto & frontier : frontier_list) {
     if (frontier->isAchievable() && !frontier->isBlacklisted()) {
-      if (isInBlacklistedRegion(frontier)) {
-        continue;
-      }
-      // LOG_DEBUG("Path length in m" << frontier->getPathLengthInM());
-      // if (frontier->getPathLengthInM() <= LOCAL_FRONTIER_SEARCH_RADIUS)
-      // {
-      //     LOG_DEBUG("Local Frontiers:");
-      //     sortedFrontiers.local_frontiers.push_back(frontier);
-      //     LOG_DEBUG(frontier);
-      // }
-      // else if (frontier->getPathLengthInM() > LOCAL_FRONTIER_SEARCH_RADIUS)
-      // {
-      //     sortedFrontiers.global_frontiers.push_back(frontier);
-      //     LOG_DEBUG("Global Frontiers:");
-      //     LOG_DEBUG(frontier);
-      //     if (frontier->getPathLengthInM() < closest_global_frontier_length)
-      //     {
-      //         LOG_DEBUG("ADDING CLOSEST FRONTIER");
-      //         closest_global_frontier_length = frontier->getPathLengthInM();
-      //         sortedFrontiers.closest_global_frontier = frontier;
-      //     }
-      // }
       LOG_DEBUG("Path length in m" << frontier->getPathLengthInM());
       if (distanceBetweenPoints(
           frontier->getGoalPoint(),
@@ -148,20 +129,6 @@ void FullPathOptimizer::getFilteredFrontiers(
     LOG_DEBUG("Closest global FrontierPtr:");
     LOG_DEBUG(sortedFrontiers.closest_global_frontier);
   }
-
-  // // Sort the filtered frontiers based on path length (closest first)
-  // std::sort(filtered_frontiers.begin(), filtered_frontiers.end(), [](const FrontierPtr &a, const FrontierPtr &b)
-  //           { return a->getPathLength() < b->getPathLength(); });
-
-  // // If there are fewer than n frontiers, return all of them
-  // if (filtered_frontiers.size() <= n)
-  // {
-  //     return std::make_tuple(filtered_frontiers, std::vector<FrontierPtr>());
-  // }
-
-  // Otherwise, return the first n frontiers
-  // return std::make_tuple(std::vector<FrontierPtr>(filtered_frontiers.begin(), filtered_frontiers.begin() + n),
-  //                        std::vector<FrontierPtr>(filtered_frontiers.begin() + n, filtered_frontiers.end()));
 }
 
 void FullPathOptimizer::getFilteredFrontiersN(
@@ -178,8 +145,7 @@ void FullPathOptimizer::getFilteredFrontiersN(
   std::vector<FrontierPtr> all_frontiers;
 
   for (const auto & frontier : frontier_list) {
-    if (frontier->isAchievable() && !frontier->isBlacklisted() &&
-      !isInBlacklistedRegion(frontier))
+    if (frontier->isAchievable() && !frontier->isBlacklisted())
     {
       double pathLength = frontier->getPathLengthInM();
       all_frontiers.push_back(frontier);
@@ -234,160 +200,6 @@ void FullPathOptimizer::getFilteredFrontiersN(
   }
 }
 
-void FullPathOptimizer::addToMarkerArrayLinePolygon(
-  visualization_msgs::msg::MarkerArray & marker_array, std::vector<FrontierPtr> & frontier_list,
-  std::string ns, float r, float g, float b, int id)
-{
-  // Initialize min and max values for x and y
-  double min_x = std::numeric_limits<double>::max();
-  double max_x = -std::numeric_limits<double>::max();
-  double min_y = std::numeric_limits<double>::max();
-  double max_y = -std::numeric_limits<double>::max();
-
-  // Iterate through the filtered frontiers to find min and max x, y values
-  for (const auto & frontier : frontier_list) {
-    geometry_msgs::msg::Point point = frontier->getGoalPoint();
-    if (point.x <= min_x) {
-      min_x = point.x;
-    }
-    if (point.x >= max_x) {
-      max_x = point.x;
-    }
-    if (point.y <= min_y) {
-      min_y = point.y;
-    }
-    if (point.y >= max_y) {
-      max_y = point.y;
-    }
-  }
-
-  // Create a Marker for the polygon
-  visualization_msgs::msg::Marker polygon_marker;
-  polygon_marker.header.frame_id = "map";
-  polygon_marker.header.stamp = rclcpp::Clock().now();
-  polygon_marker.ns = ns;
-  polygon_marker.id = id;
-  polygon_marker.type = visualization_msgs::msg::Marker::LINE_STRIP;
-  polygon_marker.action = visualization_msgs::msg::Marker::ADD;
-  polygon_marker.scale.x = 0.25;       // Line width
-  polygon_marker.color.a = 1.0;        // Alpha
-  polygon_marker.color.r = r;
-  polygon_marker.color.g = g;
-  polygon_marker.color.b = b;
-
-  // Define the corners of the bounding box
-  geometry_msgs::msg::Point p1, p2, p3, p4;
-  p1.x = min_x - CLUSTER_PADDING;
-  p1.y = min_y - CLUSTER_PADDING;
-  p2.x = max_x + CLUSTER_PADDING;
-  p2.y = min_y - CLUSTER_PADDING;
-  p3.x = max_x + CLUSTER_PADDING;
-  p3.y = max_y + CLUSTER_PADDING;
-  p4.x = min_x - CLUSTER_PADDING;
-  p4.y = max_y + CLUSTER_PADDING;
-
-  // Add the points to the marker
-  polygon_marker.points.push_back(p1);
-  polygon_marker.points.push_back(p2);
-  polygon_marker.points.push_back(p3);
-  polygon_marker.points.push_back(p4);
-  polygon_marker.points.push_back(p1);       // Close the polygon
-
-  // Add the marker to the MarkerArray
-  marker_array.markers.push_back(polygon_marker);
-}
-
-void FullPathOptimizer::addToMarkerArraySolidPolygon(
-  visualization_msgs::msg::MarkerArray & marker_array, geometry_msgs::msg::Point center,
-  double radius, std::string ns, float r, float g, float b, int id)
-{
-  visualization_msgs::msg::Marker marker;
-  marker.header.stamp = rclcpp::Clock().now();
-  marker.header.frame_id = "map";       // Set the frame to map
-  marker.ns = ns;
-  marker.id = id;
-  marker.type = visualization_msgs::msg::Marker::CYLINDER;       // Change to CYLINDER
-  marker.action = visualization_msgs::msg::Marker::ADD;
-  marker.pose.position = center;
-  marker.scale.x = radius * 2;       // Ensure this is suitable for a cylinder
-  marker.scale.y = radius * 2;
-  marker.scale.z = 1.0;
-  marker.color.a = 0.15;       // Semi-transparent
-  marker.color.r = r;          // Red color
-  marker.color.g = g;
-  marker.color.b = b;
-  marker_array.markers.push_back(marker);
-}
-
-double FullPathOptimizer::calculateLengthRobotToGoal(
-  const FrontierPtr & robot,
-  const FrontierPtr & goal,
-  geometry_msgs::msg::PoseStamped & robotP)
-{
-  std::vector<FrontierPtr> path = {robot, goal};
-  // auto robot_yaw = quatToEuler(robotP.pose.orientation)[2];
-  // if (robot_yaw < 0)
-  //     robot_yaw = robot_yaw + (M_PI * 2);
-  // double goal_yaw = atan2(goal->getGoalPoint().y - robotP.pose.position.y, goal->getGoalPoint().x - robotP.pose.position.x);
-  // if (goal_yaw < 0)
-  //     goal_yaw = goal_yaw + (M_PI * 2);
-  // double path_heading = abs(robot_yaw - goal_yaw);
-  // if (path_heading > M_PI)
-  //     path_heading = path_heading - (2 * M_PI);
-
-  // return calculatePathLength(path) + (abs(path_heading));
-  return calculatePathLength(path);
-}
-
-double FullPathOptimizer::calculatePathLength(std::vector<FrontierPtr> & path)
-{
-  // std::cout << "FrontierPtr pairs distances cached:" << std::endl;
-  // for (auto &fpair : frontier_pair_distances_)
-  // {
-  //     std::cout << fpair.first.f1 << ", " << fpair.first.f2 << std::endl;
-  //     std::cout << std::endl;
-  // }
-  double totalLength = 0.0;
-  for (size_t i = 0; i < path.size() - 1; ++i) {
-    // LOG_DEBUG("Inside loop i =" << i << "limit " << path.size());
-    LOG_TRACE("Need distance between: " << path[i] << " , " << path[i + 1]);
-    auto it = frontier_pair_distances_.find(FrontierPair(path[i], path[i + 1]));
-    if (it != frontier_pair_distances_.end()) {
-      LOG_TRACE(
-        "Using cache value bw " << path[i] << " to " << path[i + 1] << ". The value is: " <<
-          it->second.path_length_m);
-      totalLength += it->second.path_length_m;
-      continue;
-    }
-    auto it2 = frontier_pair_distances_.find(FrontierPair(path[i + 1], path[i]));
-    if (it2 != frontier_pair_distances_.end()) {
-      LOG_TRACE(
-        "Using cache value bw " << path[i + 1] << " to " << path[i] << ". The value is: " <<
-          it->second.path_length_m);
-      totalLength += it2->second.path_length_m;
-      continue;
-    }
-    LOG_TRACE("Could not find path in cache. Computing bw " << path[i] << " to " << path[i + 1]);
-    auto current_length = FrontierRoadMap::getInstance().getPlan(path[i], true, path[i + 1], true);
-    // LOG_DEBUG(current_length);
-    if (current_length.path_exists == true) {
-      totalLength += current_length.path_length_m;
-      frontier_pair_distances_[FrontierPair(path[i], path[i + 1])] = current_length;
-      std::reverse(current_length.path.begin(), current_length.path.end());
-      frontier_pair_distances_[FrontierPair(path[i + 1], path[i])] = current_length;
-      // before computing path lengths, check if the first frontier from the robot has a good amount of fisher information.
-      // This is done to prevent the robot from being lost.
-    } else if (current_length.path_exists == false) {
-      // set it to a large value since path could not be found.
-      totalLength += LOCAL_FRONTIER_SEARCH_RADIUS * 100000;
-      frontier_pair_distances_[FrontierPair(path[i], path[i + 1])] = current_length;
-      std::reverse(current_length.path.begin(), current_length.path.end());
-      frontier_pair_distances_[FrontierPair(path[i + 1], path[i])] = current_length;
-    }
-  }
-  return totalLength;
-}
-
 bool FullPathOptimizer::getBestFullPath(
   SortedFrontiers & sortedFrontiers,
   std::vector<FrontierPtr> & bestFrontierWaypoint,
@@ -404,7 +216,6 @@ bool FullPathOptimizer::getBestFullPath(
       marker_array,
       lf->getGoalPoint(), 1.0, "local_frontier", 0.5, 1.0, 0.5, id);
   }
-  // addToMarkerArrayLinePolygon(marker_array, sortedFrontiers.local_frontiers, "local_search", 0.5, 1.0, 0.5, 0);
 
   addToMarkerArraySolidPolygon(
     marker_array,
@@ -516,22 +327,10 @@ bool FullPathOptimizer::getBestFullPath(
   return true;
 }
 
-bool FullPathOptimizer::prepareGlobalOptimization(
-  SortedFrontiers & sortedFrontiers,
-  std::vector<FrontierPtr> & bestFrontierWaypoint,
-  geometry_msgs::msg::PoseStamped & robotP)
-{
-  sortedFrontiers.local_frontiers.clear();
-  sortedFrontiers.local_frontiers = sortedFrontiers.global_frontiers;
-  sortedFrontiers.global_frontiers.clear();
-  return true;
-}
-
 bool FullPathOptimizer::getNextGoal(
   std::vector<FrontierPtr> & frontier_list,
   FrontierPtr & nextFrontier, size_t n,
-  geometry_msgs::msg::PoseStamped & robotP,
-  geometry_msgs::msg::PoseStamped & robotPFI)
+  geometry_msgs::msg::PoseStamped & robotP)
 {
   SortedFrontiers sortedFrontiers;
   // sort based on path length
@@ -603,7 +402,6 @@ bool FullPathOptimizer::getNextGoal(
   //         }
   //     }
   //     LOG_DEBUG("*=*=*=*=*=");
-  //     addToMarkerArrayLinePolygon(marker_array, newCluster, "global_search", 1.0, 0.5, 0.3, id);
   //     ++id;
   // }
   // Publish the MarkerArray

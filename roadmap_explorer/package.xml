@@ -26,7 +26,6 @@
   <depend>pluginlib</depend>
   <depend>visualization_msgs</depend>
   <depend>nav2_util</depend>
-  <depend>example_interfaces</depend>
   <depend>behaviortree_cpp</depend>
   
   <export>

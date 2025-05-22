@@ -1,11 +1,4 @@
 #include <roadmap_explorer/ExplorationBT.hpp>
-
-#if defined(FRONTIER_POINT_MEDIAN) + defined(FRONTIER_POINT_INITIAL) > 1
-#error "Only one of FRONTIER_POINT_MEDIAN, or FRONTIER_POINT_INITIAL can be defined at a time."
-#elif !defined(FRONTIER_POINT_MEDIAN) && !defined(FRONTIER_POINT_INITIAL)
-#error "One of FRONTIER_POINT_MEDIAN, or FRONTIER_POINT_INITIAL must be defined."
-#endif
-
 namespace roadmap_explorer
 {
 class InitializationSequence : public BT::StatefulActionNode
@@ -460,15 +453,12 @@ public:
     frontierSearchPtr_ = frontierSearchPtr;
     nav2_interface_ = nav2_interface;
     node_ = node;
-    tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
-    tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
     LOG_INFO("OptimizeFullPath Constructor");
   }
 
   BT::NodeStatus onStart() override
   {
     EventLoggerInstance.startEvent("OptimizeFullPath");
-    full_path_optimizer_->publishBlacklistPoses();
     LOG_FLOW("MODULE OptimizeFullPath");
     std::vector<FrontierPtr> globalFrontierList;
     getInput<std::vector<FrontierPtr>>("frontier_costs_result", globalFrontierList);
@@ -479,16 +469,10 @@ public:
       LOG_FATAL("Failed to retrieve latest_robot_pose from blackboard.");
       throw std::runtime_error("Failed to retrieve latest_robot_pose from blackboard.");
     }
-    geometry_msgs::msg::TransformStamped transform_stamped =
-      tf_buffer_->lookupTransform("map", "base_footprint", tf2::TimePointZero);
-    robotP3D.pose.position.x = transform_stamped.transform.translation.x;
-    robotP3D.pose.position.y = transform_stamped.transform.translation.y;
-    robotP3D.pose.position.z = transform_stamped.transform.translation.z;
-    robotP3D.pose.orientation = transform_stamped.transform.rotation;
     FrontierPtr allocatedFrontier = std::make_shared<Frontier>();
     auto return_state = full_path_optimizer_->getNextGoal(
       globalFrontierList, allocatedFrontier, 3,
-      robotP, robotP3D);
+      robotP);
     if (return_state) {
       frontierSearchPtr_->resetSearchDistance();
       setOutput<FrontierPtr>("allocated_frontier", allocatedFrontier);
@@ -498,14 +482,12 @@ public:
       getInput("increment_search_distance_by", increment_value);
       frontierSearchPtr_->incrementSearchDistance(increment_value);
       recovery_controller_->computeVelocityCommand(false);
-      full_path_optimizer_->setExhaustiveSearch(false);
       EventLoggerInstance.endEvent("OptimizeFullPath", 0);
       return BT::NodeStatus::FAILURE;
     }
     frontierSearchPtr_->resetSearchDistance();
     EventLoggerInstance.endEvent("OptimizeFullPath", 0);
     setOutput<FrontierPtr>("allocated_frontier", allocatedFrontier);
-    full_path_optimizer_->setExhaustiveSearch(false);
     return BT::NodeStatus::SUCCESS;
   }
 
@@ -534,8 +516,6 @@ public:
   std::shared_ptr<Nav2Interface> nav2_interface_;
   std::shared_ptr<RecoveryController> recovery_controller_;
   rclcpp::Node::SharedPtr node_;
-  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
-  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
 };
 
 class HysterisisControl : public BT::StatefulActionNode
