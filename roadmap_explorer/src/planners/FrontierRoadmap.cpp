@@ -13,15 +13,19 @@ FrontierRoadMap::FrontierRoadMap(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> 
 : costmap_(explore_costmap_ros->getCostmap()),
   explore_costmap_ros_(explore_costmap_ros)
 {
+  // the below getValue cannot be changed at runtime. Hence they are not called anywhere else.
   max_frontier_distance_ = parameterInstance.getValue<double>(
     "frontierRoadmap.max_frontier_distance");
   GRID_CELL_SIZE = parameterInstance.getValue<double>("frontierRoadmap.grid_cell_size");
   RADIUS_TO_DECIDE_EDGES = parameterInstance.getValue<double>(
     "frontierRoadmap.radius_to_decide_edges");
+
+  // these can be changed at runtime and hence are called elsewhere in the code.
   MIN_DISTANCE_BETWEEN_TWO_FRONTIER_NODES = parameterInstance.getValue<double>(
     "frontierRoadmap.min_distance_between_two_frontier_nodes");
   MIN_DISTANCE_BETWEEN_ROBOT_POSE_AND_NODE = parameterInstance.getValue<double>(
     "frontierRoadmap.min_distance_between_robot_pose_and_node");
+  LOG_INFO("Max frontier distance: " << max_frontier_distance_);
 
   max_connection_length_ = RADIUS_TO_DECIDE_EDGES * 1.5;
   node_ = rclcpp::Node::make_shared("frontier_roadmap_node");
@@ -40,7 +44,6 @@ FrontierRoadMap::FrontierRoadMap(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> 
     "map_data", 10, std::bind(&FrontierRoadMap::mapDataCallback, this, std::placeholders::_1));
   astar_planner_ = std::make_shared<FrontierRoadmapAStar>();
 
-  LOG_INFO("Max frontier distance: " << max_frontier_distance_);
 
   // Subscriber to handle clicked points
   clicked_point_sub_ = node_->create_subscription<geometry_msgs::msg::PointStamped>(
@@ -143,6 +146,8 @@ void FrontierRoadMap::mapDataCallback(roadmap_explorer_msgs::msg::MapData mapDat
 
 void FrontierRoadMap::optimizeSHM()
 {
+  MIN_DISTANCE_BETWEEN_TWO_FRONTIER_NODES = parameterInstance.getValue<double>(
+  "frontierRoadmap.min_distance_between_two_frontier_nodes");
   std::vector<FrontierPtr> optimized_frontiers;
   // std::cout << "Optimize SHM" << std::endl;
   {
@@ -264,6 +269,8 @@ void FrontierRoadMap::populateNodes(
 
 void FrontierRoadMap::addNodes(const std::vector<FrontierPtr> & frontiers, bool populateClosest)
 {
+  MIN_DISTANCE_BETWEEN_TWO_FRONTIER_NODES = parameterInstance.getValue<double>(
+    "frontierRoadmap.min_distance_between_two_frontier_nodes");
   EventLoggerInstance.startEvent("addNodes");
   // LOG_DEBUG("Going to add these many frontiers to the spatial hash map:" << frontiers.size());
   EventLoggerInstance.startEvent("populateNodes");
@@ -276,6 +283,8 @@ void FrontierRoadMap::addRobotPoseAsNode(
   geometry_msgs::msg::Pose & start_pose_w,
   bool populateClosest)
 {
+  MIN_DISTANCE_BETWEEN_ROBOT_POSE_AND_NODE = parameterInstance.getValue<double>(
+    "frontierRoadmap.min_distance_between_robot_pose_and_node");
   LOG_DEBUG("ADDING ROBOT POSE TO ROADMAP ...");
   FrontierPtr start = std::make_shared<Frontier>();
   start->setGoalPoint(start_pose_w.position.x, start_pose_w.position.y);

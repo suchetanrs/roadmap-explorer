@@ -96,7 +96,7 @@ void FrontierCostCalculator::setArrivalInformationForFrontier(
     exploration_costmap_, sxm, sym, std::ceil(
       robot_radius_ / exploration_costmap_->getResolution()));
   if (footprintInLethalPenalty && frontier->getSize() < 10.0) {
-    LOG_INFO("FrontierPtr " << *frontier << " is not achievable. Very close to lethal obstacle.");
+    LOG_DEBUG("FrontierPtr " << *frontier << " is not achievable. Very close to lethal obstacle.");
     frontier->setAchievability(false);
   }
   // std::cout << "maxHitObstacles" << maxHitObstacles << std::endl;
@@ -132,7 +132,7 @@ void FrontierCostCalculator::setArrivalInformationForFrontier(
   frontier->setArrivalInformation(maxValue);
   LOG_DEBUG("Arrival information is: " << frontier->getArrivalInformation());
   if (frontier->getArrivalInformation() < min_arrival_info_gt_) {
-    LOG_INFO("FrontierPtr " << *frontier << " is not achievable. Arrival information is too low.");
+    LOG_DEBUG("FrontierPtr " << *frontier << " is not achievable. Arrival information is too low.");
     frontier->setAchievability(false);
   }
   frontier->setGoalOrientation((maxIndex * DELTA_THETA) + (CAMERA_FOV / 2));
@@ -141,6 +141,12 @@ void FrontierCostCalculator::setArrivalInformationForFrontier(
 
 double FrontierCostCalculator::setArrivalInformationLimits()
 {
+  // these are set here again because setArrivalInformationLimits() is called everytime before process costs.
+  MAX_CAMERA_DEPTH = parameterInstance.getValue<double>("costCalculator.max_camera_depth");
+  DELTA_THETA = parameterInstance.getValue<double>("costCalculator.delta_theta");
+  CAMERA_FOV = parameterInstance.getValue<double>("costCalculator.camera_fov");
+  factor_of_max_is_min = parameterInstance.getValue<double>("costCalculator.factor_of_max_is_min");
+
   LOG_WARN("Setting arrival information limits.");
   if (arrival_info_limits_set_) {
     LOG_WARN("Arrival information limits already set.");

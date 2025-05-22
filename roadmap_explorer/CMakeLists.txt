@@ -53,6 +53,10 @@ behaviortree_cpp
 yaml-cpp
 )
 
+add_compile_definitions(
+  USE_RCLCPP_LOGGER
+)
+
 include_directories(
   include
   SYSTEM

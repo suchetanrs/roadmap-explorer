@@ -9,21 +9,20 @@ using nav2_costmap_2d::NO_INFORMATION;
 FrontierSearch::FrontierSearch(nav2_costmap_2d::Costmap2D & costmap)
 : costmap_(costmap)
 {
+  LOG_DEBUG("FrontierSearch::FrontierSearch");
+}
+
+std::vector<FrontierPtr> FrontierSearch::searchFrom(geometry_msgs::msg::Point position)
+{
   min_frontier_cluster_size_ = parameterInstance.getValue<double>(
     "frontierSearch.min_frontier_cluster_size");
   max_frontier_cluster_size_ = parameterInstance.getValue<double>(
     "frontierSearch.max_frontier_cluster_size");
   max_frontier_distance_ =
     parameterInstance.getValue<double>("frontierSearch.max_frontier_distance");
-  original_search_distance_ = parameterInstance.getValue<double>(
-    "frontierSearch.max_frontier_distance");
-  LOG_DEBUG("FrontierSearch::FrontierSearch");
-  LOG_INFO("MAX SEARCH DISTANCE: " << max_frontier_distance_);
   lethal_threshold_ = parameterInstance.getValue<int64_t>("frontierSearch.lethal_threshold");
-}
+  LOG_INFO("MAX SEARCH DISTANCE: " << max_frontier_distance_);
 
-std::vector<FrontierPtr> FrontierSearch::searchFrom(geometry_msgs::msg::Point position)
-{
   //  frontier_list to store the detected frontiers.
   std::vector<FrontierPtr> frontier_list;
 

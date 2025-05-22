@@ -174,7 +174,7 @@ void FullPathOptimizer::getFilteredFrontiersN(
     // LOG_INFO("Path length in m" << frontier->getPathLengthInM());
     if (frontier->getPathLengthInM() <= LOCAL_FRONTIER_SEARCH_RADIUS && counter <= n) {
       sortedFrontiers.local_frontiers.push_back(frontier);
-      LOG_INFO("Local frontier candidate: " << frontier);
+      LOG_DEBUG("Local frontier candidate: " << frontier);
       sortedFrontiers.closest_global_frontier = frontier;
       need_to_pop = true;
     } else if (frontier->getPathLengthInM() <= LOCAL_FRONTIER_SEARCH_RADIUS && counter > n) {
@@ -187,7 +187,7 @@ void FullPathOptimizer::getFilteredFrontiersN(
       }
       need_to_pop = false;
       sortedFrontiers.global_frontiers.push_back(frontier);
-      LOG_INFO("Global frontier candidate: " << frontier);
+      LOG_DEBUG("Global frontier candidate: " << frontier);
     }
     counter++;
   }

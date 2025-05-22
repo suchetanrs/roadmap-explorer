@@ -48,6 +48,8 @@ public:
 
   void resetSearchDistance()
   {
+    original_search_distance_ = parameterInstance.getValue<double>(
+      "frontierSearch.max_frontier_distance");
     max_frontier_distance_ = original_search_distance_;
   }
 

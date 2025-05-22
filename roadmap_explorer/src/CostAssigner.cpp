@@ -14,8 +14,6 @@ CostAssigner::CostAssigner(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explor
   LOG_DEBUG("Got costmap pointer");
 
   LOG_INFO("CostAssigner::onInitialize");
-  planner_allow_unknown_ = parameterInstance.getValue<bool>("costAssigner.planner_allow_unknown");
-  add_heading_cost_ = parameterInstance.getValue<bool>("costAssigner.add_heading_cost");
 
   costCalculator_ = std::make_shared<FrontierCostCalculator>(explore_costmap_ros);
   LOG_DEBUG("Making cost calculator instance");
@@ -195,6 +193,9 @@ bool CostAssigner::assignCosts(
       frontier->setWeightedCost(std::numeric_limits<double>::max());
       continue;
     }
+
+    planner_allow_unknown_ = parameterInstance.getValue<bool>("costAssigner.planner_allow_unknown");
+    add_heading_cost_ = parameterInstance.getValue<bool>("costAssigner.add_heading_cost");
 
     /**
          * IMPORTANT! Always compute the arrival information first before the planning.

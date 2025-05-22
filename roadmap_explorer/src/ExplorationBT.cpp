@@ -1175,9 +1175,9 @@ void FrontierExplorationServer::makeBTNodes()
 
 void FrontierExplorationServer::run()
 {
-  int bt_sleep_duration = parameterInstance.getValue<int64_t>("explorationBT.bt_sleep_ms");
   while (rclcpp::ok()) {
     if (exploration_active_) {
+      int bt_sleep_duration = parameterInstance.getValue<int64_t>("explorationBT.bt_sleep_ms");
       behaviour_tree.tickOnce();
       std::this_thread::sleep_for(std::chrono::milliseconds(bt_sleep_duration));
       LOG_DEBUG("TICKED ONCE");

@@ -7,6 +7,12 @@ ParameterHandler::ParameterHandler()
 {
 }
 
+ParameterHandler::~ParameterHandler()
+{
+  dynamic_param_callback_handle_.reset();
+  parameter_map_.clear();
+}
+
 void ParameterHandler::makeParameters(bool use_ros_parameters, rclcpp::Node::SharedPtr node)
 {
   if (use_ros_parameters) {

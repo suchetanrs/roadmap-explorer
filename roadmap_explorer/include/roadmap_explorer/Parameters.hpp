@@ -1,4 +1,3 @@
-// keyFrame.hpp
 #ifndef PARAMETER_HPP_
 #define PARAMETER_HPP_
 
@@ -25,6 +24,8 @@ class ParameterHandler
 {
 public:
   ParameterHandler();
+
+  ~ParameterHandler();
 
   void makeParameters(bool use_ros_parameters, rclcpp::Node::SharedPtr node);
 
