@@ -154,10 +154,10 @@ void RosVisualizer::visualizeFrontierMarker(
 {
   visualization_msgs::msg::MarkerArray markers;
   int id = 0;
-  
-  if(frontier_marker_array_publisher_->get_subscription_count() == 0) {
+
+  if (frontier_marker_array_publisher_->get_subscription_count() == 0) {
     return;
-  };
+  }
 
   for (const auto & frontier : frontier_list) {
     // Create a marker for each frontier
@@ -184,7 +184,7 @@ void RosVisualizer::visualizeFrontierMarker(
     marker.color.g = 1.0;     // Green
     marker.color.b = 1.0;     // Blue
 
-    if(!frontier->isAchievable()) {
+    if (!frontier->isAchievable()) {
       continue;
     }
     // Set marker text

@@ -347,10 +347,10 @@ void FrontierRoadMap::constructNewEdges(const std::vector<FrontierPtr> & frontie
         roadmap_[closestNode].push_back(closestFrontier);
         numChildren++;
       } else {
-        if(unconnectable_roadmap_.find(closestNode) == unconnectable_roadmap_.end()) {
+        if (unconnectable_roadmap_.find(closestNode) == unconnectable_roadmap_.end()) {
           unconnectable_roadmap_[closestNode] = {};
         }
-        if(unconnectable_roadmap_.find(closestFrontier) == unconnectable_roadmap_.end()) {
+        if (unconnectable_roadmap_.find(closestFrontier) == unconnectable_roadmap_.end()) {
           unconnectable_roadmap_[closestFrontier] = {};
         }
         unconnectable_roadmap_[closestFrontier].push_back(closestNode);

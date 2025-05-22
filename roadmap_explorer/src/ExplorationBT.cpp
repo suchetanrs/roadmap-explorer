@@ -405,7 +405,9 @@ public:
     }
     setOutput("frontier_costs_result", frontierCostsResultPtr->frontier_list);
     EventLoggerInstance.endEvent("ProcessFrontierCosts", 0);
-    RosVisualizer::getInstance().visualizeFrontierMarker(frontierCostsResultPtr->frontier_list, "map");
+    RosVisualizer::getInstance().visualizeFrontierMarker(
+      frontierCostsResultPtr->frontier_list,
+      "map");
     return BT::NodeStatus::SUCCESS;
   }
 

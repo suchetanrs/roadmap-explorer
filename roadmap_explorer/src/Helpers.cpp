@@ -7,7 +7,7 @@ namespace roadmap_explorer
 std::vector<unsigned int> nhood4_values(4);
 std::vector<unsigned int> nhood8_values(8);
 
-  void bresenham2D(
+void bresenham2D(
   RayTracedCells & at, unsigned int abs_da, unsigned int abs_db, int error_b,
   int offset_a,
   int offset_b, unsigned int offset,
@@ -41,8 +41,8 @@ bool getTracedCells(
   // Calculate map coordinates
   unsigned int x1, y1;
   unsigned int x0, y0;
-  if (!exploration_costmap_->worldToMap(wx, wy, x1, y1) 
-  || !exploration_costmap_->worldToMap(sx, sy, x0, y0))
+  if (!exploration_costmap_->worldToMap(wx, wy, x1, y1) ||
+    !exploration_costmap_->worldToMap(sx, sy, x0, y0))
   {
     std::cerr << "Not world to map" << std::endl;
     return false;
@@ -178,8 +178,7 @@ std::vector<unsigned int> nhood4(unsigned int idx, const nav2_costmap_2d::Costma
     return nhood4_values;
   }
 
-  if(nhood4_values.size() == 0)
-  {
+  if (nhood4_values.size() == 0) {
     nhood4_values.resize(4);
   }
 
@@ -214,8 +213,7 @@ std::vector<unsigned int> nhood8(unsigned int idx, const nav2_costmap_2d::Costma
     return nhood8_values;
   }
 
-  if(nhood8_values.size() == 0)
-  {
+  if (nhood8_values.size() == 0) {
     nhood8_values.resize(4);
   }
 

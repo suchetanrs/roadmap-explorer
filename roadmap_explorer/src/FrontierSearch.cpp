@@ -56,7 +56,8 @@ std::vector<FrontierPtr> FrontierSearch::searchFrom(geometry_msgs::msg::Point po
   }
   visited_flag[bfs.front()] = true;
 
-  auto distance_to_check_ = max_frontier_distance_ + (max_frontier_cluster_size_ * costmap_.getResolution() * 1.414);
+  auto distance_to_check_ = max_frontier_distance_ +
+    (max_frontier_cluster_size_ * costmap_.getResolution() * 1.414);
   distance_to_check_ = std::pow(distance_to_check_, 2);
 
   while (rclcpp::ok() && !bfs.empty()) {
@@ -64,7 +65,7 @@ std::vector<FrontierPtr> FrontierSearch::searchFrom(geometry_msgs::msg::Point po
     bfs.pop();
 
     // iterate over 4-connected neighbourhood
-    for (unsigned& nbr : nhood4(idx, costmap_)) {
+    for (unsigned & nbr : nhood4(idx, costmap_)) {
       // add to queue all free, unvisited cells, use descending search in case initialized on non-free cell
       if (map_[nbr] < nav2_costmap_2d::LETHAL_OBSTACLE && !visited_flag[nbr]) {
         visited_flag[nbr] = true;
@@ -74,8 +75,7 @@ std::vector<FrontierPtr> FrontierSearch::searchFrom(geometry_msgs::msg::Point po
         costmap_.mapToWorld(nbr_mx, nbr_my, nbr_wx, nbr_wy);
         if (distanceBetweenPointsSq(
             position, nbr_wx,
-            nbr_wy) < distance_to_check_
-          )
+            nbr_wy) < distance_to_check_)
         {
           bfs.push(nbr);
         }
@@ -83,7 +83,7 @@ std::vector<FrontierPtr> FrontierSearch::searchFrom(geometry_msgs::msg::Point po
       } else if (isNewFrontierCell(nbr, frontier_flag)) {
         frontier_flag[nbr] = true;
         std::vector<FrontierPtr> new_frontier = buildNewFrontier(nbr, pos, frontier_flag);
-        for (auto& curr_frontier : new_frontier) {
+        for (auto & curr_frontier : new_frontier) {
           if (curr_frontier->getSize() > min_frontier_cluster_size_) {
             frontier_list.push_back(curr_frontier);
             LOG_TRACE("PUSHING NEW FRONTIER TO LIST: UID: " << curr_frontier->getUID());
@@ -132,7 +132,7 @@ std::vector<FrontierPtr> FrontierSearch::buildNewFrontier(
     bfs.pop();
 
     // try adding cells in 8-connected neighborhood to frontier
-    for (unsigned int& nbr : nhood8(idx, costmap_)) {
+    for (unsigned int & nbr : nhood8(idx, costmap_)) {
       // check if neighbour is a potential frontier cell
       if (isNewFrontierCell(nbr, frontier_flag)) {
         // mark cell as frontier

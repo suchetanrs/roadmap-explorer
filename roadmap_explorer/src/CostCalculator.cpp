@@ -88,8 +88,7 @@ void FrontierCostCalculator::setArrivalInformationForFrontier(
   }       // theta end
 
   unsigned int sxm, sym;
-  if(!exploration_costmap_->worldToMap(sx, sy, sxm, sym))
-  {
+  if (!exploration_costmap_->worldToMap(sx, sy, sxm, sym)) {
     LOG_ERROR("The detected frontier is outside the map. What is going on?")
     throw std::runtime_error("The detected frontier is outside the map. What is going on?");
   }
@@ -168,7 +167,7 @@ double FrontierCostCalculator::setArrivalInformationLimits()
       LOG_ERROR("Error in raytracing. Cannot set arrival information limits.");
       LOG_ERROR("Max length is: " << max_length);
       throw std::runtime_error(
-        "Error in raytracing. Cannot set arrival information limits.");
+              "Error in raytracing. Cannot set arrival information limits.");
       return 0;
     }
 

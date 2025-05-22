@@ -115,7 +115,7 @@ inline double distanceBetweenPointsSq(
   const geometry_msgs::msg::Point & f1, const double x2,
   const double y2)
 {
-  return ((f1.x - x2)  * (f1.x - x2)) + ((f1.y - y2)  * (f1.y - y2));
+  return ((f1.x - x2) * (f1.x - x2)) + ((f1.y - y2) * (f1.y - y2));
 }
 
 inline double sqDistanceBetweenFrontiers(const FrontierPtr & f1, const FrontierPtr & f2)

@@ -145,8 +145,7 @@ void FullPathOptimizer::getFilteredFrontiersN(
   std::vector<FrontierPtr> all_frontiers;
 
   for (const auto & frontier : frontier_list) {
-    if (frontier->isAchievable() && !frontier->isBlacklisted())
-    {
+    if (frontier->isAchievable() && !frontier->isBlacklisted()) {
       double pathLength = frontier->getPathLengthInM();
       all_frontiers.push_back(frontier);
       LOG_DEBUG("Path length in m: " << pathLength);
