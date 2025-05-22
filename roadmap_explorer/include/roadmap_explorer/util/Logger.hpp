@@ -85,66 +85,70 @@ std::ostream & operator<<(std::ostream & os, const std::unordered_map<K, V> & ma
 }
 
 #ifdef USE_RCLCPP_LOGGER     // <-- compile-time switch
-  // -------- send to rclcpp --------
-  #define RCLCPP_LOG_MESSAGE(level, msg)                           \
-    {                                                              \
-      std::ostringstream _os;                                      \
-      _os << msg;                                                  \
-      RCLCPP_##level##_STREAM(                                     \
-        rclcpp::get_logger("roadmap_explorer_node"), _os.str());   \
-    }
+// -------- send to rclcpp --------
+  #define RCLCPP_LOG_MESSAGE(level, msg) \
+  { \
+    std::ostringstream _os; \
+    _os << msg; \
+    RCLCPP_ ## level ## _STREAM( \
+      rclcpp::get_logger("roadmap_explorer_node"), _os.str()); \
+  }
 
   #define LOG_TRACE(X) \
-    if (LOG_LEVEL >= 5) \
-    RCLCPP_LOG_MESSAGE(INFO, X);
+  if (LOG_LEVEL >= 5) \
+  RCLCPP_LOG_MESSAGE(INFO, X);
   #define LOG_DEBUG(X) \
-    if (LOG_LEVEL >= 4) \
-    RCLCPP_LOG_MESSAGE(INFO, X);
+  if (LOG_LEVEL >= 4) \
+  RCLCPP_LOG_MESSAGE(INFO, X);
   #define LOG_DEBUG_N(X) \
-    if (LOG_LEVEL >= 4) \
-    RCLCPP_LOG_MESSAGE(INFO, X);
+  if (LOG_LEVEL >= 4) \
+  RCLCPP_LOG_MESSAGE(INFO, X);
   #define LOG_INFO(X) \
-    if (LOG_LEVEL >= 3) \
-    RCLCPP_LOG_MESSAGE(INFO, X);
+  if (LOG_LEVEL >= 3) \
+  RCLCPP_LOG_MESSAGE(INFO, X);
   #define LOG_WARN(X) \
-    if (LOG_LEVEL >= 2) \
-    RCLCPP_LOG_MESSAGE(WARN, X);
+  if (LOG_LEVEL >= 2) \
+  RCLCPP_LOG_MESSAGE(WARN, X);
   #define LOG_ERROR(X) \
-    if (LOG_LEVEL >= 1) \
-    RCLCPP_LOG_MESSAGE(ERROR, X);
+  if (LOG_LEVEL >= 1) \
+  RCLCPP_LOG_MESSAGE(ERROR, X);
   #define LOG_CRITICAL(X) \
-    if (LOG_LEVEL >= 1) \
-    RCLCPP_LOG_MESSAGE(ERROR, X);
+  if (LOG_LEVEL >= 1) \
+  RCLCPP_LOG_MESSAGE(ERROR, X);
   #define LOG_FATAL(X) \
-    if (LOG_LEVEL >= 0) \
-    RCLCPP_LOG_MESSAGE(FATAL, X);
+  if (LOG_LEVEL >= 0) \
+  RCLCPP_LOG_MESSAGE(FATAL, X);
 
   #define LOG_HIGHLIGHT(X) \
-    RCLCPP_LOG_MESSAGE(WARN, X);
+  RCLCPP_LOG_MESSAGE(WARN, X);
 
   #define LOG_FLOW(X) \
-    if (USE_MODULE_FLOW) \
-    RCLCPP_LOG_MESSAGE(WARN, X);
+  if (USE_MODULE_FLOW) \
+  RCLCPP_LOG_MESSAGE(WARN, X);
 
-  ////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
 
   #define LOG_ITERATION_TIME(eventName, seconds) \
-    RCLCPP_LOG_MESSAGE(INFO,"\033[0;34m" << " ITERATION : " << eventName << ": Execution Time: " << seconds << \
+  RCLCPP_LOG_MESSAGE( \
+    INFO, "\033[0;34m" << " ITERATION : " << eventName << ": Execution Time: " << seconds << \
       " Seconds\033[0m");
 
   #define LOG_EVENT_TIME(eventName, seconds) \
-    if (TIME_LEVEL >= 2) \
-    RCLCPP_LOG_MESSAGE(INFO, "\033[0;34m" << " EVENT: " << eventName << ": Execution Time: " << seconds << \
+  if (TIME_LEVEL >= 2) \
+  RCLCPP_LOG_MESSAGE( \
+    INFO, "\033[0;34m" << " EVENT: " << eventName << ": Execution Time: " << seconds << \
       " Seconds\033[0m");
 
   #define LOG_SUBMODULE_TIME(eventName, seconds) \
-    if (TIME_LEVEL >= 1) \
-    RCLCPP_LOG_MESSAGE(INFO, "\033[0;37;44m" << " SUBMODULE: " << eventName << ": Execution Time: " << seconds << \
+  if (TIME_LEVEL >= 1) \
+  RCLCPP_LOG_MESSAGE( \
+    INFO, "\033[0;37;44m" << " SUBMODULE: " << eventName << ": Execution Time: " << seconds << \
       " Seconds\033[0m");
 
   #define LOG_MODULE_TIME(eventName, seconds) \
-    if (TIME_LEVEL >= 0) \
-    RCLCPP_LOG_MESSAGE(INFO, "\033[1;37;44m" << " MODULE: " << eventName << ": Execution Time: " << seconds << \
+  if (TIME_LEVEL >= 0) \
+  RCLCPP_LOG_MESSAGE( \
+    INFO, "\033[1;37;44m" << " MODULE: " << eventName << ": Execution Time: " << seconds << \
       " Seconds\033[0m");
 
 
@@ -152,67 +156,67 @@ std::ostream & operator<<(std::ostream & os, const std::unordered_map<K, V> & ma
 
 
   #define LOG_TRACE(X) \
-    if (LOG_LEVEL >= 5) \
-    std::cout << "\e[0;96m" << "[TRACE " << std::chrono::system_clock::to_time_t( \
-      std::chrono::high_resolution_clock::now()) << "]  " << X << "\e[m" << std::endl;
+  if (LOG_LEVEL >= 5) \
+  std::cout << "\e[0;96m" << "[TRACE " << std::chrono::system_clock::to_time_t( \
+    std::chrono::high_resolution_clock::now()) << "]  " << X << "\e[m" << std::endl;
   #define LOG_DEBUG(X) \
-    if (LOG_LEVEL >= 4) \
-    std::cout << "\e[0;32m" << "[DEBUG " << std::chrono::system_clock::to_time_t( \
-      std::chrono::high_resolution_clock::now()) << "]  " << X << "\e[m" << std::endl;
+  if (LOG_LEVEL >= 4) \
+  std::cout << "\e[0;32m" << "[DEBUG " << std::chrono::system_clock::to_time_t( \
+    std::chrono::high_resolution_clock::now()) << "]  " << X << "\e[m" << std::endl;
   #define LOG_DEBUG_N(X) \
-    if (LOG_LEVEL >= 4) \
-    std::cout << "\e[0;32m" << "[DEBUG " << std::chrono::system_clock::to_time_t( \
-      std::chrono::high_resolution_clock::now()) << "]  " << X << "\e[m";
+  if (LOG_LEVEL >= 4) \
+  std::cout << "\e[0;32m" << "[DEBUG " << std::chrono::system_clock::to_time_t( \
+    std::chrono::high_resolution_clock::now()) << "]  " << X << "\e[m";
   #define LOG_INFO(X) \
-    if (LOG_LEVEL >= 3) \
-    std::cout << "[INFO " << std::chrono::system_clock::to_time_t( \
-      std::chrono::high_resolution_clock::now()) << "]  " << X << std::endl;
+  if (LOG_LEVEL >= 3) \
+  std::cout << "[INFO " << std::chrono::system_clock::to_time_t( \
+    std::chrono::high_resolution_clock::now()) << "]  " << X << std::endl;
   #define LOG_WARN(X) \
-    if (LOG_LEVEL >= 2) \
-    std::cout << "\e[0;93m" << "[WARN " << std::chrono::system_clock::to_time_t( \
-      std::chrono::high_resolution_clock::now()) << "]  " << X << "\e[m" << std::endl;
+  if (LOG_LEVEL >= 2) \
+  std::cout << "\e[0;93m" << "[WARN " << std::chrono::system_clock::to_time_t( \
+    std::chrono::high_resolution_clock::now()) << "]  " << X << "\e[m" << std::endl;
   #define LOG_ERROR(X) \
-    if (LOG_LEVEL >= 1) \
-    std::cout << "\e[0;31m" << "[ERROR " << std::chrono::system_clock::to_time_t( \
-      std::chrono::high_resolution_clock::now()) << "]  " << X << "\e[m" << std::endl;
+  if (LOG_LEVEL >= 1) \
+  std::cout << "\e[0;31m" << "[ERROR " << std::chrono::system_clock::to_time_t( \
+    std::chrono::high_resolution_clock::now()) << "]  " << X << "\e[m" << std::endl;
   #define LOG_CRITICAL(X) \
-    if (LOG_LEVEL >= 1) \
-    std::cout << "\e[04;91m" << "[CRITICAL " << std::chrono::system_clock::to_time_t( \
-      std::chrono::high_resolution_clock::now()) << "]  " << X << "\e[m" << std::endl;
+  if (LOG_LEVEL >= 1) \
+  std::cout << "\e[04;91m" << "[CRITICAL " << std::chrono::system_clock::to_time_t( \
+    std::chrono::high_resolution_clock::now()) << "]  " << X << "\e[m" << std::endl;
   #define LOG_FATAL(X) \
-    if (LOG_LEVEL >= 0) \
-    std::cout << "\e[1;37;41m" << "[FATAL " << std::chrono::system_clock::to_time_t( \
-      std::chrono::high_resolution_clock::now()) << "]  " << X << "\e[m" << std::endl;
+  if (LOG_LEVEL >= 0) \
+  std::cout << "\e[1;37;41m" << "[FATAL " << std::chrono::system_clock::to_time_t( \
+    std::chrono::high_resolution_clock::now()) << "]  " << X << "\e[m" << std::endl;
 
   #define LOG_HIGHLIGHT(X) \
-    std::cout << "\e[1;37;102m" << "[HIGHLIGHT " << std::chrono::system_clock::to_time_t( \
-      std::chrono::high_resolution_clock::now()) << "]  " << X << "\e[m" << std::endl;
+  std::cout << "\e[1;37;102m" << "[HIGHLIGHT " << std::chrono::system_clock::to_time_t( \
+    std::chrono::high_resolution_clock::now()) << "]  " << X << "\e[m" << std::endl;
 
   #define LOG_FLOW(X) \
-    if (USE_MODULE_FLOW) \
-    std::cout << "\e[1;37;103m" << "[FLOW " << std::chrono::system_clock::to_time_t( \
-      std::chrono::high_resolution_clock::now()) << "]  " << X << "\e[m" << std::endl;
+  if (USE_MODULE_FLOW) \
+  std::cout << "\e[1;37;103m" << "[FLOW " << std::chrono::system_clock::to_time_t( \
+    std::chrono::high_resolution_clock::now()) << "]  " << X << "\e[m" << std::endl;
 
-  ////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
 
   #define LOG_ITERATION_TIME(eventName, seconds) \
-    std::cout << "\033[0;34m" << " ITERATION : " << eventName << ": Execution Time: " << seconds << \
-      " Seconds\033[0m" << std::endl;
+  std::cout << "\033[0;34m" << " ITERATION : " << eventName << ": Execution Time: " << seconds << \
+    " Seconds\033[0m" << std::endl;
 
   #define LOG_EVENT_TIME(eventName, seconds) \
-    if (TIME_LEVEL >= 2) \
-    std::cout << "\033[0;34m" << " EVENT: " << eventName << ": Execution Time: " << seconds << \
-      " Seconds\033[0m" << std::endl;
+  if (TIME_LEVEL >= 2) \
+  std::cout << "\033[0;34m" << " EVENT: " << eventName << ": Execution Time: " << seconds << \
+    " Seconds\033[0m" << std::endl;
 
   #define LOG_SUBMODULE_TIME(eventName, seconds) \
-    if (TIME_LEVEL >= 1) \
-    std::cout << "\033[0;37;44m" << " SUBMODULE: " << eventName << ": Execution Time: " << seconds << \
-      " Seconds\033[0m" << std::endl;
+  if (TIME_LEVEL >= 1) \
+  std::cout << "\033[0;37;44m" << " SUBMODULE: " << eventName << ": Execution Time: " << seconds << \
+    " Seconds\033[0m" << std::endl;
 
   #define LOG_MODULE_TIME(eventName, seconds) \
-    if (TIME_LEVEL >= 0) \
-    std::cout << "\033[1;37;44m" << " MODULE: " << eventName << ": Execution Time: " << seconds << \
-      " Seconds\033[0m" << std::endl;
+  if (TIME_LEVEL >= 0) \
+  std::cout << "\033[1;37;44m" << " MODULE: " << eventName << ": Execution Time: " << seconds << \
+    " Seconds\033[0m" << std::endl;
 #endif
 
 #endif // COLOR_H

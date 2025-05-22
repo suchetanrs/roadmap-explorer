@@ -53,9 +53,7 @@ bool getTracedCells(
   int dy_full = y1 - y0;
   double dist = std::hypot(dx_full, dy_full);
   if (dist < min_length) {
-    std::cerr <<
-      "Distance to ray trace is lesser than minimum distance. Proceeding to next frontier." <<
-      std::endl;
+    LOG_ERROR("Distance to ray trace is lesser than minimum distance. Proceeding to next frontier.")
     return false;
   }
   unsigned int min_x0, min_y0;
@@ -123,13 +121,10 @@ bool surroundingCellsMapped(
   }
   for (auto cell : out) {
     auto cost = exploration_costmap_.getCost(cell);
-    // // std::cout << "Cost is: " << static_cast<int>(cost) << std::endl;
     if (static_cast<int>(cost) == 255) {
-      // // std::cout << "Surrounding cells mapped Returning false " << std::endl;
       return false;
     }
   }
-  // // std::cout << "Surrounding cells mapped Returning true " << std::endl;
   return true;
 }
 
@@ -173,7 +168,6 @@ std::vector<unsigned int> nhood4(unsigned int idx, const nav2_costmap_2d::Costma
   unsigned int size_y_ = costmap.getSizeInCellsY();
 
   if (idx > size_x_ * size_y_ - 1) {
-    // std::cout << "Evaluating nhood for offmap point" << std::endl;
     nhood4_values.clear();
     return nhood4_values;
   }

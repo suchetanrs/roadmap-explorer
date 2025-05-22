@@ -8,15 +8,6 @@
 #include <roadmap_explorer/util/GeometryUtils.hpp>
 #include <roadmap_explorer/planners/FrontierRoadmap.hpp>
 
-const double ARRIVAL_INFORMATION_THRESHOLD = 70.0;
-const double NUM_FRONTIERS_IN_LOCAL_AREA = 5.0;
-const double DISTANCE_THRESHOLD_GLOBAL_CLUSTER = 5.0;
-const double CLUSTER_PADDING = 0.25;
-const double LOCAL_FRONTIER_SEARCH_RADIUS = 12.0; // 6.0 in m
-const bool ADD_YAW_TO_TSP = false;
-const bool ADD_DISTANCE_TO_ROBOT_TO_TSP = false;
-
-const double BLACKLISTING_CIRCLE_RADIUS = 1.7; // in m
 namespace roadmap_explorer
 {
 
@@ -75,16 +66,28 @@ public:
     rclcpp::Node::SharedPtr node,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros);
 
+  bool getNextGoal(
+    std::vector<FrontierPtr> & frontier_list, FrontierPtr & nextFrontier, size_t n,
+    geometry_msgs::msg::PoseStamped & robotP);
+
+  void clearPlanCache()
+  {
+    frontier_pair_distances_.clear();
+  }
+
+  double calculateLengthRobotToGoal(
+    const FrontierPtr & robot, const FrontierPtr & goal,
+    geometry_msgs::msg::PoseStamped & robotP);
+
+  bool refineAndPublishPath(geometry_msgs::msg::PoseStamped & robotP, FrontierPtr & goalFrontier);
+private:
+
   void addToMarkerArraySolidPolygon(
     visualization_msgs::msg::MarkerArray & marker_array,
     geometry_msgs::msg::Point center, double radius, std::string ns,
     float r, float g, float b, int id);
 
   double calculatePathLength(std::vector<FrontierPtr> & path);
-
-  double calculateLengthRobotToGoal(
-    const FrontierPtr & robot, const FrontierPtr & goal,
-    geometry_msgs::msg::PoseStamped & robotP);
 
   void getFilteredFrontiers(
     std::vector<FrontierPtr> & frontier_list,
@@ -100,23 +103,19 @@ public:
     SortedFrontiers & sortedFrontiers, std::vector<FrontierPtr> & bestPath,
     geometry_msgs::msg::PoseStamped & robotP);
 
-  bool getNextGoal(
-    std::vector<FrontierPtr> & frontier_list, FrontierPtr & nextFrontier, size_t n,
-    geometry_msgs::msg::PoseStamped & robotP);
-
-  bool refineAndPublishPath(geometry_msgs::msg::PoseStamped & robotP, FrontierPtr & goalFrontier);
-
-  void clearPlanCache()
-  {
-    frontier_pair_distances_.clear();
-  }
-
-private:
   rclcpp::Node::SharedPtr node_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros_;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr marker_publisher_;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr local_search_area_publisher_;
   rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr frontier_nav2_plan_;
   std::unordered_map<FrontierPair, RoadmapPlanResult, FrontierPairHash> frontier_pair_distances_;
+
+  double ARRIVAL_INFORMATION_THRESHOLD = 70.0;
+  double NUM_FRONTIERS_IN_LOCAL_AREA = 5.0;
+  double DISTANCE_THRESHOLD_GLOBAL_CLUSTER = 5.0;
+  double CLUSTER_PADDING = 0.25;
+  double LOCAL_FRONTIER_SEARCH_RADIUS = 12.0; // 6.0 in m
+  bool ADD_YAW_TO_TSP = false;
+  bool ADD_DISTANCE_TO_ROBOT_TO_TSP = false;
 };
 }

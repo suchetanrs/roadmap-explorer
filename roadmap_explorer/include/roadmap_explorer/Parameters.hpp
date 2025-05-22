@@ -27,16 +27,21 @@ public:
 
   ~ParameterHandler();
 
+  template<typename T>
+  T getValue(std::string parameterKey)
+  {
+    std::lock_guard<std::recursive_mutex> lock(instanceMutex_);
+    if (parameter_map_.find(parameterKey) != parameter_map_.end()) {
+      // LOG_HIGHLIGHT("Got request for: " << parameterKey);
+      // LOG_HIGHLIGHT("Returning value " << boost::any_cast<T>(parameter_map_[parameterKey]) << " for parameter " << parameterKey);
+      return boost::any_cast<T>(parameter_map_[parameterKey]);
+    } else {
+      // TODO : Handle this runtime error.
+      throw std::runtime_error("Parameter " + parameterKey + " is not found in the map");
+    }
+  }
+  
   void makeParameters(bool use_ros_parameters, rclcpp::Node::SharedPtr node);
-
-  void makeParametersROS(rclcpp::Node::SharedPtr node);
-
-  void makeParametersYAMLcpp();
-
-  void sanityCheckParameters();
-
-  rcl_interfaces::msg::SetParametersResult  dynamicReconfigureCallback(
-    const std::vector<rclcpp::Parameter> & parameters);
 
   static ParameterHandler & getInstance()
   {
@@ -46,20 +51,15 @@ public:
     return *parameterHandlerPtr_;
   }
 
-  template<typename T>
-  T getValue(std::string parameterKey)
-  {
-    std::lock_guard<std::recursive_mutex> lock(instanceMutex_);
-    if (parameter_map_.find(parameterKey) != parameter_map_.end()) {
-      // std::cout << "\e[0;106m" << "Got request for: " << parameterKey << "\e[m" << std::endl;
-      // std::cout << "\e[0;106m" << "Returning value " << boost::any_cast<T>(parameter_map_[parameterKey]) << " for parameter " << parameterKey
-      //           << "\e[m" << std::endl;
-      return boost::any_cast<T>(parameter_map_[parameterKey]);
-    } else {
-      // TODO : Handle this runtime error.
-      throw std::runtime_error("Parameter " + parameterKey + " is not found in the map");
-    }
-  }
+private:
+  void makeParametersROS(rclcpp::Node::SharedPtr node);
+
+  void makeParametersYAMLcpp();
+
+  void sanityCheckParameters();
+
+  rcl_interfaces::msg::SetParametersResult  dynamicReconfigureCallback(
+    const std::vector<rclcpp::Parameter> & parameters);
 
   template<typename T>
   void setValue(const std::string & parameterKey, const T & value)
@@ -68,7 +68,6 @@ public:
     parameter_map_[parameterKey] = value;
   }
 
-private:
   ParameterHandler(const ParameterHandler &) = delete;
   ParameterHandler & operator=(const ParameterHandler &) = delete;
   static std::unique_ptr<ParameterHandler> parameterHandlerPtr_;

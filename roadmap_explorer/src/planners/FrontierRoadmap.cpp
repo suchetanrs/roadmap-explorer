@@ -147,7 +147,7 @@ void FrontierRoadMap::mapDataCallback(roadmap_explorer_msgs::msg::MapData mapDat
 void FrontierRoadMap::optimizeSHM()
 {
   MIN_DISTANCE_BETWEEN_TWO_FRONTIER_NODES = parameterInstance.getValue<double>(
-  "frontierRoadmap.min_distance_between_two_frontier_nodes");
+    "frontierRoadmap.min_distance_between_two_frontier_nodes");
   std::vector<FrontierPtr> optimized_frontiers;
   // std::cout << "Optimize SHM" << std::endl;
   {
