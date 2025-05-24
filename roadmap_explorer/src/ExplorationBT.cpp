@@ -1,48 +1,12 @@
 #include <roadmap_explorer/ExplorationBT.hpp>
 namespace roadmap_explorer
 {
-class InitializationSequence : public BT::StatefulActionNode
-{
-public:
-  InitializationSequence(
-    const std::string & name, const BT::NodeConfig & config,
-    std::shared_ptr<InitCommandVelNode> initialization_controller)
-  : BT::StatefulActionNode(name, config)
-  {
-    initialization_controller_ = initialization_controller;
-    LOG_DEBUG("InitializationSequence Constructor");
-  }
-
-  BT::NodeStatus onStart() override
-  {
-    LOG_FLOW("MODULE InitializationSequence");
-    EventLoggerInstance.endEvent("NewIteration", -1);
-    LOG_HIGHLIGHT("*******NEW SEQUENCE*******");
-    EventLoggerInstance.startEvent("NewIteration");
-    if (initialization_controller_->send_velocity_commands()) {
-      return BT::NodeStatus::FAILURE;
-    } else {
-      return BT::NodeStatus::SUCCESS;
-    }
-  }
-
-  BT::NodeStatus onRunning() override
-  {
-    return BT::NodeStatus::RUNNING;
-  }
-
-  void onHalted()
-  {
-    return;
-  }
-  std::shared_ptr<InitCommandVelNode> initialization_controller_;
-};
 
 class WaitForCurrent : public BT::StatefulActionNode
 {
 public:
   WaitForCurrent(
-    const std::string & name, const BT::NodeConfig & config,
+    const std::string & name, const BT::NodeConfiguration & config,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros,
     rclcpp::Node::SharedPtr ros_node_ptr)
   : BT::StatefulActionNode(name, config)
@@ -77,40 +41,36 @@ public:
   rclcpp::Node::SharedPtr ros_node_ptr_;
 };
 
-class UpdateBoundaryPolygonBT : public BT::StatefulActionNode
+class UpdateBoundaryPolygonBT : public BT::SyncActionNode
 {
 public:
   UpdateBoundaryPolygonBT(
-    const std::string & name, const BT::NodeConfig & config,
-    std::shared_ptr<CostAssigner> bel_ptr, std::vector<std::string> boundary_config,
+    const std::string & name, const BT::NodeConfiguration & config,
+    std::shared_ptr<CostAssigner> cost_assigner_ptr, std::vector<double> boundary_config,
     rclcpp::Node::SharedPtr ros_node_ptr)
-  : BT::StatefulActionNode(name, config)
+  : BT::SyncActionNode(name, config)
   {
-    bel_ptr_ = bel_ptr;
+    cost_assigner_ptr_ = cost_assigner_ptr;
     config_ = boundary_config;
     ros_node_ptr_ = ros_node_ptr;
     LOG_DEBUG("UpdateBoundaryPolygonBT Constructor");
   }
 
-  BT::NodeStatus onStart() override
+  BT::NodeStatus tick() override
   {
     LOG_FLOW("MODULE UpdateBoundaryPolygonBT");
     geometry_msgs::msg::PolygonStamped explore_boundary_;
-    geometry_msgs::msg::PointStamped explore_center_;
     explore_boundary_.header.frame_id = "map";
     explore_boundary_.header.stamp = rclcpp::Clock().now();
     for (int i = 0; i < config_.size(); i += 2) {
       geometry_msgs::msg::Point32 point;
-      point.x = std::stof(config_[i]);
-      point.y = std::stof(config_[i + 1]);
+      point.x = config_[i];
+      point.y = config_[i + 1];
+      LOG_DEBUG("Adding point to boundary: " << point.x << ", " << point.y);
       explore_boundary_.polygon.points.push_back(point);
     }
 
-    explore_center_.header.frame_id = "map";
-    explore_center_.point.x = 5.5;
-    explore_center_.point.y = 5.5;
-
-    auto updateBoundaryResult = bel_ptr_->updateBoundaryPolygon(explore_boundary_);
+    auto updateBoundaryResult = cost_assigner_ptr_->updateBoundaryPolygon(explore_boundary_);
     LOG_DEBUG("Adding update boundary polygon for spin.");
     if (updateBoundaryResult == true) {
       LOG_INFO("Region boundary set");
@@ -121,36 +81,25 @@ public:
     return BT::NodeStatus::SUCCESS;
   }
 
-  BT::NodeStatus onRunning()
-  {
-    LOG_DEBUG("UpdateBoundaryPolygonBT On running called ");
-    return BT::NodeStatus::SUCCESS;
-  }
-
-  void onHalted()
-  {
-    return;
-  }
-
   static BT::PortsList providedPorts()
   {
     return {};
   }
 
-  std::shared_ptr<CostAssigner> bel_ptr_;
+  std::shared_ptr<CostAssigner> cost_assigner_ptr_;
   rclcpp::Node::SharedPtr ros_node_ptr_;
-  std::vector<std::string> config_;
+  std::vector<double> config_;
 };
 
-class SearchForFrontiersBT : public BT::StatefulActionNode
+class SearchForFrontiersBT : public BT::SyncActionNode
 {
 public:
   SearchForFrontiersBT(
-    const std::string & name, const BT::NodeConfig & config,
+    const std::string & name, const BT::NodeConfiguration & config,
     std::shared_ptr<FrontierSearch> frontierSearchPtr,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros,
     rclcpp::Node::SharedPtr ros_node_ptr)
-  : BT::StatefulActionNode(name, config)
+  : BT::SyncActionNode(name, config)
   {
     explore_costmap_ros_ = explore_costmap_ros;
     frontierSearchPtr_ = frontierSearchPtr;
@@ -158,7 +107,7 @@ public:
     LOG_DEBUG("SearchForFrontiersBT Constructor");
   }
 
-  BT::NodeStatus onStart() override
+  BT::NodeStatus tick() override
   {
     LOG_FLOW("MODULE SearchForFrontiersBT");
     EventLoggerInstance.startEvent("SearchForFrontiers");
@@ -168,7 +117,7 @@ public:
     geometry_msgs::msg::PoseStamped robotP;
     explore_costmap_ros_->getRobotPose(robotP);
     config().blackboard->set<geometry_msgs::msg::PoseStamped>("latest_robot_pose", robotP);
-    LOG_INFO("Using robotP: " << robotP.pose.position.x << ", " << robotP.pose.position.y);
+    LOG_INFO("Using robot pose: " << robotP.pose.position.x << ", " << robotP.pose.position.y);
     auto frontier_list = frontierSearchPtr_->searchFrom(robotP.pose.position);
     auto every_frontier = frontierSearchPtr_->getAllFrontiers();
     if (frontier_list.size() == 0) {
@@ -192,17 +141,6 @@ public:
     return BT::NodeStatus::SUCCESS;
   }
 
-  BT::NodeStatus onRunning()
-  {
-    LOG_INFO("SearchForFrontiersBT On running called ");
-    return BT::NodeStatus::SUCCESS;
-  }
-
-  void onHalted()
-  {
-    return;
-  }
-
   static BT::PortsList providedPorts()
   {
     return {
@@ -217,22 +155,22 @@ public:
   rclcpp::Node::SharedPtr ros_node_ptr_;
 };
 
-class CleanupRoadMapBT : public BT::StatefulActionNode
+class CleanupRoadMapBT : public BT::SyncActionNode
 {
 public:
   CleanupRoadMapBT(
-    const std::string & name, const BT::NodeConfig & config,
+    const std::string & name, const BT::NodeConfiguration & config,
     rclcpp::Node::SharedPtr ros_node_ptr,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros,
     std::shared_ptr<FullPathOptimizer> full_path_optimizer)
-  : BT::StatefulActionNode(name, config)
+  : BT::SyncActionNode(name, config)
   {
     full_path_optimizer_ = full_path_optimizer;
     explore_costmap_ros_ = explore_costmap_ros;
     LOG_INFO("CleanupRoadMapBT Constructor");
   }
 
-  BT::NodeStatus onStart() override
+  BT::NodeStatus tick() override
   {
     LOG_FLOW("MODULE CleanupRoadMapBT");
     // LOG_INFO("Time since last clearance: " << EventLoggerInstance.getTimeSinceStart("clearRoadmap"));
@@ -256,17 +194,6 @@ public:
     return BT::NodeStatus::SUCCESS;
   }
 
-  BT::NodeStatus onRunning()
-  {
-    LOG_INFO("CleanupRoadMapBT On running called ");
-    return BT::NodeStatus::SUCCESS;
-  }
-
-  void onHalted()
-  {
-    return;
-  }
-
   static BT::PortsList providedPorts()
   {
     return {
@@ -279,20 +206,20 @@ public:
   std::shared_ptr<FullPathOptimizer> full_path_optimizer_;
 };
 
-class UpdateRoadmapBT : public BT::StatefulActionNode
+class UpdateRoadmapBT : public BT::SyncActionNode
 {
 public:
   UpdateRoadmapBT(
-    const std::string & name, const BT::NodeConfig & config,
+    const std::string & name, const BT::NodeConfiguration & config,
     rclcpp::Node::SharedPtr ros_node_ptr,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros)
-  : BT::StatefulActionNode(name, config)
+  : BT::SyncActionNode(name, config)
   {
     explore_costmap_ros_ = explore_costmap_ros;
     LOG_INFO("UpdateRoadmapBT Constructor");
   }
 
-  BT::NodeStatus onStart() override
+  BT::NodeStatus tick() override
   {
     EventLoggerInstance.startEvent("UpdateRoadmapBT");
     LOG_FLOW("MODULE UpdateRoadmapBT");
@@ -328,17 +255,6 @@ public:
     return BT::NodeStatus::SUCCESS;
   }
 
-  BT::NodeStatus onRunning()
-  {
-    LOG_INFO("UpdateRoadmapBT On running called ");
-    return BT::NodeStatus::SUCCESS;
-  }
-
-  void onHalted()
-  {
-    return;
-  }
-
   static BT::PortsList providedPorts()
   {
     return {
@@ -349,25 +265,23 @@ public:
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros_;
 };
 
-class ProcessFrontierCostsBT : public BT::StatefulActionNode
+class ProcessFrontierCostsBT : public BT::SyncActionNode
 {
 public:
   ProcessFrontierCostsBT(
-    const std::string & name, const BT::NodeConfig & config,
+    const std::string & name, const BT::NodeConfiguration & config,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros,
-    std::shared_ptr<CostAssigner> bel_ptr,
-    RobotActiveGoals & robot_goals,
+    std::shared_ptr<CostAssigner> cost_assigner_ptr,
     rclcpp::Node::SharedPtr ros_node_ptr)
-  : BT::StatefulActionNode(name, config),
-    robot_goals_(robot_goals)
+  : BT::SyncActionNode(name, config)
   {
     explore_costmap_ros_ = explore_costmap_ros;
-    bel_ptr_ = bel_ptr;
+    cost_assigner_ptr_ = cost_assigner_ptr;
     ros_node_ptr_ = ros_node_ptr;
     LOG_INFO("ProcessFrontierCostsBT Constructor");
   }
 
-  BT::NodeStatus onStart() override
+  BT::NodeStatus tick() override
   {
     EventLoggerInstance.startEvent("ProcessFrontierCosts");
     LOG_FLOW("MODULE ProcessFrontierCostsBT");
@@ -395,7 +309,7 @@ public:
       throw std::runtime_error("Failed to retrieve latest_robot_pose from blackboard.");
     }
     LOG_INFO("Request to get frontier costs sent");
-    bool frontierCostsSuccess = bel_ptr_->getFrontierCosts(
+    bool frontierCostsSuccess = cost_assigner_ptr_->getFrontierCosts(
       frontierCostsRequestPtr,
       frontierCostsResultPtr);
     if (frontierCostsSuccess == false) {
@@ -411,54 +325,37 @@ public:
     return BT::NodeStatus::SUCCESS;
   }
 
-  BT::NodeStatus onRunning()
-  {
-    return BT::NodeStatus::SUCCESS;
-  }
-
-  void onHalted()
-  {
-    return;
-  }
-
   static BT::PortsList providedPorts()
   {
     return {BT::InputPort<std::vector<FrontierPtr>>("frontier_list"),
-      BT::InputPort<std::string>("robot_name"),
       BT::InputPort<std::vector<std::vector<double>>>("every_frontier"),
       BT::OutputPort<std::vector<FrontierPtr>>("frontier_costs_result")};
   }
 
   std::shared_ptr<FrontierSearch> frontierSearchPtr_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros_;
-  std::shared_ptr<CostAssigner> bel_ptr_;
-  RobotActiveGoals & robot_goals_;
+  std::shared_ptr<CostAssigner> cost_assigner_ptr_;
   rclcpp::Node::SharedPtr ros_node_ptr_;
 };
 
-class OptimizeFullPath : public BT::StatefulActionNode
+class OptimizeFullPath : public BT::SyncActionNode
 {
 public:
   OptimizeFullPath(
-    const std::string & name, const BT::NodeConfig & config,
+    const std::string & name, const BT::NodeConfiguration & config,
     std::shared_ptr<FullPathOptimizer> full_path_optimizer,
-    std::shared_ptr<CostAssigner> bel_ptr,
+    std::shared_ptr<CostAssigner> cost_assigner_ptr,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros,
-    std::shared_ptr<FrontierSearch> frontierSearchPtr,
-    std::shared_ptr<Nav2Interface> nav2_interface,
-    std::shared_ptr<RecoveryController> recovery_controller,
     rclcpp::Node::SharedPtr node)
-  : BT::StatefulActionNode(name, config)
+  : BT::SyncActionNode(name, config)
   {
     explore_costmap_ros_ = explore_costmap_ros;
     full_path_optimizer_ = full_path_optimizer;
-    frontierSearchPtr_ = frontierSearchPtr;
-    nav2_interface_ = nav2_interface;
     node_ = node;
     LOG_INFO("OptimizeFullPath Constructor");
   }
 
-  BT::NodeStatus onStart() override
+  BT::NodeStatus tick() override
   {
     EventLoggerInstance.startEvent("OptimizeFullPath");
     LOG_FLOW("MODULE OptimizeFullPath");
@@ -476,47 +373,36 @@ public:
       globalFrontierList, allocatedFrontier, 3,
       robotP);
     if (return_state) {
-      frontierSearchPtr_->resetSearchDistance();
       setOutput<FrontierPtr>("allocated_frontier", allocatedFrontier);
     } else {
-      nav2_interface_->cancelAllGoals();
       double increment_value = 0.1;
       getInput("increment_search_distance_by", increment_value);
-      frontierSearchPtr_->incrementSearchDistance(increment_value);
-      recovery_controller_->computeVelocityCommand(false);
       EventLoggerInstance.endEvent("OptimizeFullPath", 0);
       return BT::NodeStatus::FAILURE;
     }
-    frontierSearchPtr_->resetSearchDistance();
     EventLoggerInstance.endEvent("OptimizeFullPath", 0);
     setOutput<FrontierPtr>("allocated_frontier", allocatedFrontier);
-    return BT::NodeStatus::SUCCESS;
-  }
 
-  BT::NodeStatus onRunning()
-  {
+    nav_msgs::msg::Path path;
+    if (!full_path_optimizer_->refineAndPublishPath(robotP, allocatedFrontier, path)) {
+      LOG_ERROR(
+        "Failed to refine and publish path between robotP: " << robotP.pose.position.x << ", " << robotP.pose.position.y << " and " <<
+          allocatedFrontier);
+      return BT::NodeStatus::FAILURE;
+    }
+    setOutput<nav_msgs::msg::Path>("optimized_path", path);
     return BT::NodeStatus::SUCCESS;
-  }
-
-  void onHalted()
-  {
-    return;
   }
 
   static BT::PortsList providedPorts()
   {
     return {BT::InputPort<std::vector<FrontierPtr>>("frontier_costs_result"),
-      BT::InputPort<bool>("use_fisher_information"),
       BT::OutputPort<FrontierPtr>("allocated_frontier"),
-      BT::InputPort<double>("increment_search_distance_by"),
-      BT::InputPort<double>("number_retries_fi")};
+      BT::OutputPort<nav_msgs::msg::Path>("optimized_path")};
   }
 
-  std::shared_ptr<FrontierSearch> frontierSearchPtr_;
   std::shared_ptr<FullPathOptimizer> full_path_optimizer_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros_;
-  std::shared_ptr<Nav2Interface> nav2_interface_;
-  std::shared_ptr<RecoveryController> recovery_controller_;
   rclcpp::Node::SharedPtr node_;
 };
 
@@ -524,7 +410,7 @@ class HysterisisControl : public BT::StatefulActionNode
 {
 public:
   HysterisisControl(
-    const std::string & name, const BT::NodeConfig & config,
+    const std::string & name, const BT::NodeConfiguration & config,
     std::shared_ptr<FullPathOptimizer> full_path_optimizer)
   : BT::StatefulActionNode(name, config)
   {
@@ -642,55 +528,11 @@ public:
   std::shared_ptr<FullPathOptimizer> full_path_optimizer_;
 };
 
-class ExecuteRecoveryMove : public BT::StatefulActionNode
-{
-public:
-  ExecuteRecoveryMove(
-    const std::string & name, const BT::NodeConfig & config,
-    std::shared_ptr<RecoveryController> recovery_controller)
-  : BT::StatefulActionNode(name, config)
-  {
-    recovery_controller_bt_ = recovery_controller;
-    LOG_INFO("ExecuteRecoveryMove Constructor");
-  }
-
-  BT::NodeStatus onStart() override
-  {
-    EventLoggerInstance.startEvent("ExecuteRecoveryMove");
-    LOG_FLOW("MODULE ExecuteRecoveryMove");
-    if (!recovery_controller_bt_) {
-      throw std::runtime_error("recovery ptr is null.");
-    }
-    bool backwardOnly;
-    getInput<bool>("backward_only", backwardOnly);
-    recovery_controller_bt_->computeVelocityCommand(backwardOnly);
-    EventLoggerInstance.endEvent("ExecuteRecoveryMove", 0);
-    return BT::NodeStatus::FAILURE;
-  }
-
-  BT::NodeStatus onRunning()
-  {
-    return BT::NodeStatus::SUCCESS;
-  }
-
-  void onHalted()
-  {
-    return;
-  }
-
-  static BT::PortsList providedPorts()
-  {
-    return {BT::InputPort<bool>("backward_only")};
-  }
-
-  std::shared_ptr<RecoveryController> recovery_controller_bt_;
-};
-
 class SendNav2Goal : public BT::StatefulActionNode
 {
 public:
   SendNav2Goal(
-    const std::string & name, const BT::NodeConfig & config,
+    const std::string & name, const BT::NodeConfiguration & config,
     std::shared_ptr<Nav2Interface> nav2_interface,
     rclcpp::Node::SharedPtr ros_node_ptr)
   : BT::StatefulActionNode(name, config)
@@ -783,7 +625,7 @@ class CheckIfGoalMapped : public BT::StatefulActionNode
 {
 public:
   CheckIfGoalMapped(
-    const std::string & name, const BT::NodeConfig & config,
+    const std::string & name, const BT::NodeConfiguration & config,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros,
     rclcpp::Node::SharedPtr ros_node_ptr,
     std::shared_ptr<FullPathOptimizer> full_path_optimizer)
@@ -823,7 +665,8 @@ public:
       LOG_FATAL("Failed to retrieve latest_robot_pose from blackboard.");
       throw std::runtime_error("Failed to retrieve latest_robot_pose from blackboard.");
     }
-    if (!full_path_optimizer_->refineAndPublishPath(robotP, allocatedFrontier)) {
+    nav_msgs::msg::Path path;
+    if (!full_path_optimizer_->refineAndPublishPath(robotP, allocatedFrontier, path)) {
       LOG_ERROR(
         "Failed to refine and publish path between robotP: " << robotP.pose.position.x << ", " << robotP.pose.position.y << " and " <<
           allocatedFrontier);
@@ -862,7 +705,7 @@ class ReplanTimeoutCompleteBT : public BT::StatefulActionNode
 {
 public:
   ReplanTimeoutCompleteBT(
-    const std::string & name, const BT::NodeConfig & config,
+    const std::string & name, const BT::NodeConfiguration & config,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros,
     rclcpp::Node::SharedPtr ros_node_ptr)
   : BT::StatefulActionNode(name, config)
@@ -915,64 +758,6 @@ public:
   rclcpp::Node::SharedPtr ros_node_ptr_;
 };
 
-class RecoveryMoveBack : public BT::StatefulActionNode
-{
-public:
-  RecoveryMoveBack(
-    const std::string & name, const BT::NodeConfig & config,
-    std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros,
-    rclcpp::Node::SharedPtr ros_node_ptr)
-  : BT::StatefulActionNode(name, config)
-  {
-    explore_costmap_ros_ = explore_costmap_ros;
-    ros_node_ptr_ = ros_node_ptr;
-    cmd_vel_publisher_ =
-      ros_node_ptr->create_publisher<geometry_msgs::msg::Twist>("cmd_vel_nav", 10);
-    LOG_INFO("RecoveryMoveBack Constructor");
-  }
-
-  BT::NodeStatus onStart() override
-  {
-    LOG_FLOW("RecoveryMoveBack onStart");
-    startTime = std::chrono::high_resolution_clock::now();
-    return BT::NodeStatus::RUNNING;
-  }
-
-  BT::NodeStatus onRunning()
-  {
-    LOG_INFO("RecoveryMoveBack onRunning");
-    auto endTime = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> duration = endTime - startTime;
-    double maxDuration;
-    getInput("move_back_duration", maxDuration);
-    if (duration.count() > maxDuration) {
-      geometry_msgs::msg::Twist twist_msg;
-      cmd_vel_publisher_->publish(twist_msg);
-      cmd_vel_publisher_->publish(twist_msg);
-      cmd_vel_publisher_->publish(twist_msg);
-      return BT::NodeStatus::SUCCESS;
-    }
-    geometry_msgs::msg::Twist twist_msg;
-    twist_msg.linear.x = -0.5;         // -0.5 m/s for reverse motion
-    cmd_vel_publisher_->publish(twist_msg);
-    return BT::NodeStatus::RUNNING;
-  }
-
-  void onHalted()
-  {
-    return;
-  }
-
-  static BT::PortsList providedPorts()
-  {
-    return {BT::InputPort<double>("move_back_duration")};
-  }
-
-  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros_;
-  rclcpp::Node::SharedPtr ros_node_ptr_;
-  std::chrono::time_point<std::chrono::high_resolution_clock> startTime;
-  rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_publisher_;
-};
 }
 
 namespace roadmap_explorer
@@ -986,19 +771,15 @@ FrontierExplorationServer::FrontierExplorationServer(rclcpp::Node::SharedPtr nod
   blackboard->set<CurrentGoalStatus>("current_goal_status", CurrentGoalStatus::RUNNING);
 
   robot_namespaces_ = {};
-  bt_node_->declare_parameter("robot_namespaces", rclcpp::ParameterValue(robot_namespaces_));
-  config_ = {"100.0", "100.0", "100.0", "-100.0", "-100.0", "-100.0", "-100.0", "100.0"};
-  bt_node_->declare_parameter("config", rclcpp::ParameterValue(config_));
-  bt_node_->declare_parameter("process_other_robots", rclcpp::ParameterValue(false));
+  bt_node_->declare_parameter("exploration_boundary", rclcpp::ParameterValue(exploration_boundary_));
   bt_node_->declare_parameter(
     "bt_xml_path",
     "/root/dev_ws/src/roadmap_explorer/roadmap_explorer/xml/exploration.xml");
 
-  bt_node_->get_parameter("robot_namespaces", robot_namespaces_);
-  bt_node_->get_parameter("config", config_);
-  bt_node_->get_parameter("process_other_robots", process_other_robots_);
+  bt_node_->get_parameter("exploration_boundary", exploration_boundary_);
   bt_node_->get_parameter("bt_xml_path", bt_xml_path_);
   parameterInstance.makeParameters(true, node);
+
   LOG_TRACE("Declared BT params");
   // //--------------------------------------------NAV2 CLIENT RELATED-------------------------------
   // nav2_interface_ = std::make_shared<Nav2Interface>(bt_node_);
@@ -1014,14 +795,11 @@ FrontierExplorationServer::FrontierExplorationServer(rclcpp::Node::SharedPtr nod
   explore_costmap_ros_->activate();
   LOG_TRACE("Created costmap instance");
 
-  recovery_controller_ = std::make_shared<RecoveryController>(explore_costmap_ros_, bt_node_);
-  initialization_controller_ = std::make_shared<InitCommandVelNode>();
-
   //------------------------------------------BOUNDED EXPLORE LAYER RELATED------------------------
   RosVisualizer::createInstance(bt_node_, explore_costmap_ros_->getCostmap());
   FrontierRoadMap::createInstance(explore_costmap_ros_);
   LOG_TRACE("Created ros visualizer instance");
-  bel_ptr_ = std::make_shared<CostAssigner>(explore_costmap_ros_);
+  cost_assigner_ptr_ = std::make_shared<CostAssigner>(explore_costmap_ros_);
 
   frontierSearchPtr_ =
     std::make_shared<FrontierSearch>(*(explore_costmap_ros_->getLayeredCostmap()->getCostmap()));
@@ -1057,13 +835,6 @@ void FrontierExplorationServer::makeBTNodes()
   EventLoggerInstance.startEvent("clearRoadmap");
   EventLoggerInstance.startEvent("replanTimeout");
 
-  BT::NodeBuilder builder_initialization =
-    [&](const std::string & name, const BT::NodeConfiguration & config)
-    {
-      return std::make_unique<InitializationSequence>(name, config, initialization_controller_);
-    };
-  factory.registerBuilder<WaitForCurrent>("InitializationSequence", builder_initialization);
-
   BT::NodeBuilder builder_wait_for_current =
     [&](const std::string & name, const BT::NodeConfiguration & config)
     {
@@ -1074,7 +845,7 @@ void FrontierExplorationServer::makeBTNodes()
   BT::NodeBuilder builder_update_boundary_polygon =
     [&](const std::string & name, const BT::NodeConfiguration & config)
     {
-      return std::make_unique<UpdateBoundaryPolygonBT>(name, config, bel_ptr_, config_, bt_node_);
+      return std::make_unique<UpdateBoundaryPolygonBT>(name, config, cost_assigner_ptr_, exploration_boundary_, bt_node_);
     };
   factory.registerBuilder<UpdateBoundaryPolygonBT>(
     "UpdateBoundaryPolygon",
@@ -1109,8 +880,7 @@ void FrontierExplorationServer::makeBTNodes()
     [&](const std::string & name, const BT::NodeConfiguration & config)
     {
       return std::make_unique<ProcessFrontierCostsBT>(
-        name, config, explore_costmap_ros_, bel_ptr_,
-        robot_active_goals_, bt_node_);
+        name, config, explore_costmap_ros_, cost_assigner_ptr_, bt_node_);
     };
   factory.registerBuilder<ProcessFrontierCostsBT>("ProcessFrontierCosts", builder_frontier_costs);
 
@@ -1118,9 +888,8 @@ void FrontierExplorationServer::makeBTNodes()
     [&](const std::string & name, const BT::NodeConfiguration & config)
     {
       return std::make_unique<OptimizeFullPath>(
-        name, config, full_path_optimizer_, bel_ptr_,
-        explore_costmap_ros_, frontierSearchPtr_,
-        nav2_interface_, recovery_controller_, bt_node_);
+        name, config, full_path_optimizer_, cost_assigner_ptr_,
+        explore_costmap_ros_, bt_node_);
     };
   factory.registerBuilder<OptimizeFullPath>("OptimizeFullPath", builder_full_path_optimizer);
 
@@ -1156,20 +925,6 @@ void FrontierExplorationServer::makeBTNodes()
     };
   factory.registerBuilder<ReplanTimeoutCompleteBT>("ReplanTimeoutComplete", builder_replan_timeout);
 
-  BT::NodeBuilder builder_recovery_back =
-    [&](const std::string & name, const BT::NodeConfiguration & config)
-    {
-      return std::make_unique<RecoveryMoveBack>(name, config, explore_costmap_ros_, bt_node_);
-    };
-  factory.registerBuilder<RecoveryMoveBack>("RecoveryMoveBack", builder_recovery_back);
-
-  BT::NodeBuilder execute_recovery_move =
-    [&](const std::string & name, const BT::NodeConfiguration & config)
-    {
-      return std::make_unique<ExecuteRecoveryMove>(name, config, recovery_controller_);
-    };
-  factory.registerBuilder<ExecuteRecoveryMove>("ExecuteRecoveryMove", execute_recovery_move);
-
   behaviour_tree = factory.createTreeFromFile(bt_xml_path_, blackboard);
 }
 
@@ -1178,7 +933,7 @@ void FrontierExplorationServer::run()
   while (rclcpp::ok()) {
     if (exploration_active_) {
       int bt_sleep_duration = parameterInstance.getValue<int64_t>("explorationBT.bt_sleep_ms");
-      behaviour_tree.tickOnce();
+      behaviour_tree.tickRoot();
       std::this_thread::sleep_for(std::chrono::milliseconds(bt_sleep_duration));
       LOG_DEBUG("TICKED ONCE");
     }

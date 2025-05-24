@@ -5,25 +5,16 @@ namespace roadmap_explorer
 FrontierCostCalculator::FrontierCostCalculator(
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros)
 {
-  MAX_CAMERA_DEPTH = parameterInstance.getValue<double>("costCalculator.max_camera_depth");
-  DELTA_THETA = parameterInstance.getValue<double>("costCalculator.delta_theta");
-  CAMERA_FOV = parameterInstance.getValue<double>("costCalculator.camera_fov");
-  factor_of_max_is_min = parameterInstance.getValue<double>("costCalculator.factor_of_max_is_min");
+  LOG_INFO("FrontierCostCalculator::FrontierCostCalculator");
   exploration_costmap_ = explore_costmap_ros->getCostmap();
   // RosVisualizerInstance = std::make_shared<RosVisualizer>(node, exploration_costmap_);
-  min_traversable_distance = std::numeric_limits<double>::max();
-  max_traversable_distance = -1.0 * std::numeric_limits<double>::max();
-  min_arrival_info_per_frontier = std::numeric_limits<double>::max();
-  max_arrival_info_per_frontier = -1.0 * std::numeric_limits<double>::max();
   robot_radius_ = explore_costmap_ros->getRobotRadius();
-  LOG_DEBUG("Got robot radius from costmap.");
 }
 
 void FrontierCostCalculator::setArrivalInformationForFrontier(
   FrontierPtr & frontier,
   std::vector<double> & polygon_xy_min_max)
 {
-
   double sx, sy;       // sensor x, sensor y, sensor orientation
   double wx, wy;
   unsigned int max_length = MAX_CAMERA_DEPTH / (exploration_costmap_->getResolution());
@@ -85,7 +76,7 @@ void FrontierCostCalculator::setArrivalInformationForFrontier(
       pnts.position.y = wmy;
       vizpoints.push_back(pnts);
     }
-  }       // theta end
+  } // theta end
 
   unsigned int sxm, sym;
   if (!exploration_costmap_->worldToMap(sx, sy, sxm, sym)) {
@@ -95,13 +86,11 @@ void FrontierCostCalculator::setArrivalInformationForFrontier(
   bool footprintInLethalPenalty = isCircleFootprintInLethal(
     exploration_costmap_, sxm, sym, std::ceil(
       robot_radius_ / exploration_costmap_->getResolution()));
+  // TODO(suchetan): Parametrize this value that compares against getSize()
   if (footprintInLethalPenalty && frontier->getSize() < 10.0) {
-    LOG_DEBUG("FrontierPtr " << *frontier << " is not achievable. Very close to lethal obstacle.");
+    LOG_DEBUG("Frontier " << frontier << " is not achievable. Very close to lethal obstacle.");
     frontier->setAchievability(false);
   }
-  // std::cout << "maxHitObstacles" << maxHitObstacles << std::endl;
-  // std::cout << "hitObstacleCount" << hitObstacleCount << std::endl;
-  // std::cout << "footprintInLethalPenalty" << footprintInLethalPenalty << std::endl;
 
   std::vector<int> kernel(static_cast<int>(CAMERA_FOV / DELTA_THETA), 1);       // initialize a kernal vector of size 6 and all elements = 1
   int n = information_along_ray.size();                                         // number of rays computed in 2PI
@@ -141,15 +130,9 @@ void FrontierCostCalculator::setArrivalInformationForFrontier(
 
 double FrontierCostCalculator::setArrivalInformationLimits()
 {
-  // these are set here again because setArrivalInformationLimits() is called everytime before process costs.
-  MAX_CAMERA_DEPTH = parameterInstance.getValue<double>("costCalculator.max_camera_depth");
-  DELTA_THETA = parameterInstance.getValue<double>("costCalculator.delta_theta");
-  CAMERA_FOV = parameterInstance.getValue<double>("costCalculator.camera_fov");
-  factor_of_max_is_min = parameterInstance.getValue<double>("costCalculator.factor_of_max_is_min");
-
-  LOG_WARN("Setting arrival information limits.");
+  // LOG_WARN("Setting arrival information limits.");
   if (arrival_info_limits_set_) {
-    LOG_WARN("Arrival information limits already set.");
+    // LOG_WARN("Arrival information limits already set.");
     return 0.0;
   }
   double sx, sy;       // sensor x, sensor y, sensor orientation
@@ -219,8 +202,7 @@ double FrontierCostCalculator::setArrivalInformationLimits()
 
 void FrontierCostCalculator::setPlanForFrontier(
   geometry_msgs::msg::Pose start_pose_w,
-  FrontierPtr & goal_point_w,
-  bool planner_allow_unknown_)
+  FrontierPtr & goal_point_w)
 {
   if (goal_point_w->isAchievable() == false) {
     goal_point_w->setAchievability(false);
@@ -332,6 +314,15 @@ void FrontierCostCalculator::setPlanForFrontier(
     goal_point_w->setPathHeading(std::numeric_limits<double>::max());
     return;
   }
+
+  if (path_length_m < closeness_rejection_threshold_) {
+    goal_point_w->setAchievability(false);
+    goal_point_w->setPathLength(std::numeric_limits<double>::max());
+    goal_point_w->setPathLengthInM(std::numeric_limits<double>::max());
+    goal_point_w->setPathHeading(std::numeric_limits<double>::max());
+    return;
+  }
+
   goal_point_w->setAchievability(true);
   goal_point_w->setPathLength(plan.poses.size());
   goal_point_w->setPathLengthInM(path_length_m);
@@ -341,8 +332,7 @@ void FrontierCostCalculator::setPlanForFrontier(
 
 void FrontierCostCalculator::setPlanForFrontierRoadmap(
   geometry_msgs::msg::Pose start_pose_w,
-  FrontierPtr & goal_point_w,
-  bool planner_allow_unknown_)
+  FrontierPtr & goal_point_w)
 {
   PROFILE_FUNCTION;
   if (goal_point_w->isAchievable() == false) {
@@ -365,6 +355,14 @@ void FrontierCostCalculator::setPlanForFrontierRoadmap(
     return;
   }
 
+  if (path_length.path_length_m < closeness_rejection_threshold_) {
+    goal_point_w->setAchievability(false);
+    goal_point_w->setPathLength(std::numeric_limits<double>::max());
+    goal_point_w->setPathLengthInM(std::numeric_limits<double>::max());
+    goal_point_w->setPathHeading(std::numeric_limits<double>::max());
+    return;
+  }
+
   goal_point_w->setAchievability(true);
   goal_point_w->setPathLength(path_length.path_length_m);
   goal_point_w->setPathLengthInM(path_length.path_length_m);
@@ -374,8 +372,7 @@ void FrontierCostCalculator::setPlanForFrontierRoadmap(
 
 void FrontierCostCalculator::setPlanForFrontierEuclidean(
   geometry_msgs::msg::Pose start_pose_w,
-  FrontierPtr & goal_point_w,
-  bool planner_allow_unknown_)
+  FrontierPtr & goal_point_w)
 {
   auto start_point_w = start_pose_w.position;
   if (goal_point_w->isAchievable() == false) {
@@ -390,7 +387,7 @@ void FrontierCostCalculator::setPlanForFrontierEuclidean(
     pow(
       start_point_w.x - goal_point_w->getGoalPoint().x,
       2) + pow(start_point_w.y - goal_point_w->getGoalPoint().y, 2));
-  if (length_to_frontier < 0.5) {
+  if (length_to_frontier < closeness_rejection_threshold_) {
     goal_point_w->setAchievability(false);
     goal_point_w->setPathLength(std::numeric_limits<double>::max());
     goal_point_w->setPathLengthInM(std::numeric_limits<double>::max());
@@ -421,12 +418,11 @@ void FrontierCostCalculator::setRandomMetaData(FrontierPtr & goal_point_w)
 
 void FrontierCostCalculator::setClosestFrontierMetaData(
   geometry_msgs::msg::Pose start_pose_w,
-  FrontierPtr & goal_point_w,
-  bool planner_allow_unknown_)
+  FrontierPtr & goal_point_w)
 {
   goal_point_w->setArrivalInformation(1e-9);
   goal_point_w->setGoalOrientation(1e-9);
-  setPlanForFrontierEuclidean(start_pose_w, goal_point_w, planner_allow_unknown_);
+  setPlanForFrontierEuclidean(start_pose_w, goal_point_w);
 }
 
 void FrontierCostCalculator::recomputeNormalizationFactors(FrontierPtr & frontier)

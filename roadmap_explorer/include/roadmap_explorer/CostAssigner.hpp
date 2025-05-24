@@ -53,7 +53,6 @@ struct GetFrontierCostsResponse
   std::vector<FrontierPtr> frontier_list;
   std::vector<double> frontier_distances;
   std::vector<double> frontier_arrival_information;
-  std::vector<double> frontier_path_information;
 };
 
 class CostAssigner
@@ -69,7 +68,7 @@ public:
     std::shared_ptr<GetFrontierCostsRequest> requestData,
     std::shared_ptr<GetFrontierCostsResponse> resultData);
 
-protected:
+private:
   bool processChosenApproach(
     std::vector<FrontierPtr> & frontier_list,
     geometry_msgs::msg::Pose & start_pose_w);
@@ -89,13 +88,9 @@ protected:
 
   void setFrontierBlacklist(std::vector<FrontierPtr> & blacklist);
 
-private:
   geometry_msgs::msg::Polygon polygon_;
+  // min_x, min_y, max_x, max_y
   std::vector<double> polygon_xy_min_max_;
-
-  bool planner_allow_unknown_;
-  double frontierDetectRadius_;
-  bool add_heading_cost_;
 
   nav2_costmap_2d::LayeredCostmap * layered_costmap_;
   nav2_costmap_2d::Costmap2D * costmap_;

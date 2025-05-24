@@ -23,17 +23,10 @@
 namespace roadmap_explorer
 {
 
-/**
-     * @brief Thread-safe implementation of a frontier-search task for an input costmap.
-     */
 class FrontierSearch
 {
 
 public:
-  /**
-       * @brief Constructor for search task
-       * @param costmap Reference to costmap data to search.
-       */
   FrontierSearch(nav2_costmap_2d::Costmap2D & costmap);
 
   void reset()
@@ -53,39 +46,18 @@ public:
     max_frontier_distance_ = original_search_distance_;
   }
 
-  /**
-       * @brief Runs search implementation, outward from the start position
-       * @param position Initial position to search from
-       * @return List of frontiers, if any
-       */
   std::vector<FrontierPtr> searchFrom(geometry_msgs::msg::Point position);
 
-  /**
-       * @brief Getter function for all frontiers unclustered.
-       * @return every_frontier variable value.
-       */
   std::vector<std::vector<double>> getAllFrontiers();
 
 protected:
-  /**
-       * @brief Starting from an initial cell, build a frontier from valid adjacent cells
-       * @param initial_cell Index of cell to start frontier building
-       * @param reference Reference index to calculate position from
-       * @param frontier_flag Flag vector indicating which cells are already marked as frontiers
-       * @return
-       */
   std::vector<FrontierPtr> buildNewFrontier(
     unsigned int initial_cell, unsigned int reference,
     std::vector<bool> & frontier_flag);
 
-  /**
-       * @brief isNewFrontierCell Evaluate if candidate cell is a valid candidate for a new frontier.
-       * @param idx Index of candidate cell
-       * @param frontier_flag Flag vector indicating which cells are already marked as frontiers
-       * @return
-       */
   bool isNewFrontierCell(unsigned int idx, const std::vector<bool> & frontier_flag);
 
+  // TODO(suchetan): Is there a better way to do this? Using a graph “medoid” or geodesic (path) median?
   std::pair<double, double> getCentroidOfCells(
     std::vector<std::pair<double, double>> & cells,
     double distance_to_offset)

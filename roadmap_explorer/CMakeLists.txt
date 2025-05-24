@@ -22,8 +22,9 @@ find_package(pluginlib REQUIRED)
 find_package(roadmap_explorer_msgs REQUIRED)
 find_package(eigen3_cmake_module REQUIRED)
 find_package(Eigen3 REQUIRED)
-find_package(behaviortree_cpp REQUIRED)
+find_package(behaviortree_cpp_v3 REQUIRED)
 find_package(yaml-cpp REQUIRED)
+find_package(nav2_behavior_tree REQUIRED)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -49,8 +50,9 @@ pluginlib
 roadmap_explorer_msgs
 eigen3_cmake_module
 Eigen3
-behaviortree_cpp
+behaviortree_cpp_v3
 yaml-cpp
+nav2_behavior_tree
 )
 
 add_compile_definitions(
@@ -66,9 +68,7 @@ include_directories(
 )
 
 # Add executable 2
-add_executable(explore_server 
-src/controllers/recovery_controller.cpp 
-src/controllers/initialization_controller.cpp 
+add_executable(explore_server
 src/planners/theta_star.cpp
 src/planners/FrontierRoadmap.cpp
 src/planners/astar.cpp
@@ -98,7 +98,7 @@ install(DIRECTORY launch params include xml
 DESTINATION share/${PROJECT_NAME}
 )
 
-ament_export_dependencies(rosidl_default_runtime)
+ament_export_dependencies(rosidl_default_runtime ${dependencies})
 ament_export_include_directories(include ${EIGEN3_INCLUDE_DIR})
 pluginlib_export_plugin_description_file(nav2_core xml/roadmap_planner.xml)
 ament_package()

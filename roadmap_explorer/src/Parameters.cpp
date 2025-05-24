@@ -5,6 +5,7 @@ std::recursive_mutex ParameterHandler::instanceMutex_;
 
 ParameterHandler::ParameterHandler()
 {
+  LOG_INFO("ParameterHandler::ParameterHandler");
 }
 
 ParameterHandler::~ParameterHandler()
@@ -44,6 +45,8 @@ void ParameterHandler::makeParametersROS(rclcpp::Node::SharedPtr node)
   node->declare_parameter<double>("costCalculator.delta_theta", 0.10);
   node->declare_parameter<double>("costCalculator.camera_fov", 1.04);
   node->declare_parameter<double>("costCalculator.factor_of_max_is_min", 0.70);
+  node->declare_parameter<double>("costCalculator.closeness_rejection_threshold", 0.5);
+  node->declare_parameter<bool>("costCalculator.planner_allow_unknown", true);
 
   parameter_map_["costCalculator.max_camera_depth"] = node->get_parameter(
     "costCalculator.max_camera_depth").as_double();
@@ -53,25 +56,31 @@ void ParameterHandler::makeParametersROS(rclcpp::Node::SharedPtr node)
     node->get_parameter("costCalculator.camera_fov").as_double();
   parameter_map_["costCalculator.factor_of_max_is_min"] = node->get_parameter(
     "costCalculator.factor_of_max_is_min").as_double();
+  parameter_map_["costCalculator.closeness_rejection_threshold"] = node->get_parameter(
+    "costCalculator.closeness_rejection_threshold").as_double();
+  parameter_map_["costCalculator.planner_allow_unknown"] = node->get_parameter(
+    "costCalculator.planner_allow_unknown").as_bool();
 
   // --- costAssigner ---
-  node->declare_parameter<bool>("costAssigner.planner_allow_unknown", true);
-  node->declare_parameter<bool>("costAssigner.add_heading_cost", true);
+  std::vector<std::string> default_cost_calculation_methods = {"RoadmapPlannerDistance", "ArrivalInformation"};
+  // {"A*PlannerDistance", "ArrivalInformation"};
+  // {"EuclideanDistance", "ArrivalInformation"};
+  // {"RandomCosts"};
+  // {};
+  node->declare_parameter<std::vector<std::string>>("costAssigner.cost_calculation_methods", default_cost_calculation_methods);
 
-  parameter_map_["costAssigner.planner_allow_unknown"] = node->get_parameter(
-    "costAssigner.planner_allow_unknown").as_bool();
-  parameter_map_["costAssigner.add_heading_cost"] = node->get_parameter(
-    "costAssigner.add_heading_cost").as_bool();
+  parameter_map_["costAssigner.cost_calculation_methods"] =
+    node->get_parameter("costAssigner.cost_calculation_methods").as_string_array();
 
   // --- frontierRoadmap ---
-  node->declare_parameter<double>("frontierRoadmap.max_frontier_distance", 25.0);
+  node->declare_parameter<double>("frontierRoadmap.max_graph_reconstruction_distance", 25.0);
   node->declare_parameter<double>("frontierRoadmap.grid_cell_size", 1.0);
   node->declare_parameter<double>("frontierRoadmap.radius_to_decide_edges", 6.1);
   node->declare_parameter<double>("frontierRoadmap.min_distance_between_two_frontier_nodes", 0.25);
   node->declare_parameter<double>("frontierRoadmap.min_distance_between_robot_pose_and_node", 0.25);
 
-  parameter_map_["frontierRoadmap.max_frontier_distance"] = node->get_parameter(
-    "frontierRoadmap.max_frontier_distance").as_double();
+  parameter_map_["frontierRoadmap.max_graph_reconstruction_distance"] = node->get_parameter(
+    "frontierRoadmap.max_graph_reconstruction_distance").as_double();
   parameter_map_["frontierRoadmap.grid_cell_size"] = node->get_parameter(
     "frontierRoadmap.grid_cell_size").as_double();
   parameter_map_["frontierRoadmap.radius_to_decide_edges"] = node->get_parameter(
@@ -80,6 +89,17 @@ void ParameterHandler::makeParametersROS(rclcpp::Node::SharedPtr node)
     "frontierRoadmap.min_distance_between_two_frontier_nodes").as_double();
   parameter_map_["frontierRoadmap.min_distance_between_robot_pose_and_node"] = node->get_parameter(
     "frontierRoadmap.min_distance_between_robot_pose_and_node").as_double();
+
+  // --- fullPathOptimizer ---
+  node->declare_parameter<double>("fullPathOptimizer.num_frontiers_in_local_area", 5.0);
+  node->declare_parameter<double>("fullPathOptimizer.local_frontier_search_radius", 12.0);
+  node->declare_parameter<bool>("fullPathOptimizer.add_yaw_to_tsp", false);
+  node->declare_parameter<bool>("fullPathOptimizer.add_distance_to_robot_to_tsp", false);
+
+  parameter_map_["fullPathOptimizer.num_frontiers_in_local_area"] = node->get_parameter("fullPathOptimizer.num_frontiers_in_local_area").as_double();
+  parameter_map_["fullPathOptimizer.local_frontier_search_radius"] = node->get_parameter("fullPathOptimizer.local_frontier_search_radius").as_double();
+  parameter_map_["fullPathOptimizer.add_yaw_to_tsp"] = node->get_parameter("fullPathOptimizer.add_yaw_to_tsp").as_bool();
+  parameter_map_["fullPathOptimizer.add_distance_to_robot_to_tsp"] = node->get_parameter("fullPathOptimizer.add_distance_to_robot_to_tsp").as_bool();
 
   // --- goalHysteresis ---
   node->declare_parameter<bool>("goalHysteresis.use_euclidean_distance", false);
@@ -133,14 +153,16 @@ void ParameterHandler::makeParametersYAMLcpp()
     loaded_node["costCalculator"]["camera_fov"].as<double>();
   parameter_map_["costCalculator.factor_of_max_is_min"] =
     loaded_node["costCalculator"]["factor_of_max_is_min"].as<double>();
+  parameter_map_["costCalculator.closeness_rejection_threshold"] =
+    loaded_node["costCalculator"]["closeness_rejection_threshold"].as<double>();
+  parameter_map_["costCalculator.planner_allow_unknown"] =
+    loaded_node["costCalculator"]["planner_allow_unknown"].as<bool>();
 
-  parameter_map_["costAssigner.planner_allow_unknown"] =
-    loaded_node["costAssigner"]["planner_allow_unknown"].as<bool>();
-  parameter_map_["costAssigner.add_heading_cost"] =
-    loaded_node["costAssigner"]["add_heading_cost"].as<bool>();
+  parameter_map_["costAssigner.cost_calculation_methods"] =
+    loaded_node["costAssigner"]["cost_calculation_methods"].as<std::vector<std::string>>();
 
-  parameter_map_["frontierRoadmap.max_frontier_distance"] =
-    loaded_node["frontierRoadmap"]["max_frontier_distance"].as<double>();
+  parameter_map_["frontierRoadmap.max_graph_reconstruction_distance"] =
+    loaded_node["frontierRoadmap"]["max_graph_reconstruction_distance"].as<double>();
   parameter_map_["frontierRoadmap.grid_cell_size"] =
     loaded_node["frontierRoadmap"]["grid_cell_size"].as<double>();
   parameter_map_["frontierRoadmap.radius_to_decide_edges"] =
@@ -149,6 +171,11 @@ void ParameterHandler::makeParametersYAMLcpp()
     loaded_node["frontierRoadmap"]["min_distance_between_two_frontier_nodes"].as<double>();
   parameter_map_["frontierRoadmap.min_distance_between_robot_pose_and_node"] =
     loaded_node["frontierRoadmap"]["min_distance_between_robot_pose_and_node"].as<double>();
+
+  parameter_map_["fullPathOptimizer.num_frontiers_in_local_area"] = loaded_node["fullPathOptimizer"]["num_frontiers_in_local_area"].as<double>();
+  parameter_map_["fullPathOptimizer.local_frontier_search_radius"] = loaded_node["fullPathOptimizer"]["local_frontier_search_radius"].as<double>();
+  parameter_map_["fullPathOptimizer.add_yaw_to_tsp"] = loaded_node["fullPathOptimizer"]["add_yaw_to_tsp"].as<bool>();
+  parameter_map_["fullPathOptimizer.add_distance_to_robot_to_tsp"] = loaded_node["fullPathOptimizer"]["add_distance_to_robot_to_tsp"].as<bool>();
 
   parameter_map_["goalHysteresis.use_euclidean_distance"] =
     loaded_node["goalHysteresis"]["use_euclidean_distance"].as<bool>();
@@ -230,6 +257,8 @@ rcl_interfaces::msg::SetParametersResult ParameterHandler::dynamicReconfigureCal
   }
 
   if (!result.successful) {
+    // revert to the previous state if sanity check fails
+    LOG_ERROR("Parameter update: Sanity check failed: " + result.reason);
     parameter_map_ = parameter_map_copy_;
   }
   return result;

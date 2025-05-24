@@ -1,6 +1,4 @@
-// helpers.cpp
-
-#include "roadmap_explorer/Helpers.hpp" // Include the corresponding header file
+#include "roadmap_explorer/Helpers.hpp"
 
 namespace roadmap_explorer
 {
@@ -150,17 +148,9 @@ bool isCircleFootprintInLethal(
       }
     }
   }
-  return false;       // Robot fits
+  return false;
 }
 
-// -------------------------- COSTMAP TOOLS ---------------------------------------------------------
-
-/**
-     * @brief Determine 4-connected neighbourhood of an input cell, checking for map edges
-     * @param idx input cell index
-     * @param costmap Reference to map data
-     * @return neighbour cell indexes
-     */
 std::vector<unsigned int> nhood4(unsigned int idx, const nav2_costmap_2d::Costmap2D & costmap)
 {
   // get 4-connected neighbourhood indexes, check for edge of map
@@ -191,12 +181,6 @@ std::vector<unsigned int> nhood4(unsigned int idx, const nav2_costmap_2d::Costma
   return nhood4_values;
 }
 
-/**
-     * @brief Determine 8-connected neighbourhood of an input cell, checking for map edges
-     * @param idx input cell index
-     * @param costmap Reference to map data
-     * @return neighbour cell indexes
-     */
 std::vector<unsigned int> nhood8(unsigned int idx, const nav2_costmap_2d::Costmap2D & costmap)
 {
   unsigned int size_x_ = costmap.getSizeInCellsX();
@@ -231,12 +215,6 @@ std::vector<unsigned int> nhood8(unsigned int idx, const nav2_costmap_2d::Costma
   return nhood8_values;
 }
 
-/**
-     * @brief Determine 20-connected neighbourhood of an input cell, checking for map edges
-     * @param idx input cell index
-     * @param costmap Reference to map data
-     * @return neighbour cell indexes
-     */
 std::vector<unsigned int> nhood20(unsigned int idx, const nav2_costmap_2d::Costmap2D & costmap)
 {
   // get 8-connected neighbourhood indexes, check for edge of map
@@ -250,14 +228,6 @@ std::vector<unsigned int> nhood20(unsigned int idx, const nav2_costmap_2d::Costm
   return out;
 }
 
-/**
-     * @brief Find nearest cell of a specified value
-     * @param result Index of located cell
-     * @param start Index initial cell to search from
-     * @param val free space threshold
-     * @param costmap Reference to map data
-     * @return True if a cell with the requested value was found
-     */
 bool nearestFreeCell(
   unsigned int & result, unsigned int start, unsigned char val,
   const nav2_costmap_2d::Costmap2D & costmap)

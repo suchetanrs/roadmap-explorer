@@ -13,7 +13,7 @@
 #include <geometry_msgs/msg/twist.hpp>
 #include <std_msgs/msg/int32.hpp>
 
-#include "behaviortree_cpp/bt_factory.h"
+#include "behaviortree_cpp_v3/bt_factory.h"
 
 #include "roadmap_explorer/util/RosVisualizer.hpp"
 #include "roadmap_explorer/util/Logger.hpp"
@@ -23,8 +23,6 @@
 #include "roadmap_explorer/Nav2Interface.hpp"
 #include "roadmap_explorer/Helpers.hpp"
 #include "roadmap_explorer/FullPathOptimizer.hpp"
-#include "roadmap_explorer/controllers/recovery_controller.hpp"
-#include "roadmap_explorer/controllers/initialization_controller.hpp"
 
 namespace roadmap_explorer
 {
@@ -76,7 +74,7 @@ private:
   // Exploration related
   geometry_msgs::msg::PolygonStamped explore_boundary_;
   geometry_msgs::msg::PointStamped explore_center_;
-  std::vector<std::string> config_;
+  std::vector<double> exploration_boundary_;
 
   // BT related
   BT::BehaviorTreeFactory factory;
@@ -84,7 +82,7 @@ private:
   BT::Tree behaviour_tree;
 
   std::shared_ptr<FrontierSearch> frontierSearchPtr_;
-  std::shared_ptr<CostAssigner> bel_ptr_;
+  std::shared_ptr<CostAssigner> cost_assigner_ptr_;
   std::shared_ptr<FullPathOptimizer> full_path_optimizer_;
 
   int retry_;
@@ -94,8 +92,6 @@ private:
   bool exploration_active_;
   std::vector<FrontierPtr> blacklisted_frontiers_;       // these are the frontiers traversed by this robot.
   RobotActiveGoals robot_active_goals_;
-  std::shared_ptr<RecoveryController> recovery_controller_;
-  std::shared_ptr<InitCommandVelNode> initialization_controller_;
   std::string bt_xml_path_;
 };
 }

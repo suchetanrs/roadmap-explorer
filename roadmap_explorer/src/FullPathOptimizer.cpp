@@ -9,10 +9,13 @@ FullPathOptimizer::FullPathOptimizer(
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros)
 : node_(node)
 {
+  
+  num_frontiers_in_local_area = parameterInstance.getValue<double>("fullPathOptimizer.num_frontiers_in_local_area");
+  local_frontier_search_radius = parameterInstance.getValue<double>("fullPathOptimizer.local_frontier_search_radius");
+  add_yaw_to_tsp = parameterInstance.getValue<bool>("fullPathOptimizer.add_yaw_to_tsp");
+  add_distance_to_robot_to_tsp = parameterInstance.getValue<bool>("fullPathOptimizer.add_distance_to_robot_to_tsp");
+
   explore_costmap_ros_ = explore_costmap_ros;
-  marker_publisher_ = node_->create_publisher<visualization_msgs::msg::MarkerArray>(
-    "top_frontiers",
-    10);
   local_search_area_publisher_ = node_->create_publisher<visualization_msgs::msg::MarkerArray>(
     "local_search_area", 10);
   frontier_nav2_plan_ = node_->create_publisher<nav_msgs::msg::Path>(
@@ -74,7 +77,7 @@ double FullPathOptimizer::calculatePathLength(std::vector<FrontierPtr> & path)
       frontier_pair_distances_[FrontierPair(path[i + 1], path[i])] = current_length;
     } else if (current_length.path_exists == false) {
       // set it to a large value since path could not be found.
-      totalLength += LOCAL_FRONTIER_SEARCH_RADIUS * 100000;
+      totalLength += local_frontier_search_radius * 100000;
       frontier_pair_distances_[FrontierPair(path[i], path[i + 1])] = current_length;
       std::reverse(current_length.path.begin(), current_length.path.end());
       frontier_pair_distances_[FrontierPair(path[i + 1], path[i])] = current_length;
@@ -105,14 +108,14 @@ void FullPathOptimizer::getFilteredFrontiers(
       LOG_DEBUG("Path length in m" << frontier->getPathLengthInM());
       if (distanceBetweenPoints(
           frontier->getGoalPoint(),
-          robotP.pose.position) <= LOCAL_FRONTIER_SEARCH_RADIUS)
+          robotP.pose.position) <= local_frontier_search_radius)
       {
         LOG_DEBUG("Local Frontiers:");
         sortedFrontiers.local_frontiers.push_back(frontier);
         LOG_DEBUG(frontier);
       } else if (distanceBetweenPoints(
           frontier->getGoalPoint(),
-          robotP.pose.position) > LOCAL_FRONTIER_SEARCH_RADIUS)
+          robotP.pose.position) > local_frontier_search_radius)
       {
         sortedFrontiers.global_frontiers.push_back(frontier);
         LOG_DEBUG("Global Frontiers:");
@@ -172,15 +175,15 @@ void FullPathOptimizer::getFilteredFrontiersN(
   bool need_to_pop = false;
   for (const auto & frontier : all_frontiers) {
     // LOG_INFO("Path length in m" << frontier->getPathLengthInM());
-    if (frontier->getPathLengthInM() <= LOCAL_FRONTIER_SEARCH_RADIUS && counter <= n) {
+    if (frontier->getPathLengthInM() <= local_frontier_search_radius && counter <= n) {
       sortedFrontiers.local_frontiers.push_back(frontier);
       LOG_DEBUG("Local frontier candidate: " << frontier);
       sortedFrontiers.closest_global_frontier = frontier;
       need_to_pop = true;
-    } else if (frontier->getPathLengthInM() <= LOCAL_FRONTIER_SEARCH_RADIUS && counter > n) {
+    } else if (frontier->getPathLengthInM() <= local_frontier_search_radius && counter > n) {
       sortedFrontiers.closest_global_frontier = frontier;
       need_to_pop = false;
-    } else if (frontier->getPathLengthInM() > LOCAL_FRONTIER_SEARCH_RADIUS) {
+    } else if (frontier->getPathLengthInM() > local_frontier_search_radius) {
       if (!global_assigned) {
         sortedFrontiers.closest_global_frontier = frontier;
         global_assigned = true;
@@ -254,7 +257,7 @@ bool FullPathOptimizer::getBestFullPath(
 
     double currentLength = calculatePathLength(sortedFrontiers.local_frontiers);
 
-    if (ADD_YAW_TO_TSP) {
+    if (add_yaw_to_tsp) {
       auto robot_yaw = quatToEuler(robotP.pose.orientation)[2];
       if (robot_yaw < 0) {
         robot_yaw = robot_yaw + (M_PI * 2);
@@ -273,7 +276,7 @@ bool FullPathOptimizer::getBestFullPath(
       currentLength += (abs(path_heading) * 2.3);
     }
 
-    if (ADD_DISTANCE_TO_ROBOT_TO_TSP) {
+    if (add_distance_to_robot_to_tsp) {
       auto distance_to_add = distanceBetweenFrontiers(
         robotPoseFrontier,
         sortedFrontiers.local_frontiers[1]);
@@ -306,7 +309,7 @@ bool FullPathOptimizer::getBestFullPath(
   } while (std::next_permutation(
     sortedFrontiers.local_frontiers.begin(),
     sortedFrontiers.local_frontiers.end()));
-  if (minLength >= LOCAL_FRONTIER_SEARCH_RADIUS * 100000) {
+  if (minLength >= local_frontier_search_radius * 100000) {
     LOG_ERROR("Zero frontiers were reasonable post FI check...returning zero frontier.");
     return false;
   }
@@ -331,9 +334,14 @@ bool FullPathOptimizer::getNextGoal(
   FrontierPtr & nextFrontier, size_t n,
   geometry_msgs::msg::PoseStamped & robotP)
 {
+  num_frontiers_in_local_area = parameterInstance.getValue<double>("fullPathOptimizer.num_frontiers_in_local_area");
+  local_frontier_search_radius = parameterInstance.getValue<double>("fullPathOptimizer.local_frontier_search_radius");
+  add_yaw_to_tsp = parameterInstance.getValue<bool>("fullPathOptimizer.add_yaw_to_tsp");
+  add_distance_to_robot_to_tsp = parameterInstance.getValue<bool>("fullPathOptimizer.add_distance_to_robot_to_tsp");
+
   SortedFrontiers sortedFrontiers;
   // sort based on path length
-  getFilteredFrontiersN(frontier_list, NUM_FRONTIERS_IN_LOCAL_AREA, sortedFrontiers, robotP);
+  getFilteredFrontiersN(frontier_list, num_frontiers_in_local_area, sortedFrontiers, robotP);
 
   FrontierPtr zeroFrontier = std::make_shared<Frontier>();
   std::vector<FrontierPtr> bestFrontierWaypoint;
@@ -384,61 +392,12 @@ bool FullPathOptimizer::getNextGoal(
   // 0 is robot pose. Return the first frontier in the path.
   nextFrontier = bestFrontierWaypoint[1];
   return true;
-
-  // FrontierRoadMap::getInstance().publishPlan(bestPathViz, 1.0, 0.0, 0.0);
-  // // GLOBAL SEARCH
-  // while (sortedFrontiers.global_frontiers.size() > 0)
-  // {
-  //     auto initial_frontier = sortedFrontiers.global_frontiers[0];
-  //     std::vector<FrontierPtr> newCluster;
-  //     for (auto it = sortedFrontiers.global_frontiers.begin(); it != sortedFrontiers.global_frontiers.end();) {
-  //         if (distanceBetweenFrontiers(*it, initial_frontier) < DISTANCE_THRESHOLD_GLOBAL_CLUSTER) {
-  //             newCluster.push_back(*it);
-  //             LOG_DEBUG("New frontier in cluster");
-  //             it = sortedFrontiers.global_frontiers.erase(it);
-  //         } else {
-  //             ++it;
-  //         }
-  //     }
-  //     LOG_DEBUG("*=*=*=*=*=");
-  //     ++id;
-  // }
-  // Publish the MarkerArray
 }
 
 bool FullPathOptimizer::refineAndPublishPath(
   geometry_msgs::msg::PoseStamped & robotP,
-  FrontierPtr & goalFrontier)
+  FrontierPtr & goalFrontier, nav_msgs::msg::Path& refined_path)
 {
-  // FrontierPtr robotPoseFrontier;
-  // robotPoseFrontier->setGoalPoint(robotP.pose.position.x, robotP.pose.position.y);
-  // robotPoseFrontier->setUID(generateUID(robotPoseFrontier));
-  // robotPoseFrontier->setPathLength(0.0);
-  // robotPoseFrontier->setPathLengthInM(0.0);
-  // if(frontier_pair_distances_.find(FrontierPair(robotPoseFrontier, goalFrontier)) == frontier_pair_distances_.end())
-  // {
-  //     LOG_INFO("FrontierPtr path not found in frontier_pair_distances_. Recomputing path ...");
-  //     auto current_length = FrontierRoadMap::getInstance().getPlan(robotPoseFrontier, true, goalFrontier, true);
-  //     if (current_length.path_exists == true)
-  //     {
-  //         frontier_pair_distances_[FrontierPair(robotPoseFrontier, goalFrontier)] = current_length;
-  //     }
-  //     else
-  //     {
-  //         return false;
-  //     }
-  // }
-  // auto bestRefinedPath = FrontierRoadMap::getInstance().refinePath(frontier_pair_distances_[FrontierPair(robotPoseFrontier, goalFrontier)]);
-  // if(bestRefinedPath.size() == 0)
-  // {
-  //     LOG_ERROR("Best path size is 0 after refinement.");
-  //     return false;
-  // }
-
-  // FrontierRoadMap::getInstance().publishPlan(bestRefinedPath, "refinedPath");
-
-  // return true;
-
   nav_msgs::msg::Path nav2_plan;
   nav2_plan.header.frame_id = "map";
   nav2_plan.header.stamp = node_->now();

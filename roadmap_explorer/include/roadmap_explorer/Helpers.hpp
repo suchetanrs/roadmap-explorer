@@ -1,32 +1,25 @@
-// helpers.hpp
-
 #ifndef HELPERS_HPP_
 #define HELPERS_HPP_
 
-#include <vector>
-#include <iostream>
-#include "nav2_costmap_2d/costmap_2d.hpp"
-#include "nav_msgs/msg/path.hpp"
-#include "roadmap_explorer/Frontier.hpp"
-#include "roadmap_explorer/util/GeometryUtils.hpp"
-#include <nav2_navfn_planner/navfn.hpp>
-#include <roadmap_explorer/planners/theta_star.hpp>
 #include <Eigen/Core>
 #include <Eigen/Geometry>
+
+#include <nav2_costmap_2d/costmap_2d.hpp>
+#include <nav_msgs/msg/path.hpp>
+#include <nav2_navfn_planner/navfn.hpp>
+
+#include "roadmap_explorer/Frontier.hpp"
+#include "roadmap_explorer/util/GeometryUtils.hpp"
+#include "roadmap_explorer/planners/theta_star.hpp"
 
 namespace roadmap_explorer
 {
 
+// The output of unknown_cells_ here is the total unknown cells until the end regardless of whether it hit a obstacle or not. 
+
 class RayTracedCells
 {
 public:
-  /**
-       * @brief Constructor for RayTracedCells.
-       *
-       * @param costmap The reference to the costmap.
-       * @param cells The vector of map locations to store ray-traced cells.
-       * @param all_min_max These values are taken <= and >= on both sides.
-       */
   RayTracedCells(
     nav2_costmap_2d::Costmap2D * costmap,
     std::vector<nav2_costmap_2d::MapLocation> & cells,
@@ -41,12 +34,6 @@ public:
     all_cells_count_ = 0;
   }
 
-  /**
-       * @brief Function call operator to add unexplored cells to the list.
-       * This operator adds cells that are currently unexplored to the list of cells.
-       * i.e pushes the relevant cells back onto the list.
-       * @param offset The offset of the cell to consider.
-       */
   inline void operator()(unsigned int offset)
   {
     nav2_costmap_2d::MapLocation loc;
@@ -72,10 +59,6 @@ public:
     }
   }
 
-  /**
-       * @brief Getter function for the vector of cells.
-       * @return std::vector<nav2_costmap_2d::MapLocation> The vector of map locations.
-       */
   std::vector<nav2_costmap_2d::MapLocation> getCells()
   {
     return cells_;
@@ -124,6 +107,7 @@ bool getTracedCells(
   double max_length,
   nav2_costmap_2d::Costmap2D * exploration_costmap_);
 
+// TODO(suchetan): A problematic function that needs fixing. Provide options to choose radius / nhood cell size. Also provide options to choose the lethal cell count threshold.
 bool surroundingCellsMapped(
   geometry_msgs::msg::Point & checkPoint,
   nav2_costmap_2d::Costmap2D & exploration_costmap_);
@@ -131,7 +115,6 @@ bool surroundingCellsMapped(
 bool isCircleFootprintInLethal(
   const nav2_costmap_2d::Costmap2D * costmap, unsigned int center_x,
   unsigned int center_y, double radius_in_cells);
-// -------------------------- COSTMAP TOOLS ---------------------------------------------------------
 
 extern std::vector<unsigned int> nhood4_values;
 extern std::vector<unsigned int> nhood8_values;

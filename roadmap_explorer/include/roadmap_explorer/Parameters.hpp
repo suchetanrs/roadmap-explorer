@@ -1,24 +1,20 @@
 #ifndef PARAMETER_HPP_
 #define PARAMETER_HPP_
 
-#include <iostream>
-#include <unordered_map>
-#include <chrono>
 #include <string>
 #include <fstream>
-#include <thread>
 #include <mutex>
 #include <random>
 #include <ctime>
-
-#include <iomanip>
-#include <sstream>
-#include <ctime>
 #include <stdexcept>
+
 #include <yaml-cpp/yaml.h>
 #include <boost/any.hpp>
+
 #include <rclcpp/rclcpp.hpp>
-#include "ament_index_cpp/get_package_share_directory.hpp"
+#include <ament_index_cpp/get_package_share_directory.hpp>
+
+#include "roadmap_explorer/util/Logger.hpp"
 
 class ParameterHandler
 {
@@ -36,7 +32,7 @@ public:
       // LOG_HIGHLIGHT("Returning value " << boost::any_cast<T>(parameter_map_[parameterKey]) << " for parameter " << parameterKey);
       return boost::any_cast<T>(parameter_map_[parameterKey]);
     } else {
-      // TODO : Handle this runtime error.
+      // TODO(suchetanrs) : Handle this runtime error.
       throw std::runtime_error("Parameter " + parameterKey + " is not found in the map");
     }
   }

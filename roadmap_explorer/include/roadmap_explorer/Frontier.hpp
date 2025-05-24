@@ -7,6 +7,7 @@
 #include <map>
 #include <limits>
 #include <cmath>
+
 #include <geometry_msgs/msg/point.hpp>
 #include <geometry_msgs/msg/quaternion.hpp>
 #include <nav2_util/geometry_utils.hpp>
@@ -145,7 +146,6 @@ struct FrontierGoalPointEquality
 inline size_t generateUID(const FrontierPtr & output)
 {
   std::hash<double> hash_fn;
-  // std::cout << "Generating UID" << std::endl;
   // Hash each double value
   std::size_t hash1 = hash_fn(output->getGoalPoint().x);
   std::size_t hash2 = hash_fn(output->getGoalPoint().y);

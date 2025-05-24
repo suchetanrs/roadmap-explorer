@@ -2,26 +2,24 @@
     <BehaviorTree ID="MainTree">
         <Sequence name="root">
             <WaitForCurrent/>
-            <!-- <InitializationSequence/> -->
             <UpdateBoundaryPolygon />
-            <Fallback>
-                <SearchForFrontiers frontier_list="{the_frontier_list}" every_frontier="{the_every_frontier}" increment_search_distance_by="10.0"/>
-                <ExecuteRecoveryMove backward_only="false"/>
-            </Fallback>
+            <SearchForFrontiers frontier_list="{the_frontier_list}" every_frontier="{the_every_frontier}" increment_search_distance_by="10.0"/>
             <Inverter>
                 <CleanupRoadmap frontier_list="{the_frontier_list}" time_between_cleanup="7.0" correct_loop_closure="false"/>
             </Inverter>
             <UpdateFrontierRoadmap frontier_list="{the_frontier_list}" add_robot_pose_to_roadmap="true"/>
-            <ProcessFrontierCosts frontier_list="{the_frontier_list}" every_frontier="{the_every_frontier}" robot_name="/robot_0" frontier_costs_result="{the_frontier_costs}"/>
+            <ProcessFrontierCosts frontier_list="{the_frontier_list}" every_frontier="{the_every_frontier}" frontier_costs_result="{the_frontier_costs}"/>
             <Fallback>
-                <OptimizeFullPath frontier_costs_result="{the_frontier_costs}" allocated_frontier="{the_allocated_frontier}" use_fisher_information="false" increment_search_distance_by="30.0" number_retries_fi="3"/>
+                <OptimizeFullPath frontier_costs_result="{the_frontier_costs}" allocated_frontier="{the_allocated_frontier}" optimized_path="{optimized_path}"/>
                 <Inverter>
                     <CleanupRoadmap frontier_list="{the_frontier_list}" time_between_cleanup="0.0" correct_loop_closure="false"/>
                 </Inverter>
-                <ExecuteRecoveryMove backward_only="true"/>
             </Fallback>
             <!-- <HysterisisControl allocated_frontier="{the_allocated_frontier}" allocated_frontier_after_hysterisis="{the_allocated_frontier_after_hysterisis}"/> -->
             
+            <!-- <FollowPath path="{optimized_path}" controller_id="FollowPath"/> -->
+            <!-- <NavigateToPose goal="{placing_location}" /> -->
+
             <!-- <ReactiveSequence> -->
                 <!-- <Inverter> -->
                     <!-- <CheckIfGoalMapped allocated_frontier="{the_allocated_frontier_after_hysterisis}"/> -->

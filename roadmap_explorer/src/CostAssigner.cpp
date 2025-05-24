@@ -13,7 +13,7 @@ CostAssigner::CostAssigner(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explor
   costmap_ = explore_costmap_ros->getCostmap();
   LOG_DEBUG("Got costmap pointer");
 
-  LOG_INFO("CostAssigner::onInitialize");
+  LOG_INFO("CostAssigner::CostAssigner");
 
   costCalculator_ = std::make_shared<FrontierCostCalculator>(explore_costmap_ros);
   LOG_DEBUG("Making cost calculator instance");
@@ -23,7 +23,6 @@ CostAssigner::~CostAssigner()
 {
   LOG_INFO("CostAssigner::~CostAssigner()");
   delete layered_costmap_;
-  rclcpp::shutdown();
 }
 
 bool CostAssigner::getFrontierCosts(
@@ -31,9 +30,7 @@ bool CostAssigner::getFrontierCosts(
   std::shared_ptr<GetFrontierCostsResponse> resultData)
 {
   setFrontierBlacklist(requestData->prohibited_frontiers);
-  bool costsResult =
-    processChosenApproach(requestData->frontier_list, requestData->start_pose.pose);
-  EventLoggerInstance.startEvent("outside_processChosenApproach");
+  bool costsResult = processChosenApproach(requestData->frontier_list, requestData->start_pose.pose);
   if (costsResult == false) {
     resultData->success = false;
     return resultData->success;
@@ -42,7 +39,6 @@ bool CostAssigner::getFrontierCosts(
   std::vector<FrontierPtr> frontiers_list;
   std::vector<double> frontier_distances;
   std::vector<double> frontier_arrival_information;
-  std::vector<double> frontier_path_information;
   for (auto & frontier : requestData->frontier_list) {
     frontiers_list.push_back(frontier);
     frontier_distances.push_back(frontier->getPathLengthInM());
@@ -58,7 +54,6 @@ bool CostAssigner::getFrontierCosts(
   }
   LOG_DEBUG("Res frontier distances size: " << resultData->frontier_distances.size());
   LOG_DEBUG("Res frontier list size: " << resultData->frontier_list.size());
-  EventLoggerInstance.endEvent("outside_processChosenApproach", 1);
   return resultData->success;
 }
 
@@ -116,16 +111,11 @@ bool CostAssigner::processChosenApproach(
   LOG_DEBUG("CostAssigner::processChosenApproach");
   EventLoggerInstance.startEvent("processChosenApproach");
 
-  // Getting map data
-  // Create a service request
-  std::vector<std::string> chosenMethods = {"RoadmapPlannerDistance", "ArrivalInformation"};
-  // std::vector<std::string> chosenMethods = {"A*PlannerDistance", "ArrivalInformation"};
-  // std::vector<std::string> chosenMethods = {"EuclideanDistance", "ArrivalInformation"};
-  // std::vector<std::string> chosenMethods = {"RandomCosts"};
-  // std::vector<std::string> chosenMethods = {};
+  std::vector<std::string> chosenMethods = parameterInstance.getValue<std::vector<std::string>>("costAssigner.cost_calculation_methods");
   LOG_INFO("Methods chosen are: " << chosenMethods);
   std::vector<std::vector<std::string>> costTypes;
   for (auto frontier : frontier_list) {
+    // for each frontier, we need to assign the costs that it should use.
     costTypes.push_back(chosenMethods);
   }
   bool costsResult;
@@ -162,7 +152,7 @@ bool CostAssigner::assignCosts(
   std::vector<FrontierPtr> & frontier_list, std::vector<double> polygon_xy_min_max,
   geometry_msgs::msg::Pose start_pose_w, std::vector<std::vector<std::string>> & costTypes)
 {
-  costCalculator_->reset();
+  costCalculator_->prepareForCostCalculation();
   costCalculator_->setArrivalInformationLimits();
   LOG_DEBUG("CostAssigner::assignCosts");
   // sanity checks
@@ -194,30 +184,40 @@ bool CostAssigner::assignCosts(
       continue;
     }
 
-    planner_allow_unknown_ = parameterInstance.getValue<bool>("costAssigner.planner_allow_unknown");
-    add_heading_cost_ = parameterInstance.getValue<bool>("costAssigner.add_heading_cost");
+    auto goal_point = frontier->getGoalPoint();
+    if (goal_point.x < polygon_xy_min_max[0] ||
+        goal_point.y < polygon_xy_min_max[1] ||
+        goal_point.x > polygon_xy_min_max[2] ||
+        goal_point.y > polygon_xy_min_max[3]) {
+      LOG_DEBUG("Frontier is outside of the polygon, skipping.");
+      frontier->setAchievability(false);
+      frontier->setArrivalInformation(0.0);
+      frontier->setGoalOrientation(0.0);
+      frontier->setPathLength(std::numeric_limits<double>::max());
+      frontier->setPathLengthInM(std::numeric_limits<double>::max());
+      frontier->setWeightedCost(std::numeric_limits<double>::max());
+      continue;
+    }
 
     /**
          * IMPORTANT! Always compute the arrival information first before the planning.
          * If the frontier is not achievable, the plan is not computed.
          */
     if (vectorContains(costTypes[frontier_idx], std::string("ArrivalInformation"))) {
-      // Calculate frontier information and add to metadata vector
-      // camera_fov / 2 is added because until here the maxIndex is only the starting index.
       costCalculator_->setArrivalInformationForFrontier(frontier, polygon_xy_min_max);
     }
     if (vectorContains(costTypes[frontier_idx], std::string("A*PlannerDistance"))) {
-      costCalculator_->setPlanForFrontier(start_pose_w, frontier, planner_allow_unknown_);
+      costCalculator_->setPlanForFrontier(start_pose_w, frontier);
     } else if (vectorContains(costTypes[frontier_idx], std::string("RoadmapPlannerDistance"))) {
-      costCalculator_->setPlanForFrontierRoadmap(start_pose_w, frontier, planner_allow_unknown_);
+      costCalculator_->setPlanForFrontierRoadmap(start_pose_w, frontier);
     } else if (vectorContains(costTypes[frontier_idx], std::string("EuclideanDistance"))) {
-      costCalculator_->setPlanForFrontierEuclidean(start_pose_w, frontier, planner_allow_unknown_);
+      costCalculator_->setPlanForFrontierEuclidean(start_pose_w, frontier);
     }
     if (vectorContains(costTypes[frontier_idx], std::string("RandomCosts"))) {
       costCalculator_->setRandomMetaData(frontier);
     }
     if (vectorContains(costTypes[frontier_idx], std::string("ClosestFrontier"))) {
-      costCalculator_->setClosestFrontierMetaData(start_pose_w, frontier, planner_allow_unknown_);
+      costCalculator_->setClosestFrontierMetaData(start_pose_w, frontier);
     }
     costCalculator_->recomputeNormalizationFactors(frontier);
   }       // frontier end

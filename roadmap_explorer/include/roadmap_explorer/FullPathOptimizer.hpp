@@ -1,13 +1,19 @@
+#ifndef FULL_PATH_OPTIMIZER_HPP_
+#define FULL_PATH_OPTIMIZER_HPP_
+
 #include <vector>
 #include <algorithm>
 #include <limits>
-#include "roadmap_explorer/Frontier.hpp"
-#include "visualization_msgs/msg/marker_array.hpp"
+
+#include <visualization_msgs/msg/marker_array.hpp>
+
 #include <nav2_costmap_2d/costmap_2d_ros.hpp>
 #include <nav2_costmap_2d/costmap_2d.hpp>
-#include <roadmap_explorer/util/GeometryUtils.hpp>
-#include <roadmap_explorer/planners/FrontierRoadmap.hpp>
 
+#include "roadmap_explorer/util/GeometryUtils.hpp"
+#include "roadmap_explorer/planners/FrontierRoadmap.hpp"
+#include "roadmap_explorer/Parameters.hpp"
+#include "roadmap_explorer/Frontier.hpp"
 namespace roadmap_explorer
 {
 
@@ -79,7 +85,7 @@ public:
     const FrontierPtr & robot, const FrontierPtr & goal,
     geometry_msgs::msg::PoseStamped & robotP);
 
-  bool refineAndPublishPath(geometry_msgs::msg::PoseStamped & robotP, FrontierPtr & goalFrontier);
+  bool refineAndPublishPath(geometry_msgs::msg::PoseStamped & robotP, FrontierPtr & goalFrontier, nav_msgs::msg::Path& refined_path);
 private:
 
   void addToMarkerArraySolidPolygon(
@@ -105,17 +111,15 @@ private:
 
   rclcpp::Node::SharedPtr node_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros_;
-  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr marker_publisher_;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr local_search_area_publisher_;
   rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr frontier_nav2_plan_;
   std::unordered_map<FrontierPair, RoadmapPlanResult, FrontierPairHash> frontier_pair_distances_;
 
-  double ARRIVAL_INFORMATION_THRESHOLD = 70.0;
-  double NUM_FRONTIERS_IN_LOCAL_AREA = 5.0;
-  double DISTANCE_THRESHOLD_GLOBAL_CLUSTER = 5.0;
-  double CLUSTER_PADDING = 0.25;
-  double LOCAL_FRONTIER_SEARCH_RADIUS = 12.0; // 6.0 in m
-  bool ADD_YAW_TO_TSP = false;
-  bool ADD_DISTANCE_TO_ROBOT_TO_TSP = false;
+  double num_frontiers_in_local_area = 5.0;
+  double local_frontier_search_radius = 12.0; // 6.0 in m
+  bool add_yaw_to_tsp = false;
+  bool add_distance_to_robot_to_tsp = false;
 };
 }
+
+#endif
