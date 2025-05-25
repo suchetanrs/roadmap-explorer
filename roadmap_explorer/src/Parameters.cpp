@@ -10,6 +10,7 @@ ParameterHandler::ParameterHandler()
 
 ParameterHandler::~ParameterHandler()
 {
+  LOG_INFO("ParameterHandler::~ParameterHandler");
   dynamic_param_callback_handle_.reset();
   parameter_map_.clear();
 }
@@ -62,12 +63,15 @@ void ParameterHandler::makeParametersROS(rclcpp::Node::SharedPtr node)
     "costCalculator.planner_allow_unknown").as_bool();
 
   // --- costAssigner ---
-  std::vector<std::string> default_cost_calculation_methods = {"RoadmapPlannerDistance", "ArrivalInformation"};
+  std::vector<std::string> default_cost_calculation_methods =
+  {"RoadmapPlannerDistance", "ArrivalInformation"};
   // {"A*PlannerDistance", "ArrivalInformation"};
   // {"EuclideanDistance", "ArrivalInformation"};
   // {"RandomCosts"};
   // {};
-  node->declare_parameter<std::vector<std::string>>("costAssigner.cost_calculation_methods", default_cost_calculation_methods);
+  node->declare_parameter<std::vector<std::string>>(
+    "costAssigner.cost_calculation_methods",
+    default_cost_calculation_methods);
 
   parameter_map_["costAssigner.cost_calculation_methods"] =
     node->get_parameter("costAssigner.cost_calculation_methods").as_string_array();
@@ -96,10 +100,14 @@ void ParameterHandler::makeParametersROS(rclcpp::Node::SharedPtr node)
   node->declare_parameter<bool>("fullPathOptimizer.add_yaw_to_tsp", false);
   node->declare_parameter<bool>("fullPathOptimizer.add_distance_to_robot_to_tsp", false);
 
-  parameter_map_["fullPathOptimizer.num_frontiers_in_local_area"] = node->get_parameter("fullPathOptimizer.num_frontiers_in_local_area").as_double();
-  parameter_map_["fullPathOptimizer.local_frontier_search_radius"] = node->get_parameter("fullPathOptimizer.local_frontier_search_radius").as_double();
-  parameter_map_["fullPathOptimizer.add_yaw_to_tsp"] = node->get_parameter("fullPathOptimizer.add_yaw_to_tsp").as_bool();
-  parameter_map_["fullPathOptimizer.add_distance_to_robot_to_tsp"] = node->get_parameter("fullPathOptimizer.add_distance_to_robot_to_tsp").as_bool();
+  parameter_map_["fullPathOptimizer.num_frontiers_in_local_area"] = node->get_parameter(
+    "fullPathOptimizer.num_frontiers_in_local_area").as_double();
+  parameter_map_["fullPathOptimizer.local_frontier_search_radius"] = node->get_parameter(
+    "fullPathOptimizer.local_frontier_search_radius").as_double();
+  parameter_map_["fullPathOptimizer.add_yaw_to_tsp"] = node->get_parameter(
+    "fullPathOptimizer.add_yaw_to_tsp").as_bool();
+  parameter_map_["fullPathOptimizer.add_distance_to_robot_to_tsp"] = node->get_parameter(
+    "fullPathOptimizer.add_distance_to_robot_to_tsp").as_bool();
 
   // --- goalHysteresis ---
   node->declare_parameter<bool>("goalHysteresis.use_euclidean_distance", false);
@@ -112,9 +120,19 @@ void ParameterHandler::makeParametersROS(rclcpp::Node::SharedPtr node)
 
   // --- explorationBT ---
   node->declare_parameter<int64_t>("explorationBT.bt_sleep_ms", 70);
+  node->declare_parameter<std::string>("explorationBT.nav2_bt_xml", roadmap_explorer_dir + "/xml/explore_to_pose.xml");
+  node->declare_parameter<std::string>("explorationBT.bt_xml_path", roadmap_explorer_dir + "/xml/exploration.xml");
+  std::vector default_exploration_boundary = {310.0, 260.0, 310.0, -120.0, -70.0, -120.0, -70.0, 260.0};
+  node->declare_parameter<std::vector<double>>("explorationBT.exploration_boundary", default_exploration_boundary);
 
   parameter_map_["explorationBT.bt_sleep_ms"] =
     node->get_parameter("explorationBT.bt_sleep_ms").as_int();
+  parameter_map_["explorationBT.nav2_bt_xml"] =
+    node->get_parameter("explorationBT.nav2_bt_xml").as_string();
+  parameter_map_["explorationBT.bt_xml_path"] =
+    node->get_parameter("explorationBT.bt_xml_path").as_string();
+  parameter_map_["explorationBT.exploration_boundary"] =
+    node->get_parameter("explorationBT.exploration_boundary").as_double_array();
 
   sanityCheckParameters();
 
@@ -127,11 +145,9 @@ void ParameterHandler::makeParametersROS(rclcpp::Node::SharedPtr node)
 
 void ParameterHandler::makeParametersYAMLcpp()
 {
-  const std::string yaml_base_path =
-    ament_index_cpp::get_package_share_directory("roadmap_explorer");
   std::string yaml_path;
   YAML::Node yaml_node;
-  yaml_path = yaml_base_path + "/params/exploration.yaml";
+  yaml_path = roadmap_explorer_dir + "/params/exploration.yaml";
 
   // Load YAML file and retrieve parameters
   YAML::Node loaded_node = YAML::LoadFile(yaml_path);
@@ -172,10 +188,14 @@ void ParameterHandler::makeParametersYAMLcpp()
   parameter_map_["frontierRoadmap.min_distance_between_robot_pose_and_node"] =
     loaded_node["frontierRoadmap"]["min_distance_between_robot_pose_and_node"].as<double>();
 
-  parameter_map_["fullPathOptimizer.num_frontiers_in_local_area"] = loaded_node["fullPathOptimizer"]["num_frontiers_in_local_area"].as<double>();
-  parameter_map_["fullPathOptimizer.local_frontier_search_radius"] = loaded_node["fullPathOptimizer"]["local_frontier_search_radius"].as<double>();
-  parameter_map_["fullPathOptimizer.add_yaw_to_tsp"] = loaded_node["fullPathOptimizer"]["add_yaw_to_tsp"].as<bool>();
-  parameter_map_["fullPathOptimizer.add_distance_to_robot_to_tsp"] = loaded_node["fullPathOptimizer"]["add_distance_to_robot_to_tsp"].as<bool>();
+  parameter_map_["fullPathOptimizer.num_frontiers_in_local_area"] =
+    loaded_node["fullPathOptimizer"]["num_frontiers_in_local_area"].as<double>();
+  parameter_map_["fullPathOptimizer.local_frontier_search_radius"] =
+    loaded_node["fullPathOptimizer"]["local_frontier_search_radius"].as<double>();
+  parameter_map_["fullPathOptimizer.add_yaw_to_tsp"] =
+    loaded_node["fullPathOptimizer"]["add_yaw_to_tsp"].as<bool>();
+  parameter_map_["fullPathOptimizer.add_distance_to_robot_to_tsp"] =
+    loaded_node["fullPathOptimizer"]["add_distance_to_robot_to_tsp"].as<bool>();
 
   parameter_map_["goalHysteresis.use_euclidean_distance"] =
     loaded_node["goalHysteresis"]["use_euclidean_distance"].as<bool>();
@@ -184,6 +204,12 @@ void ParameterHandler::makeParametersYAMLcpp()
 
   parameter_map_["explorationBT.bt_sleep_ms"] =
     loaded_node["explorationBT"]["bt_sleep_ms"].as<int>();
+  parameter_map_["explorationBT.nav2_bt_xml"] =
+    loaded_node["explorationBT"]["nav2_bt_xml"].as<std::string>();
+  parameter_map_["explorationBT.bt_xml_path"] =
+    loaded_node["explorationBT"]["bt_xml_path"].as<std::string>();
+  parameter_map_["explorationBT.exploration_boundary"] =
+    loaded_node["explorationBT"]["exploration_boundary"].as<std::vector<double>>();
 
   sanityCheckParameters();
 }

@@ -28,7 +28,25 @@ RosVisualizer::RosVisualizer(rclcpp::Node::SharedPtr node, nav2_costmap_2d::Cost
   full_path_plan_pub_ = node->create_publisher<nav_msgs::msg::Path>("full_path", 10);
   trailing_robot_poses_publisher_ = node->create_publisher<geometry_msgs::msg::PoseArray>(
     "trailing_robot_poses", 10);
+
+  blacklisted_frontiers_publisher_ = node->create_publisher<visualization_msgs::msg::MarkerArray>(
+    "blacklisted_frontiers", 10);
   costmap_ = costmap;
+}
+
+RosVisualizer::~RosVisualizer()
+{
+  LOG_INFO("RosVisualizer::~RosVisualizer()");
+  // Reset all publishers
+  frontier_cloud_pub_.reset();
+  spatial_hashmap_pub_.reset();
+  all_frontier_cloud_pub_.reset();
+  frontier_marker_array_publisher_.reset();
+  observable_cells_publisher_.reset();
+  connecting_cells_publisher_.reset();
+  frontier_plan_pub_.reset();
+  full_path_plan_pub_.reset();
+  trailing_robot_poses_publisher_.reset();
 }
 
 void RosVisualizer::observableCellsViz(std::vector<geometry_msgs::msg::Point> & points)
@@ -258,4 +276,46 @@ void RosVisualizer::visualizeTrailingPoses(std::deque<geometry_msgs::msg::Pose> 
 
   // Publish PoseArray
   trailing_robot_poses_publisher_->publish(pose_array_msg);
+}
+
+void RosVisualizer::visualizeBlacklistedFrontiers(
+  const std::vector<FrontierPtr> & blacklisted_frontiers,
+  std::string globalFrameID)
+{
+  if (blacklisted_frontiers_publisher_->get_subscription_count() == 0) {
+    return;
+  }
+
+  visualization_msgs::msg::MarkerArray markers;
+  int id = 0;
+
+  for (const auto & frontier : blacklisted_frontiers) {
+    // Create a marker for each blacklisted frontier
+    visualization_msgs::msg::Marker marker;
+    marker.header.frame_id = "map";     // Replace with your desired frame_id
+    marker.header.stamp = node_->now();
+    marker.id = id++;
+    marker.type = visualization_msgs::msg::Marker::CYLINDER;       // Change to CYLINDER
+    marker.action = visualization_msgs::msg::Marker::ADD;
+
+    // Set marker pose (position)
+    marker.pose.position.x = frontier->getGoalPoint().x;
+    marker.pose.position.y = frontier->getGoalPoint().y;
+    marker.pose.position.z = 0.0;     // Assuming 2D visualization
+
+    // Set marker orientation (optional)
+    marker.pose.orientation.w = 1.0;
+
+    marker.scale.x = 0.15 * 2;       // Ensure this is suitable for a cylinder
+    marker.scale.y = 0.15 * 2;
+    marker.scale.z = 0.2;
+    marker.color.a = 0.7;       // Semi-transparent
+    marker.color.r = 0.5;          // Red color
+    marker.color.g = 0.5;
+    marker.color.b = 0.5;
+    markers.markers.push_back(marker);
+  }
+
+  // Publish the blacklisted frontiers markers
+  blacklisted_frontiers_publisher_->publish(markers);
 }

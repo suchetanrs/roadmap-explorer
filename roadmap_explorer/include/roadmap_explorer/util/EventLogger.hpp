@@ -20,6 +20,8 @@
 class EventLogger
 {
 public:
+  ~EventLogger();
+
   static EventLogger & getInstance(const std::string & baseFilename = "defaultFilename")
   {
     std::lock_guard<std::mutex> lock(instanceMutex_);

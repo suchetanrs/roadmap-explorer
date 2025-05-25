@@ -5,6 +5,11 @@ FrontierRoadmapAStar::FrontierRoadmapAStar()
 {
 }
 
+FrontierRoadmapAStar::~FrontierRoadmapAStar()
+{
+  LOG_INFO("FrontierRoadmapAStar::~FrontierRoadmapAStar()");
+}
+
 // Function to calculate heuristic (Euclidean distance in this case)
 double FrontierRoadmapAStar::heuristic(const Node & a, const Node & b)
 {

@@ -15,7 +15,7 @@
 namespace roadmap_explorer
 {
 
-// The output of unknown_cells_ here is the total unknown cells until the end regardless of whether it hit a obstacle or not. 
+// The output of unknown_cells_ here is the total unknown cells until the end regardless of whether it hit a obstacle or not.
 
 class RayTracedCells
 {

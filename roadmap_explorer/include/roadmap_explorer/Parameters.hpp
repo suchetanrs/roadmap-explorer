@@ -19,8 +19,6 @@
 class ParameterHandler
 {
 public:
-  ParameterHandler();
-
   ~ParameterHandler();
 
   template<typename T>
@@ -36,7 +34,7 @@ public:
       throw std::runtime_error("Parameter " + parameterKey + " is not found in the map");
     }
   }
-  
+
   void makeParameters(bool use_ros_parameters, rclcpp::Node::SharedPtr node);
 
   static ParameterHandler & getInstance()
@@ -45,6 +43,12 @@ public:
       parameterHandlerPtr_.reset(new ParameterHandler());
     }
     return *parameterHandlerPtr_;
+  }
+
+  void cleanupInstance()
+  {
+    LOG_INFO("ParameterHandler::cleanupInstance()");
+    dynamic_param_callback_handle_.reset();
   }
 
 private:
@@ -66,10 +70,13 @@ private:
 
   ParameterHandler(const ParameterHandler &) = delete;
   ParameterHandler & operator=(const ParameterHandler &) = delete;
+  ParameterHandler();
   static std::unique_ptr<ParameterHandler> parameterHandlerPtr_;
   static std::recursive_mutex instanceMutex_;
   std::unordered_map<std::string, boost::any> parameter_map_;
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dynamic_param_callback_handle_;
+  const std::string roadmap_explorer_dir =
+    ament_index_cpp::get_package_share_directory("roadmap_explorer");
 };
 
 inline ParameterHandler & parameterInstance = ParameterHandler::getInstance();

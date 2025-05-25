@@ -40,6 +40,8 @@ struct RoadmapPlanResult
 class FrontierRoadMap
 {
 public:
+  ~FrontierRoadMap();
+
   static FrontierRoadMap & getInstance()
   {
     std::lock_guard<std::mutex> lock(instanceMutex_);
@@ -49,13 +51,22 @@ public:
     return *frontierRoadmapPtr;
   }
 
-  static void createInstance(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros)
+  static void createInstance(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros, rclcpp::Node::SharedPtr node_ptr)
   {
     std::cout << "Creating roadmap instance" << std::endl;
     std::lock_guard<std::mutex> lock(instanceMutex_);
     if (frontierRoadmapPtr == nullptr) {
-      frontierRoadmapPtr.reset(new FrontierRoadMap(explore_costmap_ros));
+      frontierRoadmapPtr.reset(new FrontierRoadMap(explore_costmap_ros, node_ptr));
     }
+  }
+
+  void cleanupInstance()
+  {
+    LOG_INFO("FrontierRoadMap::cleanupInstance()");
+    marker_pub_roadmap_.reset();
+    map_data_subscription_.reset();
+    marker_pub_plan_.reset();
+    roadmap_plan_test_sub_.reset();
   }
 
   void addNodes(const std::vector<FrontierPtr> & frontiers, bool populateClosest);
@@ -135,8 +146,8 @@ private:
 
   FrontierRoadMap(const FrontierRoadMap &) = delete;
   FrontierRoadMap & operator=(const FrontierRoadMap &) = delete;
-  FrontierRoadMap(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros);
-  
+  FrontierRoadMap(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros, rclcpp::Node::SharedPtr node_ptr);
+
   static std::unique_ptr<FrontierRoadMap> frontierRoadmapPtr;
   static std::mutex instanceMutex_;
 
@@ -160,7 +171,7 @@ private:
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr marker_pub_roadmap_;
   rclcpp::Subscription<roadmap_explorer_msgs::msg::MapData>::SharedPtr map_data_subscription_;
   std::shared_ptr<FrontierRoadmapAStar> astar_planner_;
-  
+
   // for testing planning
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr marker_pub_plan_;
   rclcpp::Subscription<geometry_msgs::msg::PointStamped>::SharedPtr roadmap_plan_test_sub_;

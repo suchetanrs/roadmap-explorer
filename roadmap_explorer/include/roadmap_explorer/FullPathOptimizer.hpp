@@ -71,6 +71,8 @@ public:
   FullPathOptimizer(
     rclcpp::Node::SharedPtr node,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros);
+  
+  ~FullPathOptimizer();
 
   bool getNextGoal(
     std::vector<FrontierPtr> & frontier_list, FrontierPtr & nextFrontier, size_t n,
@@ -85,9 +87,11 @@ public:
     const FrontierPtr & robot, const FrontierPtr & goal,
     geometry_msgs::msg::PoseStamped & robotP);
 
-  bool refineAndPublishPath(geometry_msgs::msg::PoseStamped & robotP, FrontierPtr & goalFrontier, nav_msgs::msg::Path& refined_path);
-private:
+  bool refineAndPublishPath(
+    geometry_msgs::msg::PoseStamped & robotP, FrontierPtr & goalFrontier,
+    nav_msgs::msg::Path & refined_path);
 
+private:
   void addToMarkerArraySolidPolygon(
     visualization_msgs::msg::MarkerArray & marker_array,
     geometry_msgs::msg::Point center, double radius, std::string ns,

@@ -44,6 +44,8 @@ class FrontierRoadmapAStar
 public:
   FrontierRoadmapAStar();
 
+  ~FrontierRoadmapAStar();
+
   std::pair<std::vector<std::shared_ptr<Node>>, double> getPlan(
     const FrontierPtr & start,
     const FrontierPtr & goal,

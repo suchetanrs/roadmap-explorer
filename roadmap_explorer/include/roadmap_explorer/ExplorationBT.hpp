@@ -13,7 +13,9 @@
 #include <geometry_msgs/msg/twist.hpp>
 #include <std_msgs/msg/int32.hpp>
 
-#include "behaviortree_cpp_v3/bt_factory.h"
+#include <behaviortree_cpp_v3/bt_factory.h>
+#include <nav2_behavior_tree/plugins/control/pipeline_sequence.hpp>
+#include <nav2_behavior_tree/plugins/decorator/rate_controller.hpp>
 
 #include "roadmap_explorer/util/RosVisualizer.hpp"
 #include "roadmap_explorer/util/Logger.hpp"
@@ -38,6 +40,12 @@ enum class CurrentGoalStatus
   RUNNING,
   COMPLETE
 };
+
+inline std::ostream & operator<<(std::ostream & os, const NavGoalStatus status)
+{
+    os << magic_enum::enum_name(status);
+    return os;
+}
 
 class FrontierExplorationServer
 {
@@ -69,12 +77,7 @@ private:
   // Nav2 related
   int nav2WaitTime_;
   std::mutex process_active_goals_lock_;
-  std::shared_ptr<Nav2Interface> nav2_interface_;
-
-  // Exploration related
-  geometry_msgs::msg::PolygonStamped explore_boundary_;
-  geometry_msgs::msg::PointStamped explore_center_;
-  std::vector<double> exploration_boundary_;
+  std::shared_ptr<Nav2Interface<nav2_msgs::action::NavigateToPose>> nav2_interface_;
 
   // BT related
   BT::BehaviorTreeFactory factory;
@@ -85,14 +88,8 @@ private:
   std::shared_ptr<CostAssigner> cost_assigner_ptr_;
   std::shared_ptr<FullPathOptimizer> full_path_optimizer_;
 
-  int retry_;
-  std::vector<std::string> robot_namespaces_;
-  bool use_custom_sim_;
-  bool process_other_robots_;
   bool exploration_active_;
-  std::vector<FrontierPtr> blacklisted_frontiers_;       // these are the frontiers traversed by this robot.
-  RobotActiveGoals robot_active_goals_;
-  std::string bt_xml_path_;
+        // these are the frontiers traversed by this robot.
 };
 }
 

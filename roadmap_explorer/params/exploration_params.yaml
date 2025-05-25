@@ -1,8 +1,6 @@
 roadmap_explorer_node:
   ros__parameters:
     use_sim_time: False
-    exploration_boundary: [310.0, 260.0, 310.0, -120.0, -70.0, -120.0, -70.0, 260.0]
-    bt_xml_path: "/root/dev_ws/src/roadmap_explorer/roadmap_explorer/xml/exploration_with_fi.xml"
     
     frontierSearch:
       min_frontier_cluster_size: 1.0
@@ -40,6 +38,7 @@ roadmap_explorer_node:
 
     explorationBT:
       bt_sleep_ms: 70
+      exploration_boundary: [310.0, 260.0, 310.0, -120.0, -70.0, -120.0, -70.0, 260.0]
 
 roadmap_explorer_costmap:
   roadmap_explorer_costmap:

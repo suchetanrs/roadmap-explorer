@@ -12,6 +12,12 @@ FrontierSearch::FrontierSearch(nav2_costmap_2d::Costmap2D & costmap)
   LOG_INFO("FrontierSearch::FrontierSearch");
 }
 
+FrontierSearch::~FrontierSearch()
+{
+  LOG_INFO("FrontierSearch::~FrontierSearch()");
+  every_frontier_list.clear();
+}
+
 std::vector<FrontierPtr> FrontierSearch::searchFrom(geometry_msgs::msg::Point position)
 {
   min_frontier_cluster_size_ = parameterInstance.getValue<double>(

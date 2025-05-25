@@ -31,6 +31,8 @@ class RosVisualizer
 {
 
 public:
+  ~RosVisualizer();
+
   static RosVisualizer & getInstance()
   {
     std::lock_guard<std::mutex> lock(instanceMutex_);
@@ -38,6 +40,20 @@ public:
       throw std::runtime_error("Cannot de-reference a null RosVisualizer! :(");
     }
     return *RosVisualizerPtr;
+  }
+
+  void cleanupInstance()
+  {
+    LOG_INFO("RosVisualizer::cleanupInstance()");
+    observable_cells_publisher_.reset();
+    connecting_cells_publisher_.reset();
+    spatial_hashmap_pub_.reset();
+    frontier_cloud_pub_.reset();
+    all_frontier_cloud_pub_.reset();
+    frontier_plan_pub_.reset();
+    frontier_marker_array_publisher_.reset();
+    full_path_plan_pub_.reset();
+    trailing_robot_poses_publisher_.reset();
   }
 
   static void createInstance(rclcpp::Node::SharedPtr node, nav2_costmap_2d::Costmap2D * costmap)
@@ -83,11 +99,17 @@ public:
   void visualizeTrailingPoses(std::deque<geometry_msgs::msg::Pose> robot_queue);
   rclcpp::Publisher<geometry_msgs::msg::PoseArray>::SharedPtr trailing_robot_poses_publisher_;
 
+  void visualizeBlacklistedFrontiers(
+    const std::vector<FrontierPtr> & blacklisted_frontiers,
+    std::string globalFrameID);
+  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr blacklisted_frontiers_publisher_;
+ 
 private:
   // Delete copy constructor and assignment operator to prevent copying
   RosVisualizer(const RosVisualizer &) = delete;
   RosVisualizer & operator=(const RosVisualizer &) = delete;
   RosVisualizer(rclcpp::Node::SharedPtr node, nav2_costmap_2d::Costmap2D * costmap);
+
   static std::unique_ptr<RosVisualizer> RosVisualizerPtr;
   static std::mutex instanceMutex_;
 

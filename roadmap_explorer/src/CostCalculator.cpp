@@ -11,6 +11,11 @@ FrontierCostCalculator::FrontierCostCalculator(
   robot_radius_ = explore_costmap_ros->getRobotRadius();
 }
 
+FrontierCostCalculator::~FrontierCostCalculator()
+{
+  LOG_INFO("FrontierCostCalculator::~FrontierCostCalculator()");
+}
+
 void FrontierCostCalculator::setArrivalInformationForFrontier(
   FrontierPtr & frontier,
   std::vector<double> & polygon_xy_min_max)

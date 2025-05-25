@@ -39,6 +39,8 @@ class FrontierCostCalculator
 public:
   FrontierCostCalculator(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros);
 
+  ~FrontierCostCalculator();
+
   // ----------------Arrival information related--------------------
   // sets frontiers as not achievable if frontier information is too low.
   // also sets frontiers as not achievable if the robot footprint radius centered at the frontier is in obstacle
@@ -84,9 +86,12 @@ public:
     MAX_CAMERA_DEPTH = parameterInstance.getValue<double>("costCalculator.max_camera_depth");
     DELTA_THETA = parameterInstance.getValue<double>("costCalculator.delta_theta");
     CAMERA_FOV = parameterInstance.getValue<double>("costCalculator.camera_fov");
-    factor_of_max_is_min = parameterInstance.getValue<double>("costCalculator.factor_of_max_is_min");
-    closeness_rejection_threshold_ = parameterInstance.getValue<double>("costCalculator.closeness_rejection_threshold");
-    planner_allow_unknown_ = parameterInstance.getValue<bool>("costCalculator.planner_allow_unknown");
+    factor_of_max_is_min =
+      parameterInstance.getValue<double>("costCalculator.factor_of_max_is_min");
+    closeness_rejection_threshold_ = parameterInstance.getValue<double>(
+      "costCalculator.closeness_rejection_threshold");
+    planner_allow_unknown_ =
+      parameterInstance.getValue<bool>("costCalculator.planner_allow_unknown");
   }
 
 private:

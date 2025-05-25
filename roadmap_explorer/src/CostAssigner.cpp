@@ -30,7 +30,9 @@ bool CostAssigner::getFrontierCosts(
   std::shared_ptr<GetFrontierCostsResponse> resultData)
 {
   setFrontierBlacklist(requestData->prohibited_frontiers);
-  bool costsResult = processChosenApproach(requestData->frontier_list, requestData->start_pose.pose);
+  RosVisualizer::getInstance().visualizeBlacklistedFrontiers(requestData->prohibited_frontiers, "map");
+  bool costsResult =
+    processChosenApproach(requestData->frontier_list, requestData->start_pose.pose);
   if (costsResult == false) {
     resultData->success = false;
     return resultData->success;
@@ -111,7 +113,8 @@ bool CostAssigner::processChosenApproach(
   LOG_DEBUG("CostAssigner::processChosenApproach");
   EventLoggerInstance.startEvent("processChosenApproach");
 
-  std::vector<std::string> chosenMethods = parameterInstance.getValue<std::vector<std::string>>("costAssigner.cost_calculation_methods");
+  std::vector<std::string> chosenMethods = parameterInstance.getValue<std::vector<std::string>>(
+    "costAssigner.cost_calculation_methods");
   LOG_INFO("Methods chosen are: " << chosenMethods);
   std::vector<std::vector<std::string>> costTypes;
   for (auto frontier : frontier_list) {
@@ -186,9 +189,10 @@ bool CostAssigner::assignCosts(
 
     auto goal_point = frontier->getGoalPoint();
     if (goal_point.x < polygon_xy_min_max[0] ||
-        goal_point.y < polygon_xy_min_max[1] ||
-        goal_point.x > polygon_xy_min_max[2] ||
-        goal_point.y > polygon_xy_min_max[3]) {
+      goal_point.y<polygon_xy_min_max[1] ||
+      goal_point.x> polygon_xy_min_max[2] ||
+      goal_point.y > polygon_xy_min_max[3])
+    {
       LOG_DEBUG("Frontier is outside of the polygon, skipping.");
       frontier->setAchievability(false);
       frontier->setArrivalInformation(0.0);

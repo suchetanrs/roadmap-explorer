@@ -50,7 +50,7 @@ Attributes	        Foreground color	   Background color
 
 #define LOG_LEVEL 3
 #define TIME_LEVEL 0
-#define USE_MODULE_FLOW false
+#define USE_MODULE_FLOW true
 
 ////////////////////////////////////////////////////////////////////////////////////////
 

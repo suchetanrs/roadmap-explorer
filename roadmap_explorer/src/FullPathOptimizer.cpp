@@ -9,11 +9,14 @@ FullPathOptimizer::FullPathOptimizer(
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros)
 : node_(node)
 {
-  
-  num_frontiers_in_local_area = parameterInstance.getValue<double>("fullPathOptimizer.num_frontiers_in_local_area");
-  local_frontier_search_radius = parameterInstance.getValue<double>("fullPathOptimizer.local_frontier_search_radius");
+
+  num_frontiers_in_local_area = parameterInstance.getValue<double>(
+    "fullPathOptimizer.num_frontiers_in_local_area");
+  local_frontier_search_radius = parameterInstance.getValue<double>(
+    "fullPathOptimizer.local_frontier_search_radius");
   add_yaw_to_tsp = parameterInstance.getValue<bool>("fullPathOptimizer.add_yaw_to_tsp");
-  add_distance_to_robot_to_tsp = parameterInstance.getValue<bool>("fullPathOptimizer.add_distance_to_robot_to_tsp");
+  add_distance_to_robot_to_tsp = parameterInstance.getValue<bool>(
+    "fullPathOptimizer.add_distance_to_robot_to_tsp");
 
   explore_costmap_ros_ = explore_costmap_ros;
   local_search_area_publisher_ = node_->create_publisher<visualization_msgs::msg::MarkerArray>(
@@ -21,6 +24,12 @@ FullPathOptimizer::FullPathOptimizer(
   frontier_nav2_plan_ = node_->create_publisher<nav_msgs::msg::Path>(
     "frontier_roadmap_nav2_plan",
     10);
+}
+
+FullPathOptimizer::~FullPathOptimizer()
+{
+  LOG_INFO("FullPathOptimizer::~FullPathOptimizer");
+  frontier_pair_distances_.clear();
 }
 
 void FullPathOptimizer::addToMarkerArraySolidPolygon(
@@ -334,10 +343,13 @@ bool FullPathOptimizer::getNextGoal(
   FrontierPtr & nextFrontier, size_t n,
   geometry_msgs::msg::PoseStamped & robotP)
 {
-  num_frontiers_in_local_area = parameterInstance.getValue<double>("fullPathOptimizer.num_frontiers_in_local_area");
-  local_frontier_search_radius = parameterInstance.getValue<double>("fullPathOptimizer.local_frontier_search_radius");
+  num_frontiers_in_local_area = parameterInstance.getValue<double>(
+    "fullPathOptimizer.num_frontiers_in_local_area");
+  local_frontier_search_radius = parameterInstance.getValue<double>(
+    "fullPathOptimizer.local_frontier_search_radius");
   add_yaw_to_tsp = parameterInstance.getValue<bool>("fullPathOptimizer.add_yaw_to_tsp");
-  add_distance_to_robot_to_tsp = parameterInstance.getValue<bool>("fullPathOptimizer.add_distance_to_robot_to_tsp");
+  add_distance_to_robot_to_tsp = parameterInstance.getValue<bool>(
+    "fullPathOptimizer.add_distance_to_robot_to_tsp");
 
   SortedFrontiers sortedFrontiers;
   // sort based on path length
@@ -396,7 +408,7 @@ bool FullPathOptimizer::getNextGoal(
 
 bool FullPathOptimizer::refineAndPublishPath(
   geometry_msgs::msg::PoseStamped & robotP,
-  FrontierPtr & goalFrontier, nav_msgs::msg::Path& refined_path)
+  FrontierPtr & goalFrontier, nav_msgs::msg::Path & refined_path)
 {
   nav_msgs::msg::Path nav2_plan;
   nav2_plan.header.frame_id = "map";

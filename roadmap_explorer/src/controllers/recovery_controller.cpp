@@ -16,6 +16,13 @@ RecoveryController::RecoveryController(
   costmap_ = explore_costmap_ros_->getCostmap();
 }
 
+RecoveryController::~RecoveryController()
+{
+  LOG_WARN("RecoveryController::~RecoveryController()");
+  delete costmap_;
+  vel_publisher_.reset();
+}
+
 bool RecoveryController::computeVelocityCommand(bool backward_only)
 {
   // Define possible directions (angles in radians) to check (e.g., forward, left, right, etc.)

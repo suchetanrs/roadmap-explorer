@@ -46,12 +46,11 @@ class UpdateBoundaryPolygonBT : public BT::SyncActionNode
 public:
   UpdateBoundaryPolygonBT(
     const std::string & name, const BT::NodeConfiguration & config,
-    std::shared_ptr<CostAssigner> cost_assigner_ptr, std::vector<double> boundary_config,
-    rclcpp::Node::SharedPtr ros_node_ptr)
+    std::shared_ptr<CostAssigner> cost_assigner_ptr, rclcpp::Node::SharedPtr ros_node_ptr)
   : BT::SyncActionNode(name, config)
   {
     cost_assigner_ptr_ = cost_assigner_ptr;
-    config_ = boundary_config;
+    config_ = parameterInstance.getValue<std::vector<double>>("explorationBT.exploration_boundary");
     ros_node_ptr_ = ros_node_ptr;
     LOG_DEBUG("UpdateBoundaryPolygonBT Constructor");
   }
@@ -288,6 +287,9 @@ public:
     auto frontierCostsRequestPtr = std::make_shared<GetFrontierCostsRequest>();
     auto frontierCostsResultPtr = std::make_shared<GetFrontierCostsResponse>();
 
+    config().blackboard->get<std::vector<FrontierPtr>>(
+      "blacklisted_frontiers", frontierCostsRequestPtr->prohibited_frontiers);
+
     if (!getInput<std::vector<FrontierPtr>>(
         "frontier_list",
         frontierCostsRequestPtr->frontier_list))
@@ -406,140 +408,17 @@ public:
   rclcpp::Node::SharedPtr node_;
 };
 
-class HysterisisControl : public BT::StatefulActionNode
-{
-public:
-  HysterisisControl(
-    const std::string & name, const BT::NodeConfiguration & config,
-    std::shared_ptr<FullPathOptimizer> full_path_optimizer)
-  : BT::StatefulActionNode(name, config)
-  {
-    LOG_INFO("HysterisisControl Constructor");
-    minDistance = std::numeric_limits<double>::max();
-    EventLoggerInstance.startEvent("startHysterisis");
-    full_path_optimizer_ = full_path_optimizer;
-  }
-
-  BT::NodeStatus onStart() override
-  {
-    EventLoggerInstance.startEvent("HysterisisControl");
-    LOG_FLOW("MODULE HysterisisControl");
-    geometry_msgs::msg::PoseStamped robotP;
-    if (!config().blackboard->get<geometry_msgs::msg::PoseStamped>("latest_robot_pose", robotP)) {
-      // Handle the case when "latest_robot_pose" is not found
-      LOG_FATAL("Failed to retrieve latest_robot_pose from blackboard.");
-      throw std::runtime_error("Failed to retrieve latest_robot_pose from blackboard.");
-    }
-    CurrentGoalStatus status;
-    if (!config().blackboard->get<CurrentGoalStatus>("current_goal_status", status)) {
-      LOG_FATAL("Failed to retrieve hysteresis_enabled from blackboard.");
-      throw std::runtime_error("Failed to retrieve hysteresis_enabled from blackboard.");
-    }
-    /**
-         * The status is set to RUNNING when when the robot is still replanning (typically at 1Hz) towards a goal.
-         * The status is set to SUCCESS when the robot has reached the goal / the goal is mapped.
-         */
-    if (status == CurrentGoalStatus::RUNNING) {
-      FrontierPtr allocatedFrontier = std::make_shared<Frontier>();
-      getInput<FrontierPtr>("allocated_frontier", allocatedFrontier);
-      LOG_INFO("Hysterisis prior: " << allocatedFrontier);
-
-      LOG_DEBUG("Value of min Distance " << minDistance);
-      LOG_DEBUG("Reference of min Distance " << &minDistance);
-      if (parameterInstance.getValue<bool>("goalHysteresis.use_euclidean_distance") == true) {
-        LOG_INFO("Using Euclidean Distance for hysteresis");
-        if (distanceBetweenPoints(
-            allocatedFrontier->getGoalPoint(),
-            robotP.pose.position) < minDistance - 3.0)
-        {
-          minDistance = distanceBetweenPoints(
-            allocatedFrontier->getGoalPoint(), robotP.pose.position);
-          mostFrequentFrontier = allocatedFrontier;
-          LOG_DEBUG("Found a closer one: " << minDistance);
-        }
-      } else if (parameterInstance.getValue<bool>("goalHysteresis.use_roadmap_planner_distance") ==
-        true)
-      {
-        FrontierPtr robotPoseFrontier = std::make_shared<Frontier>();
-        robotPoseFrontier->setGoalPoint(robotP.pose.position.x, robotP.pose.position.y);
-        robotPoseFrontier->setUID(generateUID(robotPoseFrontier));
-        robotPoseFrontier->setPathLength(0.0);
-        robotPoseFrontier->setPathLengthInM(0.0);
-        LOG_INFO("Using Roadmap Planner Distance for hysteresis");
-        auto lengthToGoal = full_path_optimizer_->calculateLengthRobotToGoal(
-          robotPoseFrontier,
-          allocatedFrontier,
-          robotP);
-        if (lengthToGoal < minDistance - 3.0) {
-          minDistance = lengthToGoal;
-          mostFrequentFrontier = allocatedFrontier;
-          LOG_DEBUG("Found a closer one: " << minDistance);
-        }
-      }
-
-      // Set the most frequent frontier as the output
-      setOutput<FrontierPtr>("allocated_frontier_after_hysterisis", mostFrequentFrontier);
-    } else {
-      FrontierPtr allocatedFrontier = std::make_shared<Frontier>();
-      getInput<FrontierPtr>("allocated_frontier", allocatedFrontier);
-      LOG_INFO("Hysterisis prior: " << allocatedFrontier);
-      setOutput<FrontierPtr>("allocated_frontier_after_hysterisis", allocatedFrontier);
-      if (parameterInstance.getValue<bool>("goalHysteresis.use_euclidean_distance") == true) {
-        minDistance =
-          distanceBetweenPoints(allocatedFrontier->getGoalPoint(), robotP.pose.position);
-      } else if (parameterInstance.getValue<bool>("goalHysteresis.use_roadmap_planner_distance") ==
-        true)
-      {
-        FrontierPtr robotPoseFrontier = std::make_shared<Frontier>();
-        robotPoseFrontier->setGoalPoint(robotP.pose.position.x, robotP.pose.position.y);
-        robotPoseFrontier->setUID(generateUID(robotPoseFrontier));
-        robotPoseFrontier->setPathLength(0.0);
-        robotPoseFrontier->setPathLengthInM(0.0);
-        minDistance = full_path_optimizer_->calculateLengthRobotToGoal(
-          robotPoseFrontier,
-          allocatedFrontier, robotP);
-      }
-      LOG_INFO("Current length to goal: " << minDistance);
-      mostFrequentFrontier = allocatedFrontier;
-    }
-    LOG_INFO("Hysterisis post: " << mostFrequentFrontier);
-    EventLoggerInstance.endEvent("HysterisisControl", 0);
-    return BT::NodeStatus::SUCCESS;
-  }
-
-  BT::NodeStatus onRunning()
-  {
-    return BT::NodeStatus::SUCCESS;
-  }
-
-  void onHalted()
-  {
-    return;
-  }
-
-  static BT::PortsList providedPorts()
-  {
-    return {BT::InputPort<FrontierPtr>("allocated_frontier"),
-      BT::OutputPort<FrontierPtr>("allocated_frontier_after_hysterisis")};
-  }
-
-  double minDistance;
-  FrontierPtr mostFrequentFrontier = std::make_shared<Frontier>();
-  std::shared_ptr<FullPathOptimizer> full_path_optimizer_;
-};
-
 class SendNav2Goal : public BT::StatefulActionNode
 {
 public:
   SendNav2Goal(
     const std::string & name, const BT::NodeConfiguration & config,
-    std::shared_ptr<Nav2Interface> nav2_interface,
+    std::shared_ptr<Nav2Interface<nav2_msgs::action::NavigateToPose>> nav2_interface,
     rclcpp::Node::SharedPtr ros_node_ptr)
   : BT::StatefulActionNode(name, config)
   {
     nav2_interface_ = nav2_interface;
     ros_node_ptr_ = ros_node_ptr;
-    latestAllocationFailures_ = 0;
     LOG_INFO("SendNav2Goal Constructor");
   }
 
@@ -547,147 +426,60 @@ public:
   {
     LOG_FLOW("SendNav2Goal onStart");
     FrontierPtr allocatedFrontier = std::make_shared<Frontier>();
-    latestAllocation_ = allocatedFrontier;
     getInput("allocated_frontier", allocatedFrontier);
-    // LOG_INFO("Allocated frontier oz:" + std::to_string(allocatedFrontier->getGoalOrientation().z));
-    // LOG_INFO("Allocated frontier ow:" + std::to_string(allocatedFrontier->getGoalOrientation().w));
-    // LOG_INFO("Allocated frontier ox:" + std::to_string(allocatedFrontier->getGoalOrientation().x));
-    // LOG_INFO("Allocated frontier oy:" + std::to_string(allocatedFrontier->getGoalOrientation().y));
-    // LOG_INFO("Allocated frontier uid:" + std::to_string(allocatedFrontier->getUID()));
     geometry_msgs::msg::PoseStamped goalPose;
     goalPose.header.frame_id = "map";
     goalPose.pose.position = allocatedFrontier->getGoalPoint();
     goalPose.pose.orientation = allocatedFrontier->getGoalOrientation();
+    if(!nav2_interface_->canSendNewGoal())
+    {
+      LOG_ERROR("Nav2Interface cannot send new goal, goal is already active. Status:" << nav2_interface_->getGoalStatus());
+      return BT::NodeStatus::FAILURE;
+    }
     nav2_interface_->sendGoal(goalPose);
-    EventLoggerInstance.startEvent("GoalSentToNav2");
-    time_for_planning_ = EventLoggerInstance.getTimeSinceStart("TimeForPlanning");
-    LOG_INFO("Planning time: " << time_for_planning_);
-    EventLoggerInstance.startEvent("SendNav2GoalModule");
     return BT::NodeStatus::RUNNING;
   }
 
   BT::NodeStatus onRunning()
   {
-    double timeoutValue;
-    getInput("timeout_value", timeoutValue);
     LOG_DEBUG("SendNav2Goal onRunning");
-    if (nav2_interface_->goalStatus() == 0 && EventLoggerInstance.getTimeSinceStart(
-        "GoalSentToNav2") + time_for_planning_ < timeoutValue)
-    {
+    FrontierPtr allocatedFrontier = std::make_shared<Frontier>();
+    getInput("allocated_frontier", allocatedFrontier);
+    if(nav2_interface_->getGoalStatus() == NavGoalStatus::SENDING_GOAL) {
+      LOG_INFO("Nav2 goal is being sent, waiting for response...");
       return BT::NodeStatus::RUNNING;
-    } else if (nav2_interface_->goalStatus() == 0 &&
-      EventLoggerInstance.getTimeSinceStart("GoalSentToNav2") + time_for_planning_ >=
-      timeoutValue)
-    {
-      EventLoggerInstance.startEvent("TimeForPlanning");
-      EventLoggerInstance.endEvent("SendNav2GoalModule", 0);
-      return BT::NodeStatus::SUCCESS;
-    } else if (nav2_interface_->goalStatus() == 1) {
-      EventLoggerInstance.startEvent("TimeForPlanning");
-      EventLoggerInstance.endEvent("SendNav2GoalModule", 0);
-      latestAllocationFailures_ = 0;
-      return BT::NodeStatus::SUCCESS;
-    } else if (nav2_interface_->goalStatus() == -1) {
-      latestAllocationFailures_++;
-      if (latestAllocationFailures_ > 4) {
-        latestAllocationFailures_ = 0;
-        latestAllocation_->setBlacklisted(true);
-      }
-      EventLoggerInstance.startEvent("TimeForPlanning");
-      EventLoggerInstance.endEvent("SendNav2GoalModule", 0);
-      return BT::NodeStatus::FAILURE;
-    } else {
-      throw BT::RuntimeError("Unknown goal status");
     }
-    EventLoggerInstance.endEvent("SendNav2GoalModule", 0);
+    if (nav2_interface_->getGoalStatus() == NavGoalStatus::ONGOING) {
+      LOG_INFO("Nav2 goal is ongoing, waiting for completion...");
+      geometry_msgs::msg::PoseStamped goalPose;
+      goalPose.header.frame_id = "map";
+      goalPose.pose.position = allocatedFrontier->getGoalPoint();
+      goalPose.pose.orientation = allocatedFrontier->getGoalOrientation();
+      LOG_TRACE("Current goal pose: " << goalPose.pose.position.x << ", " << goalPose.pose.position.y << ", " << goalPose.pose.orientation.z << ", " << goalPose.pose.orientation.w << ", " << goalPose.pose.orientation.x << ", " << goalPose.pose.orientation.y);
+      nav2_interface_->sendUpdatedGoal(goalPose);
+      return BT::NodeStatus::RUNNING;
+    }
+    if(nav2_interface_->getGoalStatus() == NavGoalStatus::FAILED) {
+      LOG_ERROR("Nav2 goal has aborted!");
+      blacklisted_frontiers_.push_back(allocatedFrontier);
+      config().blackboard->set<std::vector<FrontierPtr>>("blacklisted_frontiers", blacklisted_frontiers_);
+      return BT::NodeStatus::FAILURE;
+    }
+    if(nav2_interface_->getGoalStatus() == NavGoalStatus::SUCCEEDED) {
+      LOG_WARN("Nav2 goal has succeeded!");
+    }
     return BT::NodeStatus::SUCCESS;
   }
 
   void onHalted()
   {
-    return;
-  }
-
-  static BT::PortsList providedPorts()
-  {
-    return {BT::InputPort<FrontierPtr>("allocated_frontier"),
-      BT::InputPort<double>("timeout_value")};
-  }
-
-  std::shared_ptr<Nav2Interface> nav2_interface_;
-  rclcpp::Node::SharedPtr ros_node_ptr_;
-  FrontierPtr latestAllocation_ = std::make_shared<Frontier>();
-  int latestAllocationFailures_;
-  double time_for_planning_;
-};
-
-class CheckIfGoalMapped : public BT::StatefulActionNode
-{
-public:
-  CheckIfGoalMapped(
-    const std::string & name, const BT::NodeConfiguration & config,
-    std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros,
-    rclcpp::Node::SharedPtr ros_node_ptr,
-    std::shared_ptr<FullPathOptimizer> full_path_optimizer)
-  : BT::StatefulActionNode(name, config)
-  {
-    explore_costmap_ros_ = explore_costmap_ros;
-    ros_node_ptr_ = ros_node_ptr;
-    full_path_optimizer_ = full_path_optimizer;
-    LOG_INFO("CheckIfGoalMapped Constructor");
-  }
-
-  BT::NodeStatus onStart() override
-  {
-    LOG_FLOW("CheckIfGoalMapped onStart");
-    EventLoggerInstance.startEvent("CheckIfGoalMapped");
-    FrontierPtr allocatedFrontier = std::make_shared<Frontier>();
-    getInput("allocated_frontier", allocatedFrontier);
-    // LOG_INFO("Allocated frontier oz:" + std::to_string(allocatedFrontier->getGoalOrientation().z));
-    // LOG_INFO("Allocated frontier ow:" + std::to_string(allocatedFrontier->getGoalOrientation().w));
-    // LOG_INFO("Allocated frontier ox:" + std::to_string(allocatedFrontier->getGoalOrientation().x));
-    // LOG_INFO("Allocated frontier oy:" + std::to_string(allocatedFrontier->getGoalOrientation().y));
-    // LOG_INFO("Allocated frontier uid:" + std::to_string(allocatedFrontier->getUID()));
-    geometry_msgs::msg::PoseStamped goalPose;
-    goalPose.header.frame_id = "map";
-    goalPose.pose.position = allocatedFrontier->getGoalPoint();
-    if (surroundingCellsMapped(goalPose.pose.position, *explore_costmap_ros_->getCostmap())) {
-      LOG_WARN("Goal is mapped. Restarting....");
-      config().blackboard->set<CurrentGoalStatus>(
-        "current_goal_status",
-        CurrentGoalStatus::COMPLETE);
-      EventLoggerInstance.endEvent("CheckIfGoalMapped", 0);
-      return BT::NodeStatus::SUCCESS;
+    LOG_WARN("SendNav2Goal onHalted");
+    nav2_interface_->cancelAllGoals();
+    while(!nav2_interface_->isGoalTerminated())
+    {
+      rclcpp::sleep_for(std::chrono::milliseconds(100));
+      LOG_INFO("Waiting for Nav2 goal to be cancelled...");
     }
-    geometry_msgs::msg::PoseStamped robotP;
-    if (!config().blackboard->get<geometry_msgs::msg::PoseStamped>("latest_robot_pose", robotP)) {
-      // Handle the case when "latest_robot_pose" is not found
-      LOG_FATAL("Failed to retrieve latest_robot_pose from blackboard.");
-      throw std::runtime_error("Failed to retrieve latest_robot_pose from blackboard.");
-    }
-    nav_msgs::msg::Path path;
-    if (!full_path_optimizer_->refineAndPublishPath(robotP, allocatedFrontier, path)) {
-      LOG_ERROR(
-        "Failed to refine and publish path between robotP: " << robotP.pose.position.x << ", " << robotP.pose.position.y << " and " <<
-          allocatedFrontier);
-      config().blackboard->set<CurrentGoalStatus>(
-        "current_goal_status",
-        CurrentGoalStatus::COMPLETE);
-      EventLoggerInstance.endEvent("CheckIfGoalMapped", 0);
-      return BT::NodeStatus::SUCCESS;
-    }
-    EventLoggerInstance.endEvent("CheckIfGoalMapped", 0);
-    return BT::NodeStatus::FAILURE;
-  }
-
-  BT::NodeStatus onRunning()
-  {
-    throw BT::RuntimeError("ReplanTimeoutCompleteBT should not be running");
-    return BT::NodeStatus::FAILURE;
-  }
-
-  void onHalted()
-  {
     return;
   }
 
@@ -696,66 +488,9 @@ public:
     return {BT::InputPort<FrontierPtr>("allocated_frontier")};
   }
 
-  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros_;
+  std::shared_ptr<Nav2Interface<nav2_msgs::action::NavigateToPose>> nav2_interface_;
   rclcpp::Node::SharedPtr ros_node_ptr_;
-  std::shared_ptr<FullPathOptimizer> full_path_optimizer_;
-};
-
-class ReplanTimeoutCompleteBT : public BT::StatefulActionNode
-{
-public:
-  ReplanTimeoutCompleteBT(
-    const std::string & name, const BT::NodeConfiguration & config,
-    std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros,
-    rclcpp::Node::SharedPtr ros_node_ptr)
-  : BT::StatefulActionNode(name, config)
-  {
-    explore_costmap_ros_ = explore_costmap_ros;
-    ros_node_ptr_ = ros_node_ptr;
-    LOG_INFO("ReplanTimeoutCompleteBT Constructor");
-  }
-
-  BT::NodeStatus onStart() override
-  {
-    double timeoutValue;
-    getInput("timeout_value", timeoutValue);
-    LOG_FLOW("ReplanTimeoutCompleteBT onStart");
-    if (EventLoggerInstance.getTimeSinceStart("triggeredReplan") > timeoutValue) {
-      LOG_WARN("Replan duration exceeded. Check cpu performance!!");
-      EventLoggerInstance.startEvent("triggeredReplan");
-      return BT::NodeStatus::FAILURE;
-    }
-    if (EventLoggerInstance.getTimeSinceStart("replanTimeout") > timeoutValue) {
-      LOG_WARN("Replanning timed out. Restarting the frontier computation");
-      EventLoggerInstance.startEvent("replanTimeout");
-      config().blackboard->set<CurrentGoalStatus>(
-        "current_goal_status",
-        CurrentGoalStatus::RUNNING);
-      EventLoggerInstance.startEvent("triggeredReplan");
-      return BT::NodeStatus::SUCCESS;
-    }
-    EventLoggerInstance.startEvent("triggeredReplan");
-    return BT::NodeStatus::FAILURE;
-  }
-
-  BT::NodeStatus onRunning()
-  {
-    return BT::NodeStatus::SUCCESS;
-  }
-
-  void onHalted()
-  {
-    return;
-  }
-
-  static BT::PortsList providedPorts()
-  {
-    return {BT::InputPort<FrontierPtr>("allocated_frontier"),
-      BT::InputPort<double>("timeout_value")};
-  }
-
-  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros_;
-  rclcpp::Node::SharedPtr ros_node_ptr_;
+  std::vector<FrontierPtr> blacklisted_frontiers_;
 };
 
 }
@@ -768,24 +503,10 @@ FrontierExplorationServer::FrontierExplorationServer(rclcpp::Node::SharedPtr nod
   bt_node_ = node;
   exploration_active_ = true;
   blackboard = BT::Blackboard::create();
-  blackboard->set<CurrentGoalStatus>("current_goal_status", CurrentGoalStatus::RUNNING);
-
-  robot_namespaces_ = {};
-  bt_node_->declare_parameter("exploration_boundary", rclcpp::ParameterValue(exploration_boundary_));
-  bt_node_->declare_parameter(
-    "bt_xml_path",
-    "/root/dev_ws/src/roadmap_explorer/roadmap_explorer/xml/exploration.xml");
-
-  bt_node_->get_parameter("exploration_boundary", exploration_boundary_);
-  bt_node_->get_parameter("bt_xml_path", bt_xml_path_);
   parameterInstance.makeParameters(true, node);
 
   LOG_TRACE("Declared BT params");
-  // //--------------------------------------------NAV2 CLIENT RELATED-------------------------------
-  // nav2_interface_ = std::make_shared<Nav2Interface>(bt_node_);
-  // LOG_TRACE("Created Nav2 interface instance");
-
-  //--------------------------------------------EXPLORE SERVER RELATED----------------------------
+  nav2_interface_ = std::make_shared<Nav2Interface<nav2_msgs::action::NavigateToPose>>(bt_node_, "navigate_to_pose", "goal_update");
 
   explore_costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "roadmap_explorer_costmap", "", "roadmap_explorer_costmap");
@@ -795,35 +516,25 @@ FrontierExplorationServer::FrontierExplorationServer(rclcpp::Node::SharedPtr nod
   explore_costmap_ros_->activate();
   LOG_TRACE("Created costmap instance");
 
-  //------------------------------------------BOUNDED EXPLORE LAYER RELATED------------------------
   RosVisualizer::createInstance(bt_node_, explore_costmap_ros_->getCostmap());
-  FrontierRoadMap::createInstance(explore_costmap_ros_);
+  FrontierRoadMap::createInstance(explore_costmap_ros_, node);
   LOG_TRACE("Created ros visualizer instance");
   cost_assigner_ptr_ = std::make_shared<CostAssigner>(explore_costmap_ros_);
 
-  frontierSearchPtr_ =
-    std::make_shared<FrontierSearch>(*(explore_costmap_ros_->getLayeredCostmap()->getCostmap()));
+  frontierSearchPtr_ = std::make_shared<FrontierSearch>(*(explore_costmap_ros_->getLayeredCostmap()->getCostmap()));
   full_path_optimizer_ = std::make_shared<FullPathOptimizer>(bt_node_, explore_costmap_ros_);
-  //---------------------------------------------ROS RELATED------------------------------------------
-  rviz_control_callback_group_ = node->create_callback_group(
-    rclcpp::CallbackGroupType::MutuallyExclusive);
-  rclcpp::SubscriptionOptions options;
-  options.callback_group = rviz_control_callback_group_;
 
-  exploration_rviz_sub_ = node->create_subscription<std_msgs::msg::Int32>(
-    "/exploration_state", 10, std::bind(
-      &FrontierExplorationServer::rvizControl, this,
-      std::placeholders::_1),
-    options);
   LOG_INFO("FrontierExplorationServer::FrontierExplorationServer()");
 }
 
 FrontierExplorationServer::~FrontierExplorationServer()
 {
   LOG_INFO("FrontierExplorationServer::~FrontierExplorationServer()");
-  explore_costmap_ros_->deactivate();
-  explore_costmap_ros_->cleanup();
+  explore_costmap_ros_.reset();
   explore_costmap_thread_.reset();
+  RosVisualizer::getInstance().cleanupInstance();
+  FrontierRoadMap::getInstance().cleanupInstance();
+  parameterInstance.cleanupInstance();
 }
 
 void FrontierExplorationServer::makeBTNodes()
@@ -845,7 +556,8 @@ void FrontierExplorationServer::makeBTNodes()
   BT::NodeBuilder builder_update_boundary_polygon =
     [&](const std::string & name, const BT::NodeConfiguration & config)
     {
-      return std::make_unique<UpdateBoundaryPolygonBT>(name, config, cost_assigner_ptr_, exploration_boundary_, bt_node_);
+      return std::make_unique<UpdateBoundaryPolygonBT>(
+        name, config, cost_assigner_ptr_, bt_node_);
     };
   factory.registerBuilder<UpdateBoundaryPolygonBT>(
     "UpdateBoundaryPolygon",
@@ -893,13 +605,6 @@ void FrontierExplorationServer::makeBTNodes()
     };
   factory.registerBuilder<OptimizeFullPath>("OptimizeFullPath", builder_full_path_optimizer);
 
-  BT::NodeBuilder builder_hystersis_control =
-    [&](const std::string & name, const BT::NodeConfiguration & config)
-    {
-      return std::make_unique<HysterisisControl>(name, config, full_path_optimizer_);
-    };
-  factory.registerBuilder<HysterisisControl>("HysterisisControl", builder_hystersis_control);
-
   BT::NodeBuilder builder_send_goal =
     [&](const std::string & name, const BT::NodeConfiguration & config)
     {
@@ -907,25 +612,10 @@ void FrontierExplorationServer::makeBTNodes()
     };
   factory.registerBuilder<SendNav2Goal>("SendNav2Goal", builder_send_goal);
 
-  BT::NodeBuilder builder_goal_mapped =
-    [&](const std::string & name, const BT::NodeConfiguration & config)
-    {
-      return std::make_unique<CheckIfGoalMapped>(
-        name, config, explore_costmap_ros_, bt_node_,
-        full_path_optimizer_);
-    };
-  factory.registerBuilder<CheckIfGoalMapped>("CheckIfGoalMapped", builder_goal_mapped);
+  factory.registerNodeType<nav2_behavior_tree::PipelineSequence>("PipelineSequence");
+  factory.registerNodeType<nav2_behavior_tree::RateController>("RateController");
 
-  BT::NodeBuilder builder_replan_timeout =
-    [&](const std::string & name, const BT::NodeConfiguration & config)
-    {
-      return std::make_unique<ReplanTimeoutCompleteBT>(
-        name, config, explore_costmap_ros_,
-        bt_node_);
-    };
-  factory.registerBuilder<ReplanTimeoutCompleteBT>("ReplanTimeoutComplete", builder_replan_timeout);
-
-  behaviour_tree = factory.createTreeFromFile(bt_xml_path_, blackboard);
+  behaviour_tree = factory.createTreeFromFile(parameterInstance.getValue<std::string>("explorationBT.bt_xml_path"), blackboard);
 }
 
 void FrontierExplorationServer::run()
@@ -938,18 +628,6 @@ void FrontierExplorationServer::run()
       LOG_DEBUG("TICKED ONCE");
     }
     // std::this_thread::sleep_for(std::chrono::milliseconds(100));
-  }
-}
-
-void FrontierExplorationServer::rvizControl(std_msgs::msg::Int32 rvizControlValue)
-{
-  if (rvizControlValue.data == 0) {
-    LOG_WARN("Pausing exploration");
-    exploration_active_ = false;
-    nav2_interface_->cancelAllGoals();
-  } else if (rvizControlValue.data == 1) {
-    LOG_WARN("Playing exploration");
-    exploration_active_ = true;
   }
 }
 

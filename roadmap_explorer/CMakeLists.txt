@@ -55,9 +55,9 @@ yaml-cpp
 nav2_behavior_tree
 )
 
-add_compile_definitions(
-  USE_RCLCPP_LOGGER
-)
+# add_compile_definitions(
+#   USE_RCLCPP_LOGGER
+# )
 
 include_directories(
   include

@@ -24,6 +24,15 @@ EventLogger::EventLogger(const std::string & baseFilename)
   // outFile << "SerialNumber,Event,Duration(seconds)\n";
 }
 
+EventLogger::~EventLogger()
+{
+  LOG_INFO("EventLogger::~EventLogger()");
+  // Close the CSV file if it was opened
+  // std::ofstream outFile(csvFilename, std::ios::out | std::ios::app);
+  // outFile.close();
+  startTimes.clear();
+}
+
 // Function to start an event
 void EventLogger::startEvent(const std::string & key)
 {

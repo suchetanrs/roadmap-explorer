@@ -9,7 +9,8 @@ std::mutex roadmap_explorer::FrontierRoadMap::instanceMutex_;
 
 namespace roadmap_explorer
 {
-FrontierRoadMap::FrontierRoadMap(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros)
+FrontierRoadMap::FrontierRoadMap(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros, 
+                                 rclcpp::Node::SharedPtr node_ptr)
 : costmap_(explore_costmap_ros->getCostmap()),
   explore_costmap_ros_(explore_costmap_ros)
 {
@@ -28,24 +29,29 @@ FrontierRoadMap::FrontierRoadMap(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> 
   LOG_INFO("Max frontier distance: " << max_graph_reconstruction_distance_);
 
   max_connection_length_ = RADIUS_TO_DECIDE_EDGES * 1.5;
-  node_ = rclcpp::Node::make_shared("frontier_roadmap_node");
-  marker_pub_roadmap_ = node_->create_publisher<visualization_msgs::msg::MarkerArray>(
+  marker_pub_roadmap_ = node_ptr->create_publisher<visualization_msgs::msg::MarkerArray>(
     "frontier_roadmap", 10);
-  marker_pub_plan_ = node_->create_publisher<visualization_msgs::msg::MarkerArray>(
+  marker_pub_plan_ = node_ptr->create_publisher<visualization_msgs::msg::MarkerArray>(
     "frontier_roadmap_plan", 10);
-  map_data_subscription_ = node_->create_subscription<roadmap_explorer_msgs::msg::MapData>(
+  map_data_subscription_ = node_ptr->create_subscription<roadmap_explorer_msgs::msg::MapData>(
     "map_data", 10, std::bind(&FrontierRoadMap::mapDataCallback, this, std::placeholders::_1));
   astar_planner_ = std::make_shared<FrontierRoadmapAStar>();
 
 
   // Subscriber to handle clicked points
-  roadmap_plan_test_sub_ = node_->create_subscription<geometry_msgs::msg::PointStamped>(
+  roadmap_plan_test_sub_ = node_ptr->create_subscription<geometry_msgs::msg::PointStamped>(
     "/clicked_point", 10,
     std::bind(&FrontierRoadMap::clickedPointCallback, this, std::placeholders::_1));
-  std::thread t1([this]()
-    {rclcpp::spin(node_);});
-  t1.detach();
   // RosVisualizerInstance = std::make_shared<RosVisualizer>(node_, costmap_);
+}
+
+FrontierRoadMap::~FrontierRoadMap()
+{
+  LOG_INFO("FrontierRoadMap::~FrontierRoadMap()");
+  roadmap_.clear();
+  unconnectable_roadmap_.clear();
+  spatial_hash_map_.clear();
+  map_data_subscription_.reset();
 }
 
 void FrontierRoadMap::mapDataCallback(roadmap_explorer_msgs::msg::MapData mapData)
@@ -398,7 +404,10 @@ void FrontierRoadMap::reConstructGraph(bool entireGraph, bool optimizeRoadmap)
       if (sqrt(
           pow(
             robotPose.pose.position.x - pair.first.first,
-            2) + pow(robotPose.pose.position.y - pair.first.second, 2)) > max_graph_reconstruction_distance_)
+            2) +
+          pow(
+            robotPose.pose.position.y - pair.first.second,
+            2)) > max_graph_reconstruction_distance_)
       {
         LOG_DEBUG(
           "Skipping x: " << pair.first.first << ", y: " << pair.first.second << " from roadmap");
@@ -690,7 +699,7 @@ std::size_t FrontierRoadMap::countTotalItemsInSpatialMap()
   RosVisualizer::getInstance().visualizeSpatialHashMap(master_frontier_list, "map");
   // LOG_INFO("Total items in the spatial map is: " << total_items);
   return total_items;
-};
+}
 
 void FrontierRoadMap::publishRoadMap()
 {

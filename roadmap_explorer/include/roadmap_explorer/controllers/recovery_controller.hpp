@@ -16,6 +16,8 @@ public:
   RecoveryController(
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros,
     rclcpp::Node::SharedPtr node_ptr);
+  
+  ~RecoveryController();
 
   // Function to compute the velocity command based on free space
   bool computeVelocityCommand(bool backward_only);

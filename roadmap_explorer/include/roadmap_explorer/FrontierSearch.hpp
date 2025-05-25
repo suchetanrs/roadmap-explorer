@@ -29,6 +29,8 @@ class FrontierSearch
 public:
   FrontierSearch(nav2_costmap_2d::Costmap2D & costmap);
 
+  ~FrontierSearch();
+
   void reset()
   {
     every_frontier_list.clear();

@@ -1,60 +1,104 @@
-#ifndef NAV2_INTERFACE_HPP
-#define NAV2_INTERFACE_HPP
+#ifndef NAV2_INTERFACE_HPP_
+#define NAV2_INTERFACE_HPP_
+
+#include <memory>
+#include <string>
 
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_action/rclcpp_action.hpp>
-#include <nav2_msgs/action/navigate_to_pose.hpp>
+
 #include <geometry_msgs/msg/pose_with_covariance_stamped.hpp>
 #include <tf2_ros/buffer.h>
-#include <memory>
-#include <string>
-#include "roadmap_explorer/util/Logger.hpp"
 
-// 0  - processing
-// 1  - succeeded, no goal active
-// -1 - failure
+#include <nav2_msgs/action/navigate_to_pose.hpp>
+
+#include "roadmap_explorer/util/Logger.hpp"
+#include "roadmap_explorer/util/magic_enum.hpp"
+#include "roadmap_explorer/Parameters.hpp"
 
 namespace roadmap_explorer
 {
-using NavigateToPose = nav2_msgs::action::NavigateToPose;
-using GoalHandleNav2 = rclcpp_action::ClientGoalHandle<NavigateToPose>;
 
+enum class NavGoalStatus
+{
+  // terminal states
+  DEFAULT,
+  SUCCEEDED,
+  FAILED,
+  CANCELLED,
+  // ongoing states
+  SENDING_GOAL,
+  ONGOING,
+  CANCELLING,
+};
+
+template<typename ActionT>
 class Nav2Interface
 {
 public:
-  Nav2Interface(rclcpp::Node::SharedPtr node);
+  using GoalHandle = rclcpp_action::ClientGoalHandle<ActionT>;
+  explicit Nav2Interface(
+    rclcpp::Node::SharedPtr node, std::string action_name,
+    std::string update_topic_name);
   ~Nav2Interface();
   void goalPoseCallback(const geometry_msgs::msg::PoseStamped::SharedPtr msg);
-  void cancelAllGoalsCallback(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg);
+  bool sendCancelWaitForResponse(action_msgs::srv::CancelGoal::Response & response);
   void cancelAllGoals();
-  void sendGoal(geometry_msgs::msg::PoseStamped & goal_pose);
-  int goalStatus()
+  virtual bool sendGoal(geometry_msgs::msg::PoseStamped & pose);
+  void sendUpdatedGoal(geometry_msgs::msg::PoseStamped pose);
+  NavGoalStatus getGoalStatus()
   {
-    std::lock_guard<std::mutex> lock(goal_active_mutex_);
+    std::lock_guard<std::recursive_mutex> lock(goal_state_mutex_);
     return nav2_goal_state_;
   }
 
-private:
-  void nav2GoalFeedbackCallback(
-    GoalHandleNav2::SharedPtr,
-    const std::shared_ptr<const NavigateToPose::Feedback> feedback);
-  void nav2GoalResultCallback(const GoalHandleNav2::WrappedResult & result);
-  void nav2GoalResponseCallback(const GoalHandleNav2::SharedPtr & goal_handle);
+  bool isGoalTerminated()
+  {
+    return !isGoalActive();
+  }
+
+  bool isGoalActive()
+  {
+    std::lock_guard<std::recursive_mutex> lock(goal_state_mutex_);
+    return nav2_goal_state_ == NavGoalStatus::ONGOING ||
+           nav2_goal_state_ == NavGoalStatus::CANCELLING ||
+           nav2_goal_state_ == NavGoalStatus::SENDING_GOAL;
+  }
+
+  bool isGoalOngoing()
+  {
+    std::lock_guard<std::recursive_mutex> lock(goal_state_mutex_);
+    return nav2_goal_state_ == NavGoalStatus::ONGOING;
+  }
+
+  bool canSendNewGoal();
+
+  bool isGoalHandleNull()
+  {
+    return current_goal_handle_ == nullptr;
+  }
+
+protected:
+  virtual void nav2GoalFeedbackCallback(
+    typename GoalHandle::SharedPtr,
+    const std::shared_ptr<const typename ActionT::Feedback> feedback);
+  void nav2GoalResultCallback(const typename GoalHandle::WrappedResult & result);
+  void nav2GoalResponseCallback(const typename GoalHandle::SharedPtr & goal_handle);
+
+  rclcpp_action::Client<ActionT>::SharedPtr nav2Client_;
+  std::mutex nav2Clientlock_;
+  rclcpp_action::Client<ActionT>::SendGoalOptions nav2_goal_options_;
+  rclcpp::CallbackGroup::SharedPtr nav2_client_callback_group_;
+  rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr updated_goal_publisher_;
+  std::recursive_mutex goal_state_mutex_;
+  std::mutex nav2_feedback_mutex_;
+  NavGoalStatus nav2_goal_state_;
+
+  typename rclcpp_action::ClientGoalHandle<ActionT>::SharedPtr current_goal_handle_;
+  bool shutting_down_ = false;
 
   rclcpp::Node::SharedPtr node_;
-  rclcpp_action::Client<NavigateToPose>::SharedPtr nav2Client_;
-  std::mutex nav2Clientlock_;
-  rclcpp_action::Client<NavigateToPose>::SendGoalOptions nav2_goal_options_;
-  rclcpp::CallbackGroup::SharedPtr nav2_client_callback_group_;
-
-  rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goal_pose_subscriber_;
-  rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr
-    cancel_goal_subscriber_;
-  rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr updated_goal_publisher_;
-
-  std::mutex goal_active_mutex_;
-  int nav2_goal_state_;
 };
-}
+}  // namespace roadmap_explorer
 
-#endif // NAV2_INTERFACE_HPP
+#endif  // NAV2_INTERFACE_HPP
