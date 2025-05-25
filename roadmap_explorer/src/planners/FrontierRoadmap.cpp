@@ -9,8 +9,9 @@ std::mutex roadmap_explorer::FrontierRoadMap::instanceMutex_;
 
 namespace roadmap_explorer
 {
-FrontierRoadMap::FrontierRoadMap(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros, 
-                                 rclcpp::Node::SharedPtr node_ptr)
+FrontierRoadMap::FrontierRoadMap(
+  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros,
+  rclcpp::Node::SharedPtr node_ptr)
 : costmap_(explore_costmap_ros->getCostmap()),
   explore_costmap_ros_(explore_costmap_ros)
 {

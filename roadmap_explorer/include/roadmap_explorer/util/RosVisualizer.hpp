@@ -102,8 +102,9 @@ public:
   void visualizeBlacklistedFrontiers(
     const std::vector<FrontierPtr> & blacklisted_frontiers,
     std::string globalFrameID);
-  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr blacklisted_frontiers_publisher_;
- 
+  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
+    blacklisted_frontiers_publisher_;
+
 private:
   // Delete copy constructor and assignment operator to prevent copying
   RosVisualizer(const RosVisualizer &) = delete;

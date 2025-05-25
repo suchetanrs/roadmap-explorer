@@ -10,19 +10,18 @@ int main(int argc, char ** argv)
   auto executor = std::make_shared<rclcpp::executors::MultiThreadedExecutor>();
   executor->add_node(node);
   std::thread spin_thread([executor]() {
-    executor->spin();
-  });
+      executor->spin();
+    });
   spin_thread.detach();
 
   exploration_server->makeBTNodes();
   exploration_server->run();
   LOG_WARN("Exiting main thread, stopping exploration server.");
-  
+
   exploration_server.reset();
   LOG_WARN("Resetted exploration server.");
-  
-  if(spin_thread.joinable())
-  {
+
+  if (spin_thread.joinable()) {
     spin_thread.join();
   }
   LOG_WARN("Joined spin thread.");

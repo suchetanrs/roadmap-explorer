@@ -120,10 +120,17 @@ void ParameterHandler::makeParametersROS(rclcpp::Node::SharedPtr node)
 
   // --- explorationBT ---
   node->declare_parameter<int64_t>("explorationBT.bt_sleep_ms", 70);
-  node->declare_parameter<std::string>("explorationBT.nav2_bt_xml", roadmap_explorer_dir + "/xml/explore_to_pose.xml");
-  node->declare_parameter<std::string>("explorationBT.bt_xml_path", roadmap_explorer_dir + "/xml/exploration.xml");
-  std::vector default_exploration_boundary = {310.0, 260.0, 310.0, -120.0, -70.0, -120.0, -70.0, 260.0};
-  node->declare_parameter<std::vector<double>>("explorationBT.exploration_boundary", default_exploration_boundary);
+  node->declare_parameter<std::string>(
+    "explorationBT.nav2_bt_xml",
+    roadmap_explorer_dir + "/xml/explore_to_pose.xml");
+  node->declare_parameter<std::string>(
+    "explorationBT.bt_xml_path",
+    roadmap_explorer_dir + "/xml/exploration.xml");
+  std::vector default_exploration_boundary =
+  {310.0, 260.0, 310.0, -120.0, -70.0, -120.0, -70.0, 260.0};
+  node->declare_parameter<std::vector<double>>(
+    "explorationBT.exploration_boundary",
+    default_exploration_boundary);
 
   parameter_map_["explorationBT.bt_sleep_ms"] =
     node->get_parameter("explorationBT.bt_sleep_ms").as_int();

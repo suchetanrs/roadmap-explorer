@@ -431,9 +431,10 @@ public:
     goalPose.header.frame_id = "map";
     goalPose.pose.position = allocatedFrontier->getGoalPoint();
     goalPose.pose.orientation = allocatedFrontier->getGoalOrientation();
-    if(!nav2_interface_->canSendNewGoal())
-    {
-      LOG_ERROR("Nav2Interface cannot send new goal, goal is already active. Status:" << nav2_interface_->getGoalStatus());
+    if (!nav2_interface_->canSendNewGoal()) {
+      LOG_ERROR(
+        "Nav2Interface cannot send new goal, goal is already active. Status:" <<
+          nav2_interface_->getGoalStatus());
       return BT::NodeStatus::FAILURE;
     }
     nav2_interface_->sendGoal(goalPose);
@@ -445,7 +446,7 @@ public:
     LOG_DEBUG("SendNav2Goal onRunning");
     FrontierPtr allocatedFrontier = std::make_shared<Frontier>();
     getInput("allocated_frontier", allocatedFrontier);
-    if(nav2_interface_->getGoalStatus() == NavGoalStatus::SENDING_GOAL) {
+    if (nav2_interface_->getGoalStatus() == NavGoalStatus::SENDING_GOAL) {
       LOG_INFO("Nav2 goal is being sent, waiting for response...");
       return BT::NodeStatus::RUNNING;
     }
@@ -455,17 +456,21 @@ public:
       goalPose.header.frame_id = "map";
       goalPose.pose.position = allocatedFrontier->getGoalPoint();
       goalPose.pose.orientation = allocatedFrontier->getGoalOrientation();
-      LOG_TRACE("Current goal pose: " << goalPose.pose.position.x << ", " << goalPose.pose.position.y << ", " << goalPose.pose.orientation.z << ", " << goalPose.pose.orientation.w << ", " << goalPose.pose.orientation.x << ", " << goalPose.pose.orientation.y);
+      LOG_TRACE(
+        "Current goal pose: " << goalPose.pose.position.x << ", " << goalPose.pose.position.y << ", " << goalPose.pose.orientation.z << ", " << goalPose.pose.orientation.w << ", " << goalPose.pose.orientation.x << ", " <<
+          goalPose.pose.orientation.y);
       nav2_interface_->sendUpdatedGoal(goalPose);
       return BT::NodeStatus::RUNNING;
     }
-    if(nav2_interface_->getGoalStatus() == NavGoalStatus::FAILED) {
+    if (nav2_interface_->getGoalStatus() == NavGoalStatus::FAILED) {
       LOG_ERROR("Nav2 goal has aborted!");
       blacklisted_frontiers_.push_back(allocatedFrontier);
-      config().blackboard->set<std::vector<FrontierPtr>>("blacklisted_frontiers", blacklisted_frontiers_);
+      config().blackboard->set<std::vector<FrontierPtr>>(
+        "blacklisted_frontiers",
+        blacklisted_frontiers_);
       return BT::NodeStatus::FAILURE;
     }
-    if(nav2_interface_->getGoalStatus() == NavGoalStatus::SUCCEEDED) {
+    if (nav2_interface_->getGoalStatus() == NavGoalStatus::SUCCEEDED) {
       LOG_WARN("Nav2 goal has succeeded!");
     }
     return BT::NodeStatus::SUCCESS;
@@ -475,8 +480,7 @@ public:
   {
     LOG_WARN("SendNav2Goal onHalted");
     nav2_interface_->cancelAllGoals();
-    while(!nav2_interface_->isGoalTerminated())
-    {
+    while (!nav2_interface_->isGoalTerminated()) {
       rclcpp::sleep_for(std::chrono::milliseconds(100));
       LOG_INFO("Waiting for Nav2 goal to be cancelled...");
     }
@@ -506,7 +510,10 @@ FrontierExplorationServer::FrontierExplorationServer(rclcpp::Node::SharedPtr nod
   parameterInstance.makeParameters(true, node);
 
   LOG_TRACE("Declared BT params");
-  nav2_interface_ = std::make_shared<Nav2Interface<nav2_msgs::action::NavigateToPose>>(bt_node_, "navigate_to_pose", "goal_update");
+  nav2_interface_ = std::make_shared<Nav2Interface<nav2_msgs::action::NavigateToPose>>(
+    bt_node_,
+    "navigate_to_pose",
+    "goal_update");
 
   explore_costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "roadmap_explorer_costmap", "", "roadmap_explorer_costmap");
@@ -521,7 +528,8 @@ FrontierExplorationServer::FrontierExplorationServer(rclcpp::Node::SharedPtr nod
   LOG_TRACE("Created ros visualizer instance");
   cost_assigner_ptr_ = std::make_shared<CostAssigner>(explore_costmap_ros_);
 
-  frontierSearchPtr_ = std::make_shared<FrontierSearch>(*(explore_costmap_ros_->getLayeredCostmap()->getCostmap()));
+  frontierSearchPtr_ =
+    std::make_shared<FrontierSearch>(*(explore_costmap_ros_->getLayeredCostmap()->getCostmap()));
   full_path_optimizer_ = std::make_shared<FullPathOptimizer>(bt_node_, explore_costmap_ros_);
 
   LOG_INFO("FrontierExplorationServer::FrontierExplorationServer()");
@@ -615,7 +623,10 @@ void FrontierExplorationServer::makeBTNodes()
   factory.registerNodeType<nav2_behavior_tree::PipelineSequence>("PipelineSequence");
   factory.registerNodeType<nav2_behavior_tree::RateController>("RateController");
 
-  behaviour_tree = factory.createTreeFromFile(parameterInstance.getValue<std::string>("explorationBT.bt_xml_path"), blackboard);
+  behaviour_tree =
+    factory.createTreeFromFile(
+    parameterInstance.getValue<std::string>(
+      "explorationBT.bt_xml_path"), blackboard);
 }
 
 void FrontierExplorationServer::run()

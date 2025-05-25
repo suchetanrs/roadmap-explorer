@@ -182,45 +182,42 @@ bool Nav2Interface<ActionT>::canSendNewGoal()
 template<typename ActionT>
 bool Nav2Interface<ActionT>::sendGoal(geometry_msgs::msg::PoseStamped & pose)
 {
-    // Only allow a new goal if the current state is IDLE or in a terminal state.
-    if(!canSendNewGoal())
-    {
-        LOG_ERROR("Cannot send new goal");
-        return false;
-    }
-    std::lock_guard<std::recursive_mutex> lock(this->goal_state_mutex_);
-    auto goal_pose                      = pose;
-    goal_pose.header.stamp              = this->node_->get_clock()->now();
+  // Only allow a new goal if the current state is IDLE or in a terminal state.
+  if (!canSendNewGoal()) {
+    LOG_ERROR("Cannot send new goal");
+    return false;
+  }
+  std::lock_guard<std::recursive_mutex> lock(this->goal_state_mutex_);
+  auto goal_pose = pose;
+  goal_pose.header.stamp = this->node_->get_clock()->now();
 
-    LOG_INFO("New goal being sent to nav2");
-    this->nav2_goal_state_ = NavGoalStatus::SENDING_GOAL;
-    LOG_INFO("SendGoal but new goal");
-    std::lock_guard<std::mutex> lock2(this->nav2Clientlock_);
-    auto nav2_goal_  = std::make_shared<typename ActionT::Goal>();
-    nav2_goal_->pose = goal_pose;
-    nav2_goal_->behavior_tree = parameterInstance.getValue<std::string>("explorationBT.nav2_bt_xml");
-    this->nav2Client_->async_send_goal(*nav2_goal_, this->nav2_goal_options_);
-    return true;
+  LOG_INFO("New goal being sent to nav2");
+  this->nav2_goal_state_ = NavGoalStatus::SENDING_GOAL;
+  LOG_INFO("SendGoal but new goal");
+  std::lock_guard<std::mutex> lock2(this->nav2Clientlock_);
+  auto nav2_goal_ = std::make_shared<typename ActionT::Goal>();
+  nav2_goal_->pose = goal_pose;
+  nav2_goal_->behavior_tree = parameterInstance.getValue<std::string>("explorationBT.nav2_bt_xml");
+  this->nav2Client_->async_send_goal(*nav2_goal_, this->nav2_goal_options_);
+  return true;
 }
 
 template<typename ActionT>
 void Nav2Interface<ActionT>::sendUpdatedGoal(geometry_msgs::msg::PoseStamped pose)
 {
-    std::lock_guard<std::recursive_mutex> lock(goal_state_mutex_);
-    pose.header.stamp = node_->get_clock()->now();
-    if (isGoalActive())
-    {
-        LOG_INFO("Updated goal being sent to nav2");
-        updated_goal_publisher_->publish(pose);
-    }
-    else { LOG_ERROR("There is no ongoing goal. What are you re-planning? "); }
+  std::lock_guard<std::recursive_mutex> lock(goal_state_mutex_);
+  pose.header.stamp = node_->get_clock()->now();
+  if (isGoalActive()) {
+    LOG_INFO("Updated goal being sent to nav2");
+    updated_goal_publisher_->publish(pose);
+  } else {LOG_ERROR("There is no ongoing goal. What are you re-planning? ");}
 }
 
 template<typename ActionT>
 void Nav2Interface<ActionT>::nav2GoalFeedbackCallback(
   typename GoalHandle::SharedPtr, const std::shared_ptr<const typename ActionT::Feedback> feedback)
 {
-    std::lock_guard<std::mutex> lock(this->nav2_feedback_mutex_);
+  std::lock_guard<std::mutex> lock(this->nav2_feedback_mutex_);
 }
 
 // TODO: suchetan Since the linker cannot find the definitions of many templates if we define this in nav2_navigate_to_pose.cpp, we need to do it here.

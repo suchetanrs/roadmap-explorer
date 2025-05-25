@@ -43,8 +43,8 @@ enum class CurrentGoalStatus
 
 inline std::ostream & operator<<(std::ostream & os, const NavGoalStatus status)
 {
-    os << magic_enum::enum_name(status);
-    return os;
+  os << magic_enum::enum_name(status);
+  return os;
 }
 
 class FrontierExplorationServer
@@ -89,7 +89,7 @@ private:
   std::shared_ptr<FullPathOptimizer> full_path_optimizer_;
 
   bool exploration_active_;
-        // these are the frontiers traversed by this robot.
+  // these are the frontiers traversed by this robot.
 };
 }
 

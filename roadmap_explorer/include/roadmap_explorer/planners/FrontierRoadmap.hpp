@@ -51,7 +51,9 @@ public:
     return *frontierRoadmapPtr;
   }
 
-  static void createInstance(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros, rclcpp::Node::SharedPtr node_ptr)
+  static void createInstance(
+    std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros,
+    rclcpp::Node::SharedPtr node_ptr)
   {
     std::cout << "Creating roadmap instance" << std::endl;
     std::lock_guard<std::mutex> lock(instanceMutex_);
@@ -146,7 +148,9 @@ private:
 
   FrontierRoadMap(const FrontierRoadMap &) = delete;
   FrontierRoadMap & operator=(const FrontierRoadMap &) = delete;
-  FrontierRoadMap(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros, rclcpp::Node::SharedPtr node_ptr);
+  FrontierRoadMap(
+    std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros,
+    rclcpp::Node::SharedPtr node_ptr);
 
   static std::unique_ptr<FrontierRoadMap> frontierRoadmapPtr;
   static std::mutex instanceMutex_;

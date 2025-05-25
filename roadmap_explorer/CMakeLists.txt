@@ -80,10 +80,10 @@ src/Nav2Interface.cpp
 src/Helpers.cpp
 src/FrontierSearch.cpp
 src/CostCalculator.cpp
-src/main.cpp
-src/ExplorationBT.cpp 
+src/ExplorationBT.cpp
 src/CostAssigner.cpp
 src/FullPathOptimizer.cpp 
+src/main.cpp
 )
 ament_target_dependencies(explore_server ${dependencies})
 target_link_libraries(explore_server ${PCL_LIBRARIES} ${YAML_CPP_LIBRARIES})
