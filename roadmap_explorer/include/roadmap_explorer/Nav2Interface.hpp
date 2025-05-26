@@ -25,12 +25,19 @@ enum class NavGoalStatus
   DEFAULT,
   SUCCEEDED,
   FAILED,
+  REJECTED,
   CANCELLED,
   // ongoing states
   SENDING_GOAL,
   ONGOING,
   CANCELLING,
 };
+
+inline std::ostream & operator<<(std::ostream & os, const NavGoalStatus status)
+{
+  os << magic_enum::enum_name(status);
+  return os;
+}
 
 template<typename ActionT>
 class Nav2Interface

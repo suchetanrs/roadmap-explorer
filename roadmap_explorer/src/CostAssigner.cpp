@@ -61,7 +61,7 @@ bool CostAssigner::getFrontierCosts(
   return resultData->success;
 }
 
-bool CostAssigner::updateBoundaryPolygon(geometry_msgs::msg::PolygonStamped & explore_boundary)
+void CostAssigner::updateBoundaryPolygon(geometry_msgs::msg::PolygonStamped & explore_boundary)
 {
   // Transform all points of boundary polygon into costmap frame
   geometry_msgs::msg::PointStamped in;
@@ -105,7 +105,7 @@ bool CostAssigner::updateBoundaryPolygon(geometry_msgs::msg::PolygonStamped & ex
   polygon_xy_min_max_.push_back(min_y_polygon);
   polygon_xy_min_max_.push_back(max_x_polygon);
   polygon_xy_min_max_.push_back(max_y_polygon);
-  return true;
+  return;
 }
 
 bool CostAssigner::processChosenApproach(

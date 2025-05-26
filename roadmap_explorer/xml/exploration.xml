@@ -6,34 +6,25 @@
                     <WaitForCurrent/>
                     <UpdateBoundaryPolygon />
                     <SearchForFrontiers frontier_list="{the_frontier_list}" every_frontier="{the_every_frontier}" increment_search_distance_by="10.0"/>
-                    <Inverter>
+                    <ForceSuccess>
                         <CleanupRoadmap frontier_list="{the_frontier_list}" time_between_cleanup="7.0" correct_loop_closure="false"/>
-                    </Inverter>
+                    </ForceSuccess>
                     <UpdateFrontierRoadmap frontier_list="{the_frontier_list}" add_robot_pose_to_roadmap="true"/>
                     <ProcessFrontierCosts frontier_list="{the_frontier_list}" every_frontier="{the_every_frontier}" frontier_costs_result="{the_frontier_costs}"/>
                     <Fallback>
                         <OptimizeFullPath frontier_costs_result="{the_frontier_costs}" allocated_frontier="{the_allocated_frontier}" optimized_path="{optimized_path}"/>
-                        <Inverter>
+                        <ForceSuccess>
                             <CleanupRoadmap frontier_list="{the_frontier_list}" time_between_cleanup="0.0" correct_loop_closure="false"/>
-                        </Inverter>
+                        </ForceSuccess>
                     </Fallback>
-                    <!-- <HysterisisControl allocated_frontier="{the_allocated_frontier}" allocated_frontier_after_hysterisis="{the_allocated_frontier_after_hysterisis}"/> -->
-
-                    <!-- <ReactiveSequence> -->
-                        <!-- <Inverter> --> 
-                            <!-- <CheckIfGoalMapped allocated_frontier="{the_allocated_frontier_after_hysterisis}"/> -->
-                        <!-- </Inverter> -->
-                        <!-- <Inverter>
-                            <ReplanTimeoutComplete allocated_frontier="{the_allocated_frontier_after_hysterisis}" timeout_value="0.05"/>
-                        </Inverter> -->
-                        <!-- <Fallback> -->
-                            <!-- <RecoveryMoveBack move_back_duration="2.0"/> -->
-                            <!-- <ExecuteRecoveryMove backward_only="false"/> -->
-                        <!-- </Fallback> -->
-                    <!-- </ReactiveSequence> -->
                 </Sequence> 
             </RateController>
-            <SendNav2Goal allocated_frontier="{the_allocated_frontier}"/>
+            <Fallback>
+                <RetryUntilSuccessful num_attempts="3">
+                    <SendNav2Goal allocated_frontier="{the_allocated_frontier}"/>
+                </RetryUntilSuccessful>
+                <BlacklistGoal allocated_frontier="{the_allocated_frontier}"/>
+            </Fallback>
         </PipelineSequence>
     </BehaviorTree>
 </root>

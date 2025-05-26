@@ -69,14 +69,7 @@ public:
       explore_boundary_.polygon.points.push_back(point);
     }
 
-    auto updateBoundaryResult = cost_assigner_ptr_->updateBoundaryPolygon(explore_boundary_);
-    LOG_DEBUG("Adding update boundary polygon for spin.");
-    if (updateBoundaryResult == true) {
-      LOG_INFO("Region boundary set");
-    } else {
-      LOG_ERROR("Failed to receive response for updateBoundaryPolygon");
-      return BT::NodeStatus::FAILURE;
-    }
+    cost_assigner_ptr_->updateBoundaryPolygon(explore_boundary_);
     return BT::NodeStatus::SUCCESS;
   }
 
@@ -122,10 +115,22 @@ public:
     if (frontier_list.size() == 0) {
       double increment_value = 0.1;
       getInput("increment_search_distance_by", increment_value);
-      frontierSearchPtr_->incrementSearchDistance(increment_value);
+      auto result_distance = frontierSearchPtr_->incrementSearchDistance(increment_value);
+      if (!result_distance) {
+        LOG_ERROR("Maximum frontier search distance exceeded. Returning BT Failure.");
+        EventLoggerInstance.endEvent("SearchForFrontiers", 0);
+        explore_costmap_ros_->getCostmap()->getMutex()->unlock();
+        config().blackboard->set<ExplorationErrorCode>(
+          "error_code_id",
+          ExplorationErrorCode::MAX_FRONTIER_SEARCH_RADIUS_EXCEEDED);
+        return BT::NodeStatus::FAILURE;
+      }
       LOG_WARN("No frontiers found in search. Incrementing search radius and returning BT Failure.");
       EventLoggerInstance.endEvent("SearchForFrontiers", 0);
       explore_costmap_ros_->getCostmap()->getMutex()->unlock();
+      config().blackboard->set<ExplorationErrorCode>(
+        "error_code_id",
+        ExplorationErrorCode::NO_FRONTIERS_IN_CURRENT_RADIUS);
       return BT::NodeStatus::FAILURE;
     }
     LOG_INFO("Recieved " << frontier_list.size() << " frontiers");
@@ -176,7 +181,7 @@ public:
     double time_between_cleanup;
     getInput("time_between_cleanup", time_between_cleanup);
     if (EventLoggerInstance.getTimeSinceStart("clearRoadmap") < time_between_cleanup) {
-      return BT::NodeStatus::FAILURE;
+      return BT::NodeStatus::SUCCESS;
     }
     EventLoggerInstance.startEvent("clearRoadmap");
     EventLoggerInstance.startEvent("CleanupRoadMapBT");
@@ -287,8 +292,9 @@ public:
     auto frontierCostsRequestPtr = std::make_shared<GetFrontierCostsRequest>();
     auto frontierCostsResultPtr = std::make_shared<GetFrontierCostsResponse>();
 
-    config().blackboard->get<std::vector<FrontierPtr>>(
-      "blacklisted_frontiers", frontierCostsRequestPtr->prohibited_frontiers);
+    frontierCostsRequestPtr->prohibited_frontiers =
+      *(config().blackboard->get<std::shared_ptr<std::vector<FrontierPtr>>>(
+        "blacklisted_frontiers"));
 
     if (!getInput<std::vector<FrontierPtr>>(
         "frontier_list",
@@ -317,6 +323,9 @@ public:
     if (frontierCostsSuccess == false) {
       LOG_INFO("Failed to receive response for getNextFrontier called from within the robot.");
       EventLoggerInstance.endEvent("ProcessFrontierCosts", 0);
+      config().blackboard->set<ExplorationErrorCode>(
+        "error_code_id",
+        ExplorationErrorCode::COST_COMPUTATION_FAILURE);
       return BT::NodeStatus::FAILURE;
     }
     setOutput("frontier_costs_result", frontierCostsResultPtr->frontier_list);
@@ -380,6 +389,8 @@ public:
       double increment_value = 0.1;
       getInput("increment_search_distance_by", increment_value);
       EventLoggerInstance.endEvent("OptimizeFullPath", 0);
+      config().blackboard->set<ExplorationErrorCode>(
+        "error_code_id", ExplorationErrorCode::FULL_PATH_OPTIMIZATION_FAILURE);
       return BT::NodeStatus::FAILURE;
     }
     EventLoggerInstance.endEvent("OptimizeFullPath", 0);
@@ -390,6 +401,9 @@ public:
       LOG_ERROR(
         "Failed to refine and publish path between robotP: " << robotP.pose.position.x << ", " << robotP.pose.position.y << " and " <<
           allocatedFrontier);
+      config().blackboard->set<ExplorationErrorCode>(
+        "error_code_id", ExplorationErrorCode::REFINED_PATH_COMPUTATION_FAILURE);
+      blacklistFrontier(allocatedFrontier, config().blackboard);
       return BT::NodeStatus::FAILURE;
     }
     setOutput<nav_msgs::msg::Path>("optimized_path", path);
@@ -435,6 +449,8 @@ public:
       LOG_ERROR(
         "Nav2Interface cannot send new goal, goal is already active. Status:" <<
           nav2_interface_->getGoalStatus());
+      config().blackboard->set<ExplorationErrorCode>(
+        "error_code_id", ExplorationErrorCode::UNHANDLED_ERROR);
       return BT::NodeStatus::FAILURE;
     }
     nav2_interface_->sendGoal(goalPose);
@@ -464,10 +480,8 @@ public:
     }
     if (nav2_interface_->getGoalStatus() == NavGoalStatus::FAILED) {
       LOG_ERROR("Nav2 goal has aborted!");
-      blacklisted_frontiers_.push_back(allocatedFrontier);
-      config().blackboard->set<std::vector<FrontierPtr>>(
-        "blacklisted_frontiers",
-        blacklisted_frontiers_);
+      config().blackboard->set<ExplorationErrorCode>(
+        "error_code_id", ExplorationErrorCode::NAV2_GOAL_ABORT);
       return BT::NodeStatus::FAILURE;
     }
     if (nav2_interface_->getGoalStatus() == NavGoalStatus::SUCCEEDED) {
@@ -494,22 +508,44 @@ public:
 
   std::shared_ptr<Nav2Interface<nav2_msgs::action::NavigateToPose>> nav2_interface_;
   rclcpp::Node::SharedPtr ros_node_ptr_;
-  std::vector<FrontierPtr> blacklisted_frontiers_;
+};
+
+class BlacklistGoal : public BT::SyncActionNode
+{
+public:
+  BlacklistGoal(
+    const std::string & name, const BT::NodeConfiguration & config)
+  : BT::SyncActionNode(name, config)
+  {
+    LOG_INFO("BlacklistGoal Constructor");
+  }
+
+  BT::NodeStatus tick() override
+  {
+    EventLoggerInstance.startEvent("BlacklistGoal");
+    LOG_FLOW("MODULE BlacklistGoal");
+    FrontierPtr allocatedFrontier = std::make_shared<Frontier>();
+    getInput<FrontierPtr>("allocated_frontier", allocatedFrontier);
+    blacklistFrontier(allocatedFrontier, config().blackboard);
+    return BT::NodeStatus::SUCCESS;
+  }
+
+  static BT::PortsList providedPorts()
+  {
+    return {BT::OutputPort<FrontierPtr>("allocated_frontier")};
+  }
 };
 
 }
 
 namespace roadmap_explorer
 {
-FrontierExplorationServer::FrontierExplorationServer(rclcpp::Node::SharedPtr node)
+RoadmapExplorationBT::RoadmapExplorationBT(rclcpp::Node::SharedPtr node)
 {
-  LOG_TRACE("First BT constructor");
   bt_node_ = node;
-  exploration_active_ = true;
   blackboard = BT::Blackboard::create();
   parameterInstance.makeParameters(true, node);
 
-  LOG_TRACE("Declared BT params");
   nav2_interface_ = std::make_shared<Nav2Interface<nav2_msgs::action::NavigateToPose>>(
     bt_node_,
     "navigate_to_pose",
@@ -521,23 +557,20 @@ FrontierExplorationServer::FrontierExplorationServer(rclcpp::Node::SharedPtr nod
   // Launch a thread to run the costmap node
   explore_costmap_thread_ = std::make_unique<nav2_util::NodeThread>(explore_costmap_ros_);
   explore_costmap_ros_->activate();
-  LOG_TRACE("Created costmap instance");
 
   RosVisualizer::createInstance(bt_node_, explore_costmap_ros_->getCostmap());
   FrontierRoadMap::createInstance(explore_costmap_ros_, node);
-  LOG_TRACE("Created ros visualizer instance");
   cost_assigner_ptr_ = std::make_shared<CostAssigner>(explore_costmap_ros_);
-
   frontierSearchPtr_ =
     std::make_shared<FrontierSearch>(*(explore_costmap_ros_->getLayeredCostmap()->getCostmap()));
   full_path_optimizer_ = std::make_shared<FullPathOptimizer>(bt_node_, explore_costmap_ros_);
 
-  LOG_INFO("FrontierExplorationServer::FrontierExplorationServer()");
+  LOG_INFO("RoadmapExplorationBT::RoadmapExplorationBT()");
 }
 
-FrontierExplorationServer::~FrontierExplorationServer()
+RoadmapExplorationBT::~RoadmapExplorationBT()
 {
-  LOG_INFO("FrontierExplorationServer::~FrontierExplorationServer()");
+  LOG_INFO("RoadmapExplorationBT::~RoadmapExplorationBT()");
   explore_costmap_ros_.reset();
   explore_costmap_thread_.reset();
   RosVisualizer::getInstance().cleanupInstance();
@@ -545,7 +578,7 @@ FrontierExplorationServer::~FrontierExplorationServer()
   parameterInstance.cleanupInstance();
 }
 
-void FrontierExplorationServer::makeBTNodes()
+void RoadmapExplorationBT::makeBTNodes()
 {
   while (!explore_costmap_ros_->isCurrent()) {
     LOG_WARN("Waiting for explore costmap to be current.");
@@ -553,6 +586,8 @@ void FrontierExplorationServer::makeBTNodes()
   }
   EventLoggerInstance.startEvent("clearRoadmap");
   EventLoggerInstance.startEvent("replanTimeout");
+
+  // ------------------- Nodes ----------------------------------------------
 
   BT::NodeBuilder builder_wait_for_current =
     [&](const std::string & name, const BT::NodeConfiguration & config)
@@ -620,6 +655,14 @@ void FrontierExplorationServer::makeBTNodes()
     };
   factory.registerBuilder<SendNav2Goal>("SendNav2Goal", builder_send_goal);
 
+  BT::NodeBuilder builder_blacklist_goal =
+    [&](const std::string & name, const BT::NodeConfiguration & config)
+    {
+      return std::make_unique<BlacklistGoal>(name, config);
+    };
+  factory.registerBuilder<BlacklistGoal>("BlacklistGoal", builder_blacklist_goal);
+
+  // -------------------- Control and decorators -----------------------------
   factory.registerNodeType<nav2_behavior_tree::PipelineSequence>("PipelineSequence");
   factory.registerNodeType<nav2_behavior_tree::RateController>("RateController");
 
@@ -627,18 +670,62 @@ void FrontierExplorationServer::makeBTNodes()
     factory.createTreeFromFile(
     parameterInstance.getValue<std::string>(
       "explorationBT.bt_xml_path"), blackboard);
+
+  blackboard->set<std::shared_ptr<std::vector<FrontierPtr>>>(
+    "blacklisted_frontiers",
+    std::make_shared<std::vector<FrontierPtr>>());
 }
 
-void FrontierExplorationServer::run()
+void RoadmapExplorationBT::run()
 {
   while (rclcpp::ok()) {
-    if (exploration_active_) {
-      int bt_sleep_duration = parameterInstance.getValue<int64_t>("explorationBT.bt_sleep_ms");
-      behaviour_tree.tickRoot();
-      std::this_thread::sleep_for(std::chrono::milliseconds(bt_sleep_duration));
-      LOG_DEBUG("TICKED ONCE");
+    int bt_sleep_duration = parameterInstance.getValue<int64_t>("explorationBT.bt_sleep_ms");
+    auto status = behaviour_tree.tickRoot();
+    if (status == BT::NodeStatus::FAILURE) {
+      if (blackboard->get<ExplorationErrorCode>("error_code_id") ==
+        ExplorationErrorCode::NO_FRONTIERS_IN_CURRENT_RADIUS)
+      {
+        LOG_ERROR(
+          "Behavior Tree tick returned FAILURE due to no frontiers in current search radius.");
+        continue;
+      } else if (blackboard->get<ExplorationErrorCode>("error_code_id") ==
+        ExplorationErrorCode::MAX_FRONTIER_SEARCH_RADIUS_EXCEEDED)
+      {
+        LOG_ERROR("Behavior Tree tick returned FAILURE due to max frontier search radius exceeded.");
+      } else if (blackboard->get<ExplorationErrorCode>("error_code_id") ==
+        ExplorationErrorCode::COST_COMPUTATION_FAILURE)
+      {
+        LOG_ERROR("Behavior Tree tick returned FAILURE due to cost computation failure.");
+      } else if (blackboard->get<ExplorationErrorCode>("error_code_id") ==
+        ExplorationErrorCode::FULL_PATH_OPTIMIZATION_FAILURE)
+      {
+        LOG_ERROR("Behavior Tree tick returned FAILURE due to full path optimization failure.");
+      } else if (blackboard->get<ExplorationErrorCode>("error_code_id") ==
+        ExplorationErrorCode::REFINED_PATH_COMPUTATION_FAILURE)
+      {
+        LOG_ERROR("Behavior Tree tick returned FAILURE due to refined path computation failure.");
+      } else if (blackboard->get<ExplorationErrorCode>("error_code_id") ==
+        ExplorationErrorCode::UNHANDLED_ERROR)
+      {
+        LOG_ERROR("Behavior Tree tick returned FAILURE with unhandled error code.");
+      } else if (blackboard->get<ExplorationErrorCode>("error_code_id") ==
+        ExplorationErrorCode::NAV2_GOAL_ABORT)
+      {
+        LOG_ERROR("Behavior Tree tick returned FAILURE due to Nav2 goal abort.");
+        if (parameterInstance.getValue<bool>("explorationBT.abort_exploration_on_nav2_abort")) {
+          LOG_ERROR("Aborting exploration due to Nav2 goal abort.");
+          return;
+        } else {
+          LOG_WARN("Continuing exploration despite Nav2 goal abort. The frontier was blacklisted.");
+          continue;
+        }
+      } else {
+        throw std::runtime_error("Behavior Tree tick returned FAILURE with unknown error code.");
+      }
+      return;
     }
-    // std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    std::this_thread::sleep_for(std::chrono::milliseconds(bt_sleep_duration));
+    LOG_DEBUG("TICKED ONCE");
   }
 }
 

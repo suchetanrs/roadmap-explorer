@@ -25,7 +25,7 @@ std::vector<FrontierPtr> FrontierSearch::searchFrom(geometry_msgs::msg::Point po
   max_frontier_cluster_size_ = parameterInstance.getValue<double>(
     "frontierSearch.max_frontier_cluster_size");
   lethal_threshold_ = parameterInstance.getValue<int64_t>("frontierSearch.lethal_threshold");
-  LOG_INFO("MAX FRONTIER SEARCH DISTANCE: " << max_frontier_distance_);
+  LOG_INFO("MAX FRONTIER SEARCH DISTANCE: " << frontier_search_distance_);
 
   //  frontier_list to store the detected frontiers.
   std::vector<FrontierPtr> frontier_list;
@@ -59,7 +59,7 @@ std::vector<FrontierPtr> FrontierSearch::searchFrom(geometry_msgs::msg::Point po
   }
   visited_flag[bfs.front()] = true;
 
-  auto distance_to_check_ = max_frontier_distance_ +
+  auto distance_to_check_ = frontier_search_distance_ +
     (max_frontier_cluster_size_ * costmap_.getResolution() * 1.414);
   distance_to_check_ = std::pow(distance_to_check_, 2);
 

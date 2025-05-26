@@ -36,16 +36,23 @@ public:
     every_frontier_list.clear();
   }
 
-  void incrementSearchDistance(double value)
+  bool incrementSearchDistance(double value)
   {
-    max_frontier_distance_ += value;
+    frontier_search_distance_ += value;
+    if (frontier_search_distance_ > parameterInstance.getValue<double>(
+        "frontierSearch.max_frontier_search_distance"))
+    {
+      LOG_ERROR("Frontier search distance exceeded maximum limit");
+      return false;
+    }
+    return true;
   }
 
   void resetSearchDistance()
   {
     original_search_distance_ = parameterInstance.getValue<double>(
-      "frontierSearch.max_frontier_distance");
-    max_frontier_distance_ = original_search_distance_;
+      "frontierSearch.frontier_search_distance");
+    frontier_search_distance_ = original_search_distance_;
   }
 
   std::vector<FrontierPtr> searchFrom(geometry_msgs::msg::Point position);
@@ -126,7 +133,7 @@ private:
   std::vector<std::vector<double>> every_frontier_list;
   int min_frontier_cluster_size_;
   int max_frontier_cluster_size_;
-  double max_frontier_distance_;
+  double frontier_search_distance_;
   double original_search_distance_;
   unsigned char lethal_threshold_;
 };

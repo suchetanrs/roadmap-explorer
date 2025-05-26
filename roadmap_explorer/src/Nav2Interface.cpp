@@ -148,7 +148,7 @@ void Nav2Interface<ActionT>::nav2GoalResponseCallback(
   std::lock_guard<std::recursive_mutex> lock(goal_state_mutex_);
   if (!goal_handle) {
     LOG_ERROR("Goal was rejected by Nav2 server");
-    nav2_goal_state_ = NavGoalStatus::FAILED;
+    nav2_goal_state_ = NavGoalStatus::REJECTED;
   } else {
     LOG_INFO("Goal accepted by Nav2 server, waiting for result");
     current_goal_handle_ = goal_handle;

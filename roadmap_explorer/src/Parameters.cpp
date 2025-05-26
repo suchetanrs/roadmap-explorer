@@ -29,15 +29,15 @@ void ParameterHandler::makeParametersROS(rclcpp::Node::SharedPtr node)
   // --- frontierSearch ---
   node->declare_parameter<double>("frontierSearch.min_frontier_cluster_size", 1.0);
   node->declare_parameter<double>("frontierSearch.max_frontier_cluster_size", 20.0);
-  node->declare_parameter<double>("frontierSearch.max_frontier_distance", 50.0);
+  node->declare_parameter<double>("frontierSearch.frontier_search_distance", 50.0);
   node->declare_parameter<int64_t>("frontierSearch.lethal_threshold", 160);
 
   parameter_map_["frontierSearch.min_frontier_cluster_size"] = node->get_parameter(
     "frontierSearch.min_frontier_cluster_size").as_double();
   parameter_map_["frontierSearch.max_frontier_cluster_size"] = node->get_parameter(
     "frontierSearch.max_frontier_cluster_size").as_double();
-  parameter_map_["frontierSearch.max_frontier_distance"] = node->get_parameter(
-    "frontierSearch.max_frontier_distance").as_double();
+  parameter_map_["frontierSearch.frontier_search_distance"] = node->get_parameter(
+    "frontierSearch.frontier_search_distance").as_double();
   parameter_map_["frontierSearch.lethal_threshold"] = node->get_parameter(
     "frontierSearch.lethal_threshold").as_int();
 
@@ -131,6 +131,8 @@ void ParameterHandler::makeParametersROS(rclcpp::Node::SharedPtr node)
   node->declare_parameter<std::vector<double>>(
     "explorationBT.exploration_boundary",
     default_exploration_boundary);
+  node->declare_parameter<bool>(
+    "explorationBT.abort_exploration_on_nav2_abort", true);
 
   parameter_map_["explorationBT.bt_sleep_ms"] =
     node->get_parameter("explorationBT.bt_sleep_ms").as_int();
@@ -140,6 +142,8 @@ void ParameterHandler::makeParametersROS(rclcpp::Node::SharedPtr node)
     node->get_parameter("explorationBT.bt_xml_path").as_string();
   parameter_map_["explorationBT.exploration_boundary"] =
     node->get_parameter("explorationBT.exploration_boundary").as_double_array();
+  parameter_map_["explorationBT.abort_exploration_on_nav2_abort"] =
+    node->get_parameter("explorationBT.abort_exploration_on_nav2_abort").as_bool();
 
   sanityCheckParameters();
 
@@ -163,8 +167,8 @@ void ParameterHandler::makeParametersYAMLcpp()
     loaded_node["frontierSearch"]["min_frontier_cluster_size"].as<double>();
   parameter_map_["frontierSearch.max_frontier_cluster_size"] =
     loaded_node["frontierSearch"]["max_frontier_cluster_size"].as<double>();
-  parameter_map_["frontierSearch.max_frontier_distance"] =
-    loaded_node["frontierSearch"]["max_frontier_distance"].as<double>();
+  parameter_map_["frontierSearch.frontier_search_distance"] =
+    loaded_node["frontierSearch"]["frontier_search_distance"].as<double>();
   parameter_map_["frontierSearch.lethal_threshold"] =
     loaded_node["frontierSearch"]["lethal_threshold"].as<int>();
 
@@ -217,6 +221,8 @@ void ParameterHandler::makeParametersYAMLcpp()
     loaded_node["explorationBT"]["bt_xml_path"].as<std::string>();
   parameter_map_["explorationBT.exploration_boundary"] =
     loaded_node["explorationBT"]["exploration_boundary"].as<std::vector<double>>();
+  parameter_map_["explorationBT.abort_exploration_on_nav2_abort"] =
+    loaded_node["explorationBT"]["abort_exploration_on_nav2_abort"].as<bool>();
 
   sanityCheckParameters();
 }

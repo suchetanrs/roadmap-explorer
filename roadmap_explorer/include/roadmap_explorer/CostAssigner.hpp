@@ -62,7 +62,7 @@ public:
 
   ~CostAssigner();
 
-  bool updateBoundaryPolygon(geometry_msgs::msg::PolygonStamped & explore_boundary);
+  void updateBoundaryPolygon(geometry_msgs::msg::PolygonStamped & explore_boundary);
 
   bool getFrontierCosts(
     std::shared_ptr<GetFrontierCostsRequest> requestData,
