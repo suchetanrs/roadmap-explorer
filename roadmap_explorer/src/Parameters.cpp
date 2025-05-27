@@ -15,7 +15,9 @@ ParameterHandler::~ParameterHandler()
   parameter_map_.clear();
 }
 
-void ParameterHandler::makeParameters(bool use_ros_parameters, std::shared_ptr<nav2_util::LifecycleNode> node)
+void ParameterHandler::makeParameters(
+  bool use_ros_parameters,
+  std::shared_ptr<nav2_util::LifecycleNode> node)
 {
   if (use_ros_parameters) {
     makeParametersROS(node);
@@ -27,10 +29,18 @@ void ParameterHandler::makeParameters(bool use_ros_parameters, std::shared_ptr<n
 void ParameterHandler::makeParametersROS(std::shared_ptr<nav2_util::LifecycleNode> node)
 {
   // --- frontierSearch ---
-  nav2_util::declare_parameter_if_not_declared(node, "frontierSearch.min_frontier_cluster_size", rclcpp::ParameterValue(1.0));
-  nav2_util::declare_parameter_if_not_declared(node, "frontierSearch.max_frontier_cluster_size", rclcpp::ParameterValue(20.0));
-  nav2_util::declare_parameter_if_not_declared(node, "frontierSearch.frontier_search_distance", rclcpp::ParameterValue(50.0));
-  nav2_util::declare_parameter_if_not_declared(node, "frontierSearch.lethal_threshold", rclcpp::ParameterValue(160));
+  nav2_util::declare_parameter_if_not_declared(
+    node, "frontierSearch.min_frontier_cluster_size", rclcpp::ParameterValue(
+      1.0));
+  nav2_util::declare_parameter_if_not_declared(
+    node, "frontierSearch.max_frontier_cluster_size", rclcpp::ParameterValue(
+      20.0));
+  nav2_util::declare_parameter_if_not_declared(
+    node, "frontierSearch.frontier_search_distance", rclcpp::ParameterValue(
+      50.0));
+  nav2_util::declare_parameter_if_not_declared(
+    node, "frontierSearch.lethal_threshold", rclcpp::ParameterValue(
+      160));
 
   parameter_map_["frontierSearch.min_frontier_cluster_size"] = node->get_parameter(
     "frontierSearch.min_frontier_cluster_size").as_double();
@@ -42,12 +52,24 @@ void ParameterHandler::makeParametersROS(std::shared_ptr<nav2_util::LifecycleNod
     "frontierSearch.lethal_threshold").as_int();
 
   // --- costCalculator ---
-  nav2_util::declare_parameter_if_not_declared(node, "costCalculator.max_camera_depth", rclcpp::ParameterValue(2.0));
-  nav2_util::declare_parameter_if_not_declared(node, "costCalculator.delta_theta", rclcpp::ParameterValue(0.10));
-  nav2_util::declare_parameter_if_not_declared(node, "costCalculator.camera_fov", rclcpp::ParameterValue(1.04));
-  nav2_util::declare_parameter_if_not_declared(node, "costCalculator.factor_of_max_is_min", rclcpp::ParameterValue(0.70));
-  nav2_util::declare_parameter_if_not_declared(node, "costCalculator.closeness_rejection_threshold", rclcpp::ParameterValue(0.5));
-  nav2_util::declare_parameter_if_not_declared(node, "costCalculator.planner_allow_unknown", rclcpp::ParameterValue(true));
+  nav2_util::declare_parameter_if_not_declared(
+    node, "costCalculator.max_camera_depth", rclcpp::ParameterValue(
+      2.0));
+  nav2_util::declare_parameter_if_not_declared(
+    node, "costCalculator.delta_theta", rclcpp::ParameterValue(
+      0.10));
+  nav2_util::declare_parameter_if_not_declared(
+    node, "costCalculator.camera_fov", rclcpp::ParameterValue(
+      1.04));
+  nav2_util::declare_parameter_if_not_declared(
+    node, "costCalculator.factor_of_max_is_min", rclcpp::ParameterValue(
+      0.70));
+  nav2_util::declare_parameter_if_not_declared(
+    node, "costCalculator.closeness_rejection_threshold", rclcpp::ParameterValue(
+      0.5));
+  nav2_util::declare_parameter_if_not_declared(
+    node, "costCalculator.planner_allow_unknown", rclcpp::ParameterValue(
+      true));
 
   parameter_map_["costCalculator.max_camera_depth"] = node->get_parameter(
     "costCalculator.max_camera_depth").as_double();
@@ -69,17 +91,32 @@ void ParameterHandler::makeParametersROS(std::shared_ptr<nav2_util::LifecycleNod
   // {"EuclideanDistance", "ArrivalInformation"};
   // {"RandomCosts"};
   // {};
-  nav2_util::declare_parameter_if_not_declared(node, "costAssigner.cost_calculation_methods", rclcpp::ParameterValue(default_cost_calculation_methods));
+  nav2_util::declare_parameter_if_not_declared(
+    node, "costAssigner.cost_calculation_methods", rclcpp::ParameterValue(
+      default_cost_calculation_methods));
 
   parameter_map_["costAssigner.cost_calculation_methods"] =
     node->get_parameter("costAssigner.cost_calculation_methods").as_string_array();
 
   // --- frontierRoadmap ---
-  nav2_util::declare_parameter_if_not_declared(node, "frontierRoadmap.max_graph_reconstruction_distance", rclcpp::ParameterValue(25.0));
-  nav2_util::declare_parameter_if_not_declared(node, "frontierRoadmap.grid_cell_size", rclcpp::ParameterValue(1.0));
-  nav2_util::declare_parameter_if_not_declared(node, "frontierRoadmap.radius_to_decide_edges", rclcpp::ParameterValue(6.1));
-  nav2_util::declare_parameter_if_not_declared(node, "frontierRoadmap.min_distance_between_two_frontier_nodes", rclcpp::ParameterValue(0.25));
-  nav2_util::declare_parameter_if_not_declared(node, "frontierRoadmap.min_distance_between_robot_pose_and_node", rclcpp::ParameterValue(0.25));
+  nav2_util::declare_parameter_if_not_declared(
+    node,
+    "frontierRoadmap.max_graph_reconstruction_distance", rclcpp::ParameterValue(
+      25.0));
+  nav2_util::declare_parameter_if_not_declared(
+    node, "frontierRoadmap.grid_cell_size", rclcpp::ParameterValue(
+      1.0));
+  nav2_util::declare_parameter_if_not_declared(
+    node, "frontierRoadmap.radius_to_decide_edges", rclcpp::ParameterValue(
+      6.1));
+  nav2_util::declare_parameter_if_not_declared(
+    node,
+    "frontierRoadmap.min_distance_between_two_frontier_nodes", rclcpp::ParameterValue(
+      0.25));
+  nav2_util::declare_parameter_if_not_declared(
+    node,
+    "frontierRoadmap.min_distance_between_robot_pose_and_node", rclcpp::ParameterValue(
+      0.25));
 
   parameter_map_["frontierRoadmap.max_graph_reconstruction_distance"] = node->get_parameter(
     "frontierRoadmap.max_graph_reconstruction_distance").as_double();
@@ -93,10 +130,21 @@ void ParameterHandler::makeParametersROS(std::shared_ptr<nav2_util::LifecycleNod
     "frontierRoadmap.min_distance_between_robot_pose_and_node").as_double();
 
   // --- fullPathOptimizer ---
-  nav2_util::declare_parameter_if_not_declared(node, "fullPathOptimizer.num_frontiers_in_local_area", rclcpp::ParameterValue(5.0));
-  nav2_util::declare_parameter_if_not_declared(node, "fullPathOptimizer.local_frontier_search_radius", rclcpp::ParameterValue(12.0));
-  nav2_util::declare_parameter_if_not_declared(node, "fullPathOptimizer.add_yaw_to_tsp", rclcpp::ParameterValue(false));
-  nav2_util::declare_parameter_if_not_declared(node, "fullPathOptimizer.add_distance_to_robot_to_tsp", rclcpp::ParameterValue(false));
+  nav2_util::declare_parameter_if_not_declared(
+    node,
+    "fullPathOptimizer.num_frontiers_in_local_area", rclcpp::ParameterValue(
+      5.0));
+  nav2_util::declare_parameter_if_not_declared(
+    node,
+    "fullPathOptimizer.local_frontier_search_radius", rclcpp::ParameterValue(
+      12.0));
+  nav2_util::declare_parameter_if_not_declared(
+    node, "fullPathOptimizer.add_yaw_to_tsp", rclcpp::ParameterValue(
+      false));
+  nav2_util::declare_parameter_if_not_declared(
+    node,
+    "fullPathOptimizer.add_distance_to_robot_to_tsp", rclcpp::ParameterValue(
+      false));
 
   parameter_map_["fullPathOptimizer.num_frontiers_in_local_area"] = node->get_parameter(
     "fullPathOptimizer.num_frontiers_in_local_area").as_double();
@@ -108,8 +156,12 @@ void ParameterHandler::makeParametersROS(std::shared_ptr<nav2_util::LifecycleNod
     "fullPathOptimizer.add_distance_to_robot_to_tsp").as_bool();
 
   // --- goalHysteresis ---
-  nav2_util::declare_parameter_if_not_declared(node, "goalHysteresis.use_euclidean_distance", rclcpp::ParameterValue(false));
-  nav2_util::declare_parameter_if_not_declared(node, "goalHysteresis.use_roadmap_planner_distance", rclcpp::ParameterValue(true));
+  nav2_util::declare_parameter_if_not_declared(
+    node, "goalHysteresis.use_euclidean_distance", rclcpp::ParameterValue(
+      false));
+  nav2_util::declare_parameter_if_not_declared(
+    node, "goalHysteresis.use_roadmap_planner_distance", rclcpp::ParameterValue(
+      true));
 
   parameter_map_["goalHysteresis.use_euclidean_distance"] = node->get_parameter(
     "goalHysteresis.use_euclidean_distance").as_bool();
@@ -117,13 +169,24 @@ void ParameterHandler::makeParametersROS(std::shared_ptr<nav2_util::LifecycleNod
     "goalHysteresis.use_roadmap_planner_distance").as_bool();
 
   // --- explorationBT ---
-  nav2_util::declare_parameter_if_not_declared(node, "explorationBT.bt_sleep_ms", rclcpp::ParameterValue(70));
-  nav2_util::declare_parameter_if_not_declared(node, "explorationBT.nav2_bt_xml", rclcpp::ParameterValue(roadmap_explorer_dir + "/xml/explore_to_pose.xml"));
-  nav2_util::declare_parameter_if_not_declared(node, "explorationBT.bt_xml_path", rclcpp::ParameterValue(roadmap_explorer_dir + "/xml/exploration.xml"));
+  nav2_util::declare_parameter_if_not_declared(
+    node, "explorationBT.bt_sleep_ms", rclcpp::ParameterValue(
+      70));
+  nav2_util::declare_parameter_if_not_declared(
+    node, "explorationBT.nav2_bt_xml", rclcpp::ParameterValue(
+      roadmap_explorer_dir + "/xml/explore_to_pose.xml"));
+  nav2_util::declare_parameter_if_not_declared(
+    node, "explorationBT.bt_xml_path", rclcpp::ParameterValue(
+      roadmap_explorer_dir + "/xml/exploration.xml"));
   std::vector default_exploration_boundary =
   {310.0, 260.0, 310.0, -120.0, -70.0, -120.0, -70.0, 260.0};
-  nav2_util::declare_parameter_if_not_declared(node, "explorationBT.exploration_boundary", rclcpp::ParameterValue(default_exploration_boundary));
-  nav2_util::declare_parameter_if_not_declared(node, "explorationBT.abort_exploration_on_nav2_abort", rclcpp::ParameterValue(true));
+  nav2_util::declare_parameter_if_not_declared(
+    node, "explorationBT.exploration_boundary", rclcpp::ParameterValue(
+      default_exploration_boundary));
+  nav2_util::declare_parameter_if_not_declared(
+    node,
+    "explorationBT.abort_exploration_on_nav2_abort", rclcpp::ParameterValue(
+      true));
 
   parameter_map_["explorationBT.bt_sleep_ms"] =
     node->get_parameter("explorationBT.bt_sleep_ms").as_int();

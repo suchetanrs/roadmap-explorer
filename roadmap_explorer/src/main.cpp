@@ -4,7 +4,8 @@
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
-  auto exploration_server = std::make_shared<roadmap_explorer::ExplorationServer>(rclcpp::NodeOptions());
+  auto exploration_server = std::make_shared<roadmap_explorer::ExplorationServer>(
+    rclcpp::NodeOptions());
 
   auto executor = std::make_shared<rclcpp::executors::MultiThreadedExecutor>();
   executor->add_node(exploration_server->get_node_base_interface());

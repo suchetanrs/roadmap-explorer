@@ -46,7 +46,8 @@ class UpdateBoundaryPolygonBT : public BT::SyncActionNode
 public:
   UpdateBoundaryPolygonBT(
     const std::string & name, const BT::NodeConfiguration & config,
-    std::shared_ptr<CostAssigner> cost_assigner_ptr, std::shared_ptr<nav2_util::LifecycleNode> ros_node_ptr)
+    std::shared_ptr<CostAssigner> cost_assigner_ptr,
+    std::shared_ptr<nav2_util::LifecycleNode> ros_node_ptr)
   : BT::SyncActionNode(name, config)
   {
     cost_assigner_ptr_ = cost_assigner_ptr;

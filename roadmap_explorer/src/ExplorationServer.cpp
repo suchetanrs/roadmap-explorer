@@ -14,8 +14,6 @@ ExplorationServer::ExplorationServer(const rclcpp::NodeOptions & options)
 nav2_util::CallbackReturn ExplorationServer::on_configure(const rclcpp_lifecycle::State &)
 {
   RCLCPP_INFO(get_logger(), "Configured %s", get_name());
-    // auto node = shared_from_this();
-    // auto pub = node->create_publisher<geometry_msgs::msg::PoseStamped>("createPub", 10);
   node_ = shared_from_this();
 
   exploration_bt_ = std::make_shared<RoadmapExplorationBT>(node_);
@@ -70,7 +68,7 @@ nav2_util::CallbackReturn ExplorationServer::on_shutdown(const rclcpp_lifecycle:
 
 rclcpp_action::GoalResponse ExplorationServer::handle_goal(
   const rclcpp_action::GoalUUID & /*uuid*/,
-  std::shared_ptr<const ExploreAction::Goal> /*goal*/)
+  std::shared_ptr<const ExploreAction::Goal>/*goal*/)
 {
   if (!server_active_) {
     RCLCPP_WARN(get_logger(), "Received goal while inactive -> rejecting");

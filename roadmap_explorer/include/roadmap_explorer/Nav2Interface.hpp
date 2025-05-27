@@ -96,7 +96,8 @@ protected:
   std::mutex nav2Clientlock_;
   rclcpp_action::Client<ActionT>::SendGoalOptions nav2_goal_options_;
   rclcpp::CallbackGroup::SharedPtr nav2_client_callback_group_;
-  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PoseStamped>::SharedPtr updated_goal_publisher_;
+  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PoseStamped>::SharedPtr
+    updated_goal_publisher_;
   std::recursive_mutex goal_state_mutex_;
   std::mutex nav2_feedback_mutex_;
   NavGoalStatus nav2_goal_state_;

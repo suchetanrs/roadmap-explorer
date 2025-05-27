@@ -172,12 +172,14 @@ private:
   double max_connection_length_;
   double max_graph_reconstruction_distance_;
   std::shared_ptr<nav2_util::LifecycleNode> node_;
-  rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::MarkerArray>::SharedPtr marker_pub_roadmap_;
+  rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::MarkerArray>::SharedPtr
+    marker_pub_roadmap_;
   rclcpp::Subscription<roadmap_explorer_msgs::msg::MapData>::SharedPtr map_data_subscription_;
   std::shared_ptr<FrontierRoadmapAStar> astar_planner_;
 
   // for testing planning
-  rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::MarkerArray>::SharedPtr marker_pub_plan_;
+  rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::MarkerArray>::SharedPtr
+    marker_pub_plan_;
   rclcpp::Subscription<geometry_msgs::msg::PointStamped>::SharedPtr roadmap_plan_test_sub_;
   std::vector<geometry_msgs::msg::Point> clicked_points_;
 

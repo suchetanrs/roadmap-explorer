@@ -2,7 +2,9 @@
 std::unique_ptr<RosVisualizer> RosVisualizer::RosVisualizerPtr = nullptr;
 std::mutex RosVisualizer::instanceMutex_;
 
-RosVisualizer::RosVisualizer(std::shared_ptr<nav2_util::LifecycleNode> node, nav2_costmap_2d::Costmap2D * costmap)
+RosVisualizer::RosVisualizer(
+  std::shared_ptr<nav2_util::LifecycleNode> node,
+  nav2_costmap_2d::Costmap2D * costmap)
 {
   node_ = node;
   // Creating publishers with custom QoS settings
@@ -42,7 +44,7 @@ RosVisualizer::RosVisualizer(std::shared_ptr<nav2_util::LifecycleNode> node, nav
   full_path_plan_pub_->on_activate();
   trailing_robot_poses_publisher_->on_activate();
   blacklisted_frontiers_publisher_->on_activate();
-  
+
   costmap_ = costmap;
 }
 

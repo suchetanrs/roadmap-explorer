@@ -18,8 +18,8 @@ namespace roadmap_explorer
 class ExplorationServer : public nav2_util::LifecycleNode
 {
 public:
-  using ExploreAction       = roadmap_explorer_msgs::action::Explore;
-  using GoalHandleExplore   = rclcpp_action::ServerGoalHandle<ExploreAction>;
+  using ExploreAction = roadmap_explorer_msgs::action::Explore;
+  using GoalHandleExplore = rclcpp_action::ServerGoalHandle<ExploreAction>;
 
   explicit ExplorationServer(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
   ~ExplorationServer() = default;
