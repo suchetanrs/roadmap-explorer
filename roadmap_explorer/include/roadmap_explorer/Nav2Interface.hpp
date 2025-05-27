@@ -45,7 +45,7 @@ class Nav2Interface
 public:
   using GoalHandle = rclcpp_action::ClientGoalHandle<ActionT>;
   explicit Nav2Interface(
-    rclcpp::Node::SharedPtr node, std::string action_name,
+    std::shared_ptr<nav2_util::LifecycleNode> node, std::string action_name,
     std::string update_topic_name);
   ~Nav2Interface();
   void goalPoseCallback(const geometry_msgs::msg::PoseStamped::SharedPtr msg);
@@ -96,7 +96,7 @@ protected:
   std::mutex nav2Clientlock_;
   rclcpp_action::Client<ActionT>::SendGoalOptions nav2_goal_options_;
   rclcpp::CallbackGroup::SharedPtr nav2_client_callback_group_;
-  rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr updated_goal_publisher_;
+  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PoseStamped>::SharedPtr updated_goal_publisher_;
   std::recursive_mutex goal_state_mutex_;
   std::mutex nav2_feedback_mutex_;
   NavGoalStatus nav2_goal_state_;
@@ -104,7 +104,7 @@ protected:
   typename rclcpp_action::ClientGoalHandle<ActionT>::SharedPtr current_goal_handle_;
   bool shutting_down_ = false;
 
-  rclcpp::Node::SharedPtr node_;
+  std::shared_ptr<nav2_util::LifecycleNode> node_;
 };
 }  // namespace roadmap_explorer
 

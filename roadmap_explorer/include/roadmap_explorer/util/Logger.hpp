@@ -9,6 +9,7 @@
 #include <unordered_map>
 
 #include <rclcpp/rclcpp.hpp>
+#include <nav2_util/lifecycle_node.hpp>
 
 // Color_id	    Color
 //        1	    Aqua

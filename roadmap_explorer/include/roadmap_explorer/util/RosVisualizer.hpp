@@ -56,7 +56,7 @@ public:
     trailing_robot_poses_publisher_.reset();
   }
 
-  static void createInstance(rclcpp::Node::SharedPtr node, nav2_costmap_2d::Costmap2D * costmap)
+  static void createInstance(std::shared_ptr<nav2_util::LifecycleNode> node, nav2_costmap_2d::Costmap2D * costmap)
   {
     std::cout << "Creating ros visualizer instance" << std::endl;
     std::lock_guard<std::mutex> lock(instanceMutex_);
@@ -66,55 +66,55 @@ public:
   }
 
   void observableCellsViz(std::vector<geometry_msgs::msg::Point> & points);
-  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr observable_cells_publisher_;
+  rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::Marker>::SharedPtr observable_cells_publisher_;
 
   void observableCellsViz(std::vector<nav2_costmap_2d::MapLocation> & points);
-  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr connecting_cells_publisher_;
+  rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::Marker>::SharedPtr connecting_cells_publisher_;
 
   void visualizeSpatialHashMap(
     const std::vector<FrontierPtr> & frontier_list,
     std::string globalFrameID);
-  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr spatial_hashmap_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::PointCloud2>::SharedPtr spatial_hashmap_pub_;
 
   void visualizeFrontier(
     const std::vector<FrontierPtr> & frontier_list,
     const std::vector<std::vector<double>> & every_frontier,
     std::string globalFrameID);
-  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr frontier_cloud_pub_;
-  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr all_frontier_cloud_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::PointCloud2>::SharedPtr frontier_cloud_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::PointCloud2>::SharedPtr all_frontier_cloud_pub_;
 
   void visualizeFrontierMarker(
     const std::vector<FrontierPtr> & frontier_list,
     std::string globalFrameID);
-  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
+  rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::MarkerArray>::SharedPtr
     frontier_marker_array_publisher_;
 
   void frontierPlanViz(nav_msgs::msg::Path & path);
-  rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr frontier_plan_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr frontier_plan_pub_;
 
   void fullPathPlanViz(nav_msgs::msg::Path & path);
   size_t getNumSubscribersFullPathPlan();
-  rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr full_path_plan_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr full_path_plan_pub_;
 
   void visualizeTrailingPoses(std::deque<geometry_msgs::msg::Pose> robot_queue);
-  rclcpp::Publisher<geometry_msgs::msg::PoseArray>::SharedPtr trailing_robot_poses_publisher_;
+  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PoseArray>::SharedPtr trailing_robot_poses_publisher_;
 
   void visualizeBlacklistedFrontiers(
     const std::vector<FrontierPtr> & blacklisted_frontiers,
     std::string globalFrameID);
-  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
+  rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::MarkerArray>::SharedPtr
     blacklisted_frontiers_publisher_;
 
 private:
   // Delete copy constructor and assignment operator to prevent copying
   RosVisualizer(const RosVisualizer &) = delete;
   RosVisualizer & operator=(const RosVisualizer &) = delete;
-  RosVisualizer(rclcpp::Node::SharedPtr node, nav2_costmap_2d::Costmap2D * costmap);
+  RosVisualizer(std::shared_ptr<nav2_util::LifecycleNode> node, nav2_costmap_2d::Costmap2D * costmap);
 
   static std::unique_ptr<RosVisualizer> RosVisualizerPtr;
   static std::mutex instanceMutex_;
 
-  rclcpp::Node::SharedPtr node_;
+  std::shared_ptr<nav2_util::LifecycleNode> node_;
   nav2_costmap_2d::Costmap2D * costmap_;
 };
 

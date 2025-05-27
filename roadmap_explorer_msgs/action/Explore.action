@@ -1,0 +1,5 @@
+---
+bool success True  # docking success status
+string error_message
+---
+string status_message

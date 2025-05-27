@@ -11,7 +11,7 @@ namespace roadmap_explorer
 {
 FrontierRoadMap::FrontierRoadMap(
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros,
-  rclcpp::Node::SharedPtr node_ptr)
+  std::shared_ptr<nav2_util::LifecycleNode> node_ptr)
 : costmap_(explore_costmap_ros->getCostmap()),
   explore_costmap_ros_(explore_costmap_ros)
 {
@@ -32,8 +32,10 @@ FrontierRoadMap::FrontierRoadMap(
   max_connection_length_ = RADIUS_TO_DECIDE_EDGES * 1.5;
   marker_pub_roadmap_ = node_ptr->create_publisher<visualization_msgs::msg::MarkerArray>(
     "frontier_roadmap", 10);
+  marker_pub_roadmap_->on_activate();
   marker_pub_plan_ = node_ptr->create_publisher<visualization_msgs::msg::MarkerArray>(
     "frontier_roadmap_plan", 10);
+  marker_pub_plan_->on_activate();
   map_data_subscription_ = node_ptr->create_subscription<roadmap_explorer_msgs::msg::MapData>(
     "map_data", 10, std::bind(&FrontierRoadMap::mapDataCallback, this, std::placeholders::_1));
   astar_planner_ = std::make_shared<FrontierRoadmapAStar>();
@@ -53,6 +55,8 @@ FrontierRoadMap::~FrontierRoadMap()
   unconnectable_roadmap_.clear();
   spatial_hash_map_.clear();
   map_data_subscription_.reset();
+  marker_pub_roadmap_->on_deactivate();
+  marker_pub_plan_->on_deactivate();
 }
 
 void FrontierRoadMap::mapDataCallback(roadmap_explorer_msgs::msg::MapData mapData)

@@ -53,10 +53,10 @@ protected Q_SLOTS:
   void onPlayClicked();
 
 protected:
-  rclcpp::Node::SharedPtr fitslam_panel_node_;
+  std::shared_ptr<nav2_util::LifecycleNode> fitslam_panel_node_;
   rclcpp::Subscription<std_msgs::msg::String>::SharedPtr subscription_;
   rclcpp::Subscription<std_msgs::msg::String>::SharedPtr subscription2_;
-  rclcpp::Publisher<std_msgs::msg::Int32>::SharedPtr exploration_state_publisher_;
+  rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::Int32>::SharedPtr exploration_state_publisher_;
   std::shared_ptr<rclcpp::executors::MultiThreadedExecutor> fitslam_panel_executor_;
   QHBoxLayout * topic_layout = new QHBoxLayout;
   QHBoxLayout * topic_layout2 = new QHBoxLayout;

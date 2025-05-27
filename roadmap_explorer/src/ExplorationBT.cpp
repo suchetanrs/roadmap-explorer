@@ -8,7 +8,7 @@ public:
   WaitForCurrent(
     const std::string & name, const BT::NodeConfiguration & config,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros,
-    rclcpp::Node::SharedPtr ros_node_ptr)
+    std::shared_ptr<nav2_util::LifecycleNode> ros_node_ptr)
   : BT::StatefulActionNode(name, config)
   {
     explore_costmap_ros_ = explore_costmap_ros;
@@ -38,7 +38,7 @@ public:
   }
 
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros_;
-  rclcpp::Node::SharedPtr ros_node_ptr_;
+  std::shared_ptr<nav2_util::LifecycleNode> ros_node_ptr_;
 };
 
 class UpdateBoundaryPolygonBT : public BT::SyncActionNode
@@ -46,7 +46,7 @@ class UpdateBoundaryPolygonBT : public BT::SyncActionNode
 public:
   UpdateBoundaryPolygonBT(
     const std::string & name, const BT::NodeConfiguration & config,
-    std::shared_ptr<CostAssigner> cost_assigner_ptr, rclcpp::Node::SharedPtr ros_node_ptr)
+    std::shared_ptr<CostAssigner> cost_assigner_ptr, std::shared_ptr<nav2_util::LifecycleNode> ros_node_ptr)
   : BT::SyncActionNode(name, config)
   {
     cost_assigner_ptr_ = cost_assigner_ptr;
@@ -79,7 +79,7 @@ public:
   }
 
   std::shared_ptr<CostAssigner> cost_assigner_ptr_;
-  rclcpp::Node::SharedPtr ros_node_ptr_;
+  std::shared_ptr<nav2_util::LifecycleNode> ros_node_ptr_;
   std::vector<double> config_;
 };
 
@@ -90,7 +90,7 @@ public:
     const std::string & name, const BT::NodeConfiguration & config,
     std::shared_ptr<FrontierSearch> frontierSearchPtr,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros,
-    rclcpp::Node::SharedPtr ros_node_ptr)
+    std::shared_ptr<nav2_util::LifecycleNode> ros_node_ptr)
   : BT::SyncActionNode(name, config)
   {
     explore_costmap_ros_ = explore_costmap_ros;
@@ -156,7 +156,7 @@ public:
 
   std::shared_ptr<FrontierSearch> frontierSearchPtr_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros_;
-  rclcpp::Node::SharedPtr ros_node_ptr_;
+  std::shared_ptr<nav2_util::LifecycleNode> ros_node_ptr_;
 };
 
 class CleanupRoadMapBT : public BT::SyncActionNode
@@ -164,7 +164,7 @@ class CleanupRoadMapBT : public BT::SyncActionNode
 public:
   CleanupRoadMapBT(
     const std::string & name, const BT::NodeConfiguration & config,
-    rclcpp::Node::SharedPtr ros_node_ptr,
+    std::shared_ptr<nav2_util::LifecycleNode> ros_node_ptr,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros,
     std::shared_ptr<FullPathOptimizer> full_path_optimizer)
   : BT::SyncActionNode(name, config)
@@ -215,7 +215,7 @@ class UpdateRoadmapBT : public BT::SyncActionNode
 public:
   UpdateRoadmapBT(
     const std::string & name, const BT::NodeConfiguration & config,
-    rclcpp::Node::SharedPtr ros_node_ptr,
+    std::shared_ptr<nav2_util::LifecycleNode> ros_node_ptr,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros)
   : BT::SyncActionNode(name, config)
   {
@@ -276,7 +276,7 @@ public:
     const std::string & name, const BT::NodeConfiguration & config,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros,
     std::shared_ptr<CostAssigner> cost_assigner_ptr,
-    rclcpp::Node::SharedPtr ros_node_ptr)
+    std::shared_ptr<nav2_util::LifecycleNode> ros_node_ptr)
   : BT::SyncActionNode(name, config)
   {
     explore_costmap_ros_ = explore_costmap_ros;
@@ -346,7 +346,7 @@ public:
   std::shared_ptr<FrontierSearch> frontierSearchPtr_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros_;
   std::shared_ptr<CostAssigner> cost_assigner_ptr_;
-  rclcpp::Node::SharedPtr ros_node_ptr_;
+  std::shared_ptr<nav2_util::LifecycleNode> ros_node_ptr_;
 };
 
 class OptimizeFullPath : public BT::SyncActionNode
@@ -357,7 +357,7 @@ public:
     std::shared_ptr<FullPathOptimizer> full_path_optimizer,
     std::shared_ptr<CostAssigner> cost_assigner_ptr,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros,
-    rclcpp::Node::SharedPtr node)
+    std::shared_ptr<nav2_util::LifecycleNode> node)
   : BT::SyncActionNode(name, config)
   {
     explore_costmap_ros_ = explore_costmap_ros;
@@ -419,7 +419,7 @@ public:
 
   std::shared_ptr<FullPathOptimizer> full_path_optimizer_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros_;
-  rclcpp::Node::SharedPtr node_;
+  std::shared_ptr<nav2_util::LifecycleNode> node_;
 };
 
 class SendNav2Goal : public BT::StatefulActionNode
@@ -428,7 +428,7 @@ public:
   SendNav2Goal(
     const std::string & name, const BT::NodeConfiguration & config,
     std::shared_ptr<Nav2Interface<nav2_msgs::action::NavigateToPose>> nav2_interface,
-    rclcpp::Node::SharedPtr ros_node_ptr)
+    std::shared_ptr<nav2_util::LifecycleNode> ros_node_ptr)
   : BT::StatefulActionNode(name, config)
   {
     nav2_interface_ = nav2_interface;
@@ -507,7 +507,7 @@ public:
   }
 
   std::shared_ptr<Nav2Interface<nav2_msgs::action::NavigateToPose>> nav2_interface_;
-  rclcpp::Node::SharedPtr ros_node_ptr_;
+  std::shared_ptr<nav2_util::LifecycleNode> ros_node_ptr_;
 };
 
 class BlacklistGoal : public BT::SyncActionNode
@@ -540,7 +540,7 @@ public:
 
 namespace roadmap_explorer
 {
-RoadmapExplorationBT::RoadmapExplorationBT(rclcpp::Node::SharedPtr node)
+RoadmapExplorationBT::RoadmapExplorationBT(std::shared_ptr<nav2_util::LifecycleNode> node)
 {
   bt_node_ = node;
   blackboard = BT::Blackboard::create();
@@ -727,6 +727,12 @@ void RoadmapExplorationBT::run()
     std::this_thread::sleep_for(std::chrono::milliseconds(bt_sleep_duration));
     LOG_DEBUG("TICKED ONCE");
   }
+}
+
+void RoadmapExplorationBT::halt()
+{
+  LOG_INFO("RoadmapExplorationBT::halt()");
+  behaviour_tree.haltTree();
 }
 
 }

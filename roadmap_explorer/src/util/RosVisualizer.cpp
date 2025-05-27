@@ -2,7 +2,7 @@
 std::unique_ptr<RosVisualizer> RosVisualizer::RosVisualizerPtr = nullptr;
 std::mutex RosVisualizer::instanceMutex_;
 
-RosVisualizer::RosVisualizer(rclcpp::Node::SharedPtr node, nav2_costmap_2d::Costmap2D * costmap)
+RosVisualizer::RosVisualizer(std::shared_ptr<nav2_util::LifecycleNode> node, nav2_costmap_2d::Costmap2D * costmap)
 {
   node_ = node;
   // Creating publishers with custom QoS settings
@@ -31,6 +31,18 @@ RosVisualizer::RosVisualizer(rclcpp::Node::SharedPtr node, nav2_costmap_2d::Cost
 
   blacklisted_frontiers_publisher_ = node->create_publisher<visualization_msgs::msg::MarkerArray>(
     "blacklisted_frontiers", 10);
+
+  frontier_cloud_pub_->on_activate();
+  spatial_hashmap_pub_->on_activate();
+  all_frontier_cloud_pub_->on_activate();
+  frontier_marker_array_publisher_->on_activate();
+  observable_cells_publisher_->on_activate();
+  connecting_cells_publisher_->on_activate();
+  frontier_plan_pub_->on_activate();
+  full_path_plan_pub_->on_activate();
+  trailing_robot_poses_publisher_->on_activate();
+  blacklisted_frontiers_publisher_->on_activate();
+  
   costmap_ = costmap;
 }
 
@@ -47,6 +59,17 @@ RosVisualizer::~RosVisualizer()
   frontier_plan_pub_.reset();
   full_path_plan_pub_.reset();
   trailing_robot_poses_publisher_.reset();
+
+  frontier_cloud_pub_->on_deactivate();
+  spatial_hashmap_pub_->on_deactivate();
+  all_frontier_cloud_pub_->on_deactivate();
+  frontier_marker_array_publisher_->on_deactivate();
+  observable_cells_publisher_->on_deactivate();
+  connecting_cells_publisher_->on_deactivate();
+  frontier_plan_pub_->on_deactivate();
+  full_path_plan_pub_->on_deactivate();
+  trailing_robot_poses_publisher_->on_deactivate();
+  blacklisted_frontiers_publisher_->on_deactivate();
 }
 
 void RosVisualizer::observableCellsViz(std::vector<geometry_msgs::msg::Point> & points)

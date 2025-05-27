@@ -53,7 +53,7 @@ public:
 
   static void createInstance(
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros,
-    rclcpp::Node::SharedPtr node_ptr)
+    std::shared_ptr<nav2_util::LifecycleNode> node_ptr)
   {
     std::cout << "Creating roadmap instance" << std::endl;
     std::lock_guard<std::mutex> lock(instanceMutex_);
@@ -150,7 +150,7 @@ private:
   FrontierRoadMap & operator=(const FrontierRoadMap &) = delete;
   FrontierRoadMap(
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros,
-    rclcpp::Node::SharedPtr node_ptr);
+    std::shared_ptr<nav2_util::LifecycleNode> node_ptr);
 
   static std::unique_ptr<FrontierRoadMap> frontierRoadmapPtr;
   static std::mutex instanceMutex_;
@@ -171,13 +171,13 @@ private:
   std::mutex roadmap_mutex_;
   double max_connection_length_;
   double max_graph_reconstruction_distance_;
-  rclcpp::Node::SharedPtr node_;
-  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr marker_pub_roadmap_;
+  std::shared_ptr<nav2_util::LifecycleNode> node_;
+  rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::MarkerArray>::SharedPtr marker_pub_roadmap_;
   rclcpp::Subscription<roadmap_explorer_msgs::msg::MapData>::SharedPtr map_data_subscription_;
   std::shared_ptr<FrontierRoadmapAStar> astar_planner_;
 
   // for testing planning
-  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr marker_pub_plan_;
+  rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::MarkerArray>::SharedPtr marker_pub_plan_;
   rclcpp::Subscription<geometry_msgs::msg::PointStamped>::SharedPtr roadmap_plan_test_sub_;
   std::vector<geometry_msgs::msg::Point> clicked_points_;
 

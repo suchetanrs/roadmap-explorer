@@ -50,7 +50,7 @@ inline void blacklistFrontier(const FrontierPtr & frontier, BT::Blackboard::Ptr 
 class RoadmapExplorationBT
 {
 public:
-  RoadmapExplorationBT(rclcpp::Node::SharedPtr node);
+  RoadmapExplorationBT(std::shared_ptr<nav2_util::LifecycleNode> node);
 
   ~RoadmapExplorationBT();
 
@@ -58,8 +58,10 @@ public:
 
   void run();
 
+  void halt();
+
 private:
-  rclcpp::Node::SharedPtr bt_node_;
+  std::shared_ptr<nav2_util::LifecycleNode> bt_node_;
 
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros_;
   std::unique_ptr<nav2_util::NodeThread> explore_costmap_thread_;

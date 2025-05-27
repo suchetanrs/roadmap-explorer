@@ -69,7 +69,7 @@ class FullPathOptimizer
 {
 public:
   FullPathOptimizer(
-    rclcpp::Node::SharedPtr node,
+    std::shared_ptr<nav2_util::LifecycleNode> node,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros);
 
   ~FullPathOptimizer();
@@ -113,10 +113,10 @@ private:
     SortedFrontiers & sortedFrontiers, std::vector<FrontierPtr> & bestPath,
     geometry_msgs::msg::PoseStamped & robotP);
 
-  rclcpp::Node::SharedPtr node_;
+  std::shared_ptr<nav2_util::LifecycleNode> node_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros_;
-  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr local_search_area_publisher_;
-  rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr frontier_nav2_plan_;
+  rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::MarkerArray>::SharedPtr local_search_area_publisher_;
+  rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr frontier_nav2_plan_;
   std::unordered_map<FrontierPair, RoadmapPlanResult, FrontierPairHash> frontier_pair_distances_;
 
   double num_frontiers_in_local_area = 5.0;

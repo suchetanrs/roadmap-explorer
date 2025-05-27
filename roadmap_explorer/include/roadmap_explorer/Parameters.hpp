@@ -13,6 +13,7 @@
 
 #include <rclcpp/rclcpp.hpp>
 #include <ament_index_cpp/get_package_share_directory.hpp>
+#include <nav2_util/node_utils.hpp>
 
 #include "roadmap_explorer/util/Logger.hpp"
 
@@ -35,7 +36,7 @@ public:
     }
   }
 
-  void makeParameters(bool use_ros_parameters, rclcpp::Node::SharedPtr node);
+  void makeParameters(bool use_ros_parameters, std::shared_ptr<nav2_util::LifecycleNode> node);
 
   static ParameterHandler & getInstance()
   {
@@ -52,7 +53,7 @@ public:
   }
 
 private:
-  void makeParametersROS(rclcpp::Node::SharedPtr node);
+  void makeParametersROS(std::shared_ptr<nav2_util::LifecycleNode> node);
 
   void makeParametersYAMLcpp();
 

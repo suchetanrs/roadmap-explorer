@@ -4,7 +4,7 @@ namespace roadmap_explorer
 {
 template<typename ActionT>
 Nav2Interface<ActionT>::Nav2Interface(
-  rclcpp::Node::SharedPtr node, std::string action_name,
+  std::shared_ptr<nav2_util::LifecycleNode> node, std::string action_name,
   std::string update_topic_name)
 {
   node_ = node;
@@ -29,12 +29,14 @@ Nav2Interface<ActionT>::Nav2Interface(
   }
   updated_goal_publisher_ = node->create_publisher<geometry_msgs::msg::PoseStamped>(
     update_topic_name, 10);
+  updated_goal_publisher_->on_activate();
 }
 
 template<typename ActionT>
 Nav2Interface<ActionT>::~Nav2Interface()
 {
   LOG_INFO("Nav2Interface::~Nav2Interface()");
+  updated_goal_publisher_->on_deactivate();
 }
 // --------------------Internal function-----------------------
 

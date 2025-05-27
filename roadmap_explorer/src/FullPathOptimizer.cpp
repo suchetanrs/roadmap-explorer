@@ -5,7 +5,7 @@
 namespace roadmap_explorer
 {
 FullPathOptimizer::FullPathOptimizer(
-  rclcpp::Node::SharedPtr node,
+  std::shared_ptr<nav2_util::LifecycleNode> node,
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros)
 : node_(node)
 {
@@ -21,15 +21,19 @@ FullPathOptimizer::FullPathOptimizer(
   explore_costmap_ros_ = explore_costmap_ros;
   local_search_area_publisher_ = node_->create_publisher<visualization_msgs::msg::MarkerArray>(
     "local_search_area", 10);
+  local_search_area_publisher_->on_activate();
   frontier_nav2_plan_ = node_->create_publisher<nav_msgs::msg::Path>(
     "frontier_roadmap_nav2_plan",
     10);
+  frontier_nav2_plan_->on_activate();
 }
 
 FullPathOptimizer::~FullPathOptimizer()
 {
   LOG_INFO("FullPathOptimizer::~FullPathOptimizer");
   frontier_pair_distances_.clear();
+  local_search_area_publisher_->on_deactivate();
+  frontier_nav2_plan_->on_deactivate();
 }
 
 void FullPathOptimizer::addToMarkerArraySolidPolygon(

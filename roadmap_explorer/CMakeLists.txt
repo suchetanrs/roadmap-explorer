@@ -67,8 +67,8 @@ include_directories(
   ${YAML_CPP_INCLUDE_DIRS}
 )
 
-# Add executable 2
-add_executable(explore_server
+#-------------------------------------------------------------------
+add_library(roadmap_exploration_bt SHARED
 src/planners/theta_star.cpp
 src/planners/FrontierRoadmap.cpp
 src/planners/astar.cpp
@@ -83,22 +83,42 @@ src/CostCalculator.cpp
 src/ExplorationBT.cpp
 src/CostAssigner.cpp
 src/FullPathOptimizer.cpp 
+src/ExplorationServer.cpp
+)
+ament_target_dependencies(roadmap_exploration_bt ${dependencies})
+target_link_libraries(roadmap_exploration_bt ${PCL_LIBRARIES} ${YAML_CPP_LIBRARIES})
+
+rclcpp_components_register_nodes(roadmap_exploration_bt "roadmap_exploration::ExplorationServer")
+
+#-------------------------------------------------------------------
+add_executable(roadmap_exploration_server
 src/main.cpp
 )
-ament_target_dependencies(explore_server ${dependencies})
-target_link_libraries(explore_server ${PCL_LIBRARIES} ${YAML_CPP_LIBRARIES})
+ament_target_dependencies(roadmap_exploration_server ${dependencies})
+target_link_libraries(roadmap_exploration_server ${PCL_LIBRARIES} ${YAML_CPP_LIBRARIES} roadmap_exploration_bt)
+
 # ------------------------------------------------------------------
 
 
-install(TARGETS explore_server
-DESTINATION lib/${PROJECT_NAME}
+install(TARGETS roadmap_exploration_bt
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
+
+install(TARGETS roadmap_exploration_server
+  RUNTIME DESTINATION lib/${PROJECT_NAME}
+)
+
+install(DIRECTORY include/
+  DESTINATION include/
 )
 
 install(DIRECTORY launch params include xml
 DESTINATION share/${PROJECT_NAME}
 )
 
-ament_export_dependencies(rosidl_default_runtime ${dependencies})
 ament_export_include_directories(include ${EIGEN3_INCLUDE_DIR})
-pluginlib_export_plugin_description_file(nav2_core xml/roadmap_planner.xml)
+ament_export_libraries(roadmap_exploration_bt roadmap_exploration_server)
+ament_export_dependencies(rosidl_default_runtime ${dependencies})
 ament_package()
