@@ -1,5 +1,15 @@
+# request
 ---
-bool success True  # docking success status
-string error_message
+# result
+uint16 NO_ERROR=0
+uint16 NO_MORE_REACHABLE_FRONTIERS=1
+uint16 NAV2_INTERNAL_FAULT=2
+uint16 UNKNOWN=3
+
+uint16 error_code 0
+bool success True
+geometry_msgs/Point[] failed_frontiers
 ---
-string status_message
+# feedback
+builtin_interfaces/Duration exploration_time
+geometry_msgs/Point[] current_frontier

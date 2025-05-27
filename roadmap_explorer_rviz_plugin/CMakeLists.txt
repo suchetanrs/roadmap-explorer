@@ -22,6 +22,18 @@ find_package(rclcpp REQUIRED)
 find_package(rviz_common REQUIRED)
 find_package(rviz_rendering REQUIRED)
 find_package(sensor_msgs REQUIRED)
+find_package(roadmap_explorer_msgs REQUIRED)
+
+set(dependencies
+ament_cmake
+geometry_msgs
+pluginlib
+rclcpp
+rviz_common
+rviz_rendering
+sensor_msgs
+roadmap_explorer_msgs
+)
 
 ## This setting causes Qt's "MOC" generation to happen automatically.
 set(CMAKE_AUTOMOC ON)
@@ -38,12 +50,7 @@ set(SRC_FILES
 ## is called) and specify the list of source files we collected above
 ## in ``${SRC_FILES}``. We also add the needed dependencies.
 add_library(${PROJECT_NAME} SHARED ${SRC_FILES})
-ament_target_dependencies(${PROJECT_NAME}
-  "geometry_msgs"
-  "rclcpp"
-  "rviz_common"
-  "rviz_rendering"
-  "sensor_msgs")
+ament_target_dependencies(${PROJECT_NAME} ${dependencies})
 target_include_directories(${PROJECT_NAME} PUBLIC
   ${Qt5Widgets_INCLUDE_DIRS})
 
@@ -53,12 +60,7 @@ pluginlib_export_plugin_description_file(rviz_common plugin_description.xml)
 
 ## END_TUTORIAL
 
-ament_export_dependencies(
-  geometry_msgs
-  rclcpp
-  rviz_common
-  rviz_rendering
-  sensor_msgs)
+ament_export_dependencies(${dependencies})
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

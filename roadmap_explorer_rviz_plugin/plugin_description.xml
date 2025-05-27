@@ -1,6 +1,6 @@
 <library path="roadmap_explorer_rviz_plugin">
-  <class name="rviz_plugin/FIT-SLAM Control"
-         type="rviz_plugin::FrontierExplorationPanel"
+  <class name="rviz_plugin/RoadmapExplorerPanel"
+         type="rviz_plugin::RoadmapExplorerPanel"
          base_class_type="rviz_common::Panel">
     <description>
       A panel widget allowing exploration control.

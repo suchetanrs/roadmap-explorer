@@ -27,6 +27,8 @@
 #include "roadmap_explorer/Helpers.hpp"
 #include "roadmap_explorer/FullPathOptimizer.hpp"
 
+#include "roadmap_explorer_msgs/action/explore.hpp"
+
 namespace roadmap_explorer
 {
 
@@ -40,6 +42,8 @@ enum class ExplorationErrorCode
   UNHANDLED_ERROR,
   NAV2_GOAL_ABORT
 };
+
+using ExploreActionResult = roadmap_explorer_msgs::action::Explore_Result;
 
 inline void blacklistFrontier(const FrontierPtr & frontier, BT::Blackboard::Ptr blackboard)
 {
@@ -57,7 +61,7 @@ public:
 
   void makeBTNodes();
 
-  void run();
+  uint16_t tickOnceWithSleep();
 
   void halt();
 

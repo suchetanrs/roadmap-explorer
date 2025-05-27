@@ -16,7 +16,6 @@ nav2_util::CallbackReturn ExplorationServer::on_configure(const rclcpp_lifecycle
   RCLCPP_INFO(get_logger(), "Configured %s", get_name());
   node_ = shared_from_this();
 
-  exploration_bt_ = std::make_shared<RoadmapExplorationBT>(node_);
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -31,13 +30,16 @@ nav2_util::CallbackReturn ExplorationServer::on_activate(const rclcpp_lifecycle:
     get_node_clock_interface(),
     get_node_logging_interface(),
     get_node_waitables_interface(),
-    "explore_area",
+    "roadmap_explorer",
     std::bind(&ExplorationServer::handle_goal, this, std::placeholders::_1, std::placeholders::_2),
     std::bind(&ExplorationServer::handle_cancel, this, std::placeholders::_1),
     std::bind(&ExplorationServer::handle_accepted, this, std::placeholders::_1),
     rcl_action_server_get_default_options(),
     action_server_cb_group_);
 
+
+  exploration_bt_ = std::make_shared<RoadmapExplorationBT>(node_);
+  exploration_bt_->makeBTNodes();
   // Create bond connection
   createBond();
 
@@ -50,13 +52,14 @@ nav2_util::CallbackReturn ExplorationServer::on_deactivate(const rclcpp_lifecycl
   server_active_ = false;
   action_server_.reset();
   exploration_bt_->halt();
+  exploration_bt_.reset();
+  destroyBond();
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
 nav2_util::CallbackReturn ExplorationServer::on_cleanup(const rclcpp_lifecycle::State &)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up %s", get_name());
-  exploration_bt_.reset();
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -82,13 +85,13 @@ rclcpp_action::CancelResponse ExplorationServer::handle_cancel(
   const std::shared_ptr<GoalHandleExplore> goal_handle)
 {
   RCLCPP_WARN(get_logger(), "Cancel requested");
-  exploration_bt_->halt();
   return rclcpp_action::CancelResponse::ACCEPT;
 }
 
 void ExplorationServer::handle_accepted(
   const std::shared_ptr<GoalHandleExplore> goal_handle)
 {
+  RCLCPP_WARN(get_logger(), "Goal accepted, starting execution");
   // Spin the work off to a new thread so we don’t block the executor
   std::thread{std::bind(&ExplorationServer::execute, this, goal_handle)}.detach();
 }
@@ -98,7 +101,6 @@ void ExplorationServer::publish_feedback(
   const std::string & message)
 {
   auto feedback = std::make_shared<ExploreAction::Feedback>();
-  feedback->status_message = message;
   goal_handle->publish_feedback(feedback);
 }
 
@@ -111,28 +113,48 @@ void ExplorationServer::execute(const std::shared_ptr<GoalHandleExplore> goal_ha
 
   // Build the tree
   try {
-    exploration_bt_->makeBTNodes();
-    publish_feedback(goal_handle, "BT constructed, starting loop");
+    while(rclcpp::ok())
+    {
+      auto error_code = exploration_bt_->tickOnceWithSleep();
 
-    // Run will loop internally; if user cancels mid-way, we’ll check once loop finishes
-    exploration_bt_->run();
+      // Check for cancellation
+      if (goal_handle->is_canceling()) {
+        RCLCPP_WARN(get_logger(), "Goal canceled; aborting");
+        exploration_bt_->halt();
+        goal_handle->canceled(result);
+        return;
+      }
 
-    // Check for cancellation
-    if (goal_handle->is_canceling()) {
-      RCLCPP_WARN(get_logger(), "Goal canceled; aborting");
-      goal_handle->canceled(result);
-      return;
+      if(error_code == ExploreActionResult::NO_ERROR)
+      {
+        continue;
+      }
+      else if (error_code == ExploreActionResult::NO_MORE_REACHABLE_FRONTIERS) {
+        RCLCPP_INFO(get_logger(), "No more reachable frontiers found, exploration complete");
+        result->success = true;
+        result->error_code = ExploreActionResult::NO_MORE_REACHABLE_FRONTIERS;
+        goal_handle->succeed(result);
+        return;
+      }
+      else if (error_code == ExploreActionResult::NAV2_INTERNAL_FAULT) {
+        RCLCPP_ERROR(get_logger(), "Internal fault during exploration, aborting");
+        result->success = false;
+        result->error_code = ExploreActionResult::NAV2_INTERNAL_FAULT;
+        goal_handle->abort(result);
+        return;
+      } else {
+        RCLCPP_ERROR(get_logger(), "Unknown error occurred during exploration");
+        result->success = false;
+        result->error_code = ExploreActionResult::UNKNOWN;
+        goal_handle->abort(result);
+        return;
+      }
     }
-
-    // Otherwise, success
-    result->success = true;
-    RCLCPP_INFO(get_logger(), "Exploration succeeded");
-    goal_handle->succeed(result);
 
   } catch (const std::exception & ex) {
     RCLCPP_ERROR(get_logger(), "Exploration error: %s", ex.what());
     result->success = false;
-    result->error_message = ex.what();
+    result->error_code = ExploreActionResult::UNKNOWN;
     goal_handle->abort(result);
   }
 }

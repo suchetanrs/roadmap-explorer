@@ -1,118 +1,140 @@
 #include "panel.hpp"
 
-#include <stdio.h>
-#include <QPainter>
-#include <QLineEdit>
-#include <QVBoxLayout>
-#include <QHBoxLayout>
-#include <QLabel>
-#include <QTimer>
+#include <pluginlib/class_list_macros.hpp>
 
-#include <memory>
-
-#include "geometry_msgs/msg/twist.hpp"
-#include "pluginlib/class_list_macros.hpp"
-
+using namespace std::chrono_literals;
 namespace rviz_plugin
 {
 
-FrontierExplorationPanel::FrontierExplorationPanel(QWidget * parent)
-: rviz_common::Panel(parent)
+// ─────────────────────────────────────────────────────────────────────────────
+RoadmapExplorerPanel::RoadmapExplorerPanel(QWidget * parent)
+: rviz_common::Panel(parent),
+  start_button_(new QPushButton("Start exploration", this)),
+  stop_button_(new QPushButton("Stop exploration",  this)),
+  node_(std::make_shared<rclcpp::Node>("roadmap_explorer_panel")),
+  client_(rclcpp_action::create_client<Explore>(node_, "roadmap_explorer"))
 {
-  fitslam_panel_node_ = rclcpp::Node::make_shared("fitslam_panel_node");
-  topic_layout->addWidget(topic_name1);
-
-  topic_layout2->addWidget(topic_name2);
-
-  topic_layout3->addWidget(topic_name3);
-
-  topic_layout4->addWidget(topic_name4);
-
-  topic_layout5->addWidget(topic_name5);
-
-  topic_layout6->addWidget(topic_name6);
-
-  topic_layout7->addWidget(topic_button1);
-
-  topic_layout8->addWidget(topic_button2);
-
-  // Lay out the topic field above the control widget.
-  QVBoxLayout * layout = new QVBoxLayout;
-  layout->addLayout(topic_layout);
-  layout->addLayout(topic_layout2);
-  layout->addLayout(topic_layout3);
-  layout->addLayout(topic_layout4);
-  layout->addLayout(topic_layout5);
-  layout->addLayout(topic_layout6);
-  layout->addLayout(topic_layout7);
-  layout->addLayout(topic_layout8);
-  connect(topic_button1, &QPushButton::clicked, this, &FrontierExplorationPanel::onPauseClicked);
-  connect(topic_button2, &QPushButton::clicked, this, &FrontierExplorationPanel::onPlayClicked);
+  // Basic UI
+  auto * layout = new QVBoxLayout;
+  layout->addWidget(start_button_);
+  layout->addWidget(stop_button_);
   setLayout(layout);
 
-  // subscription_ = fitslam_panel_node_->create_subscription<std_msgs::msg::String>(
-  //     "/topic2", 10,
-  //     std::bind(&FrontierExplorationPanel::topicCallback, this, std::placeholders::_1));
+  // Initial state
+  updateButtons(false);
 
-  // subscription2_ = fitslam_panel_node_->create_subscription<std_msgs::msg::String>(
-  //     "/topic1", 10,
-  //     std::bind(&FrontierExplorationPanel::topic2Callback, this, std::placeholders::_1));
+  // Qt connections
+  connect(start_button_, &QPushButton::clicked, this, &RoadmapExplorerPanel::onStartClicked);
+  connect(stop_button_,  &QPushButton::clicked, this, &RoadmapExplorerPanel::onStopClicked);
 
-  exploration_state_publisher_ = fitslam_panel_node_->create_publisher<std_msgs::msg::Int32>(
-    "/exploration_state", 10);
-
-  fitslam_panel_executor_ = std::make_shared<rclcpp::executors::MultiThreadedExecutor>();
-  fitslam_panel_executor_->add_node(fitslam_panel_node_);
-
-  // spin the new executor in a new thread.
-  std::thread t1(&FrontierExplorationPanel::threadFunction, this, fitslam_panel_executor_);
-  t1.detach();
+  // Periodic spinning so ROS callbacks run inside RViz’s GUI thread
+  spin_timer_.setInterval(50);  // 20 Hz
+  connect(&spin_timer_, &QTimer::timeout, [this]() { rclcpp::spin_some(node_); });
+  spin_timer_.start();
 }
 
-void FrontierExplorationPanel::onPauseClicked()
+// ───── Qt slots ──────────────────────────────────────────────────────────────
+void RoadmapExplorerPanel::onStartClicked()
 {
-  QPushButton * button = qobject_cast<QPushButton *>(sender());
-  if (button) {
-    QString buttonText = button->text();
-    RCLCPP_INFO(rclcpp::get_logger("rviz_plugin"), "Pause clicked");
-    std_msgs::msg::Int32 msg;
-    msg.data = 0;
-    exploration_state_publisher_->publish(msg);
+  sendGoal();
+}
+
+void RoadmapExplorerPanel::onStopClicked()
+{
+  cancelGoal();
+}
+
+// ───── Internal helpers ──────────────────────────────────────────────────────
+void RoadmapExplorerPanel::sendGoal()
+{
+  if (!client_->wait_for_action_server(500ms))
+  {
+    RCLCPP_WARN(node_->get_logger(), "roadmap_explorer action server not available");
+    return;
+  }
+
+  // Goal is empty for this action
+  Explore::Goal goal_msg;
+
+  auto goal_options = rclcpp_action::Client<Explore>::SendGoalOptions();
+  goal_options.goal_response_callback =
+    std::bind(&RoadmapExplorerPanel::goalResponseCallback, this, std::placeholders::_1);
+  goal_options.feedback_callback =
+    std::bind(&RoadmapExplorerPanel::feedbackCallback, this,
+              std::placeholders::_1, std::placeholders::_2);
+  goal_options.result_callback =
+    std::bind(&RoadmapExplorerPanel::resultCallback, this, std::placeholders::_1);
+
+  client_->async_send_goal(goal_msg, goal_options);
+  updateButtons(true);
+}
+
+void RoadmapExplorerPanel::cancelGoal()
+{
+  if (goal_handle_)
+  {
+    client_->async_cancel_goal(goal_handle_);
+  }
+  updateButtons(false);
+}
+
+void RoadmapExplorerPanel::updateButtons(bool goal_active)
+{
+  start_button_->setEnabled(!goal_active);
+  stop_button_->setEnabled(goal_active);
+}
+
+// ───── Action callbacks ──────────────────────────────────────────────────────
+void RoadmapExplorerPanel::goalResponseCallback(
+  const GoalHandle::SharedPtr & goal_handle)
+{
+  goal_handle_ = goal_handle;
+  if (!goal_handle_)
+  {
+    RCLCPP_ERROR(node_->get_logger(), "Goal was rejected by action server");
+    updateButtons(false);
   }
 }
 
-void FrontierExplorationPanel::onPlayClicked()
+void RoadmapExplorerPanel::feedbackCallback(
+    GoalHandle::SharedPtr,
+    const std::shared_ptr<const Explore::Feedback> feedback)
 {
-  QPushButton * button = qobject_cast<QPushButton *>(sender());
-  if (button) {
-    QString buttonText = button->text();
-    RCLCPP_INFO(rclcpp::get_logger("rviz_plugin"), "Play clicked");
-    std_msgs::msg::Int32 msg;
-    msg.data = 1;
-    exploration_state_publisher_->publish(msg);
+  // Example: print the frontier count and elapsed time
+  RCLCPP_INFO_THROTTLE(node_->get_logger(), *node_->get_clock(), 2000,
+                       "Exploring for %.1fs, frontier count: %zu",
+                       rclcpp::Duration(feedback->exploration_time).seconds(),
+                       feedback->current_frontier.size());
+}
+
+void RoadmapExplorerPanel::resultCallback(const GoalHandle::WrappedResult & result)
+{
+  switch (result.code)
+  {
+    case rclcpp_action::ResultCode::SUCCEEDED:
+      RCLCPP_INFO(node_->get_logger(), "Exploration finished successfully: %s",
+                  result.result->success ? "true" : "false");
+      break;
+
+    case rclcpp_action::ResultCode::ABORTED:
+      RCLCPP_WARN(node_->get_logger(),
+                  "Exploration aborted (error code %u)", result.result->error_code);
+      break;
+
+    case rclcpp_action::ResultCode::CANCELED:
+      RCLCPP_INFO(node_->get_logger(), "Exploration goal canceled");
+      break;
+
+    default:
+      RCLCPP_ERROR(node_->get_logger(), "Unknown result code");
+      break;
   }
+
+  goal_handle_.reset();
+  updateButtons(false);
 }
 
-void FrontierExplorationPanel::topicCallback(std_msgs::msg::String::SharedPtr msg)
-{
-  (void)msg;
-  topic_name1->setText("");
-  topic_name2->setText("");
-  topic_name3->setText("");
-  topic_name4->setText("");
-  topic_name5->setText("");
-  topic_name6->setText("");
-}
+}  // namespace rviz_plugin
 
-void FrontierExplorationPanel::topic2Callback(std_msgs::msg::String::SharedPtr msg)
-{
-  (void)msg;
-}
-
-} // end namespace rviz_plugin
-
-// Tell pluginlib about this class.  Every class which should be
-// loadable by pluginlib::ClassLoader must have these two lines
-// compiled in its .cpp file, outside of any namespace scope.
-PLUGINLIB_EXPORT_CLASS(rviz_plugin::FrontierExplorationPanel, rviz_common::Panel)
-// END_TUTORIAL
+// ─── Pluginlib export ─────────────────────────────────────────────────────────
+PLUGINLIB_EXPORT_CLASS(rviz_plugin::RoadmapExplorerPanel, rviz_common::Panel)

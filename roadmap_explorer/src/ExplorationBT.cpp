@@ -502,6 +502,7 @@ public:
       rclcpp::sleep_for(std::chrono::milliseconds(100));
       LOG_INFO("Waiting for Nav2 goal to be cancelled...");
     }
+    LOG_WARN("Goal is terminated");
     return;
   }
 
@@ -677,57 +678,56 @@ void RoadmapExplorationBT::makeBTNodes()
     std::make_shared<std::vector<FrontierPtr>>());
 }
 
-void RoadmapExplorationBT::run()
+uint16_t RoadmapExplorationBT::tickOnceWithSleep()
 {
-  while (rclcpp::ok()) {
-    int bt_sleep_duration = parameterInstance.getValue<int64_t>("explorationBT.bt_sleep_ms");
-    auto status = behaviour_tree.tickRoot();
-    if (status == BT::NodeStatus::FAILURE) {
-      if (blackboard->get<ExplorationErrorCode>("error_code_id") ==
-        ExplorationErrorCode::NO_FRONTIERS_IN_CURRENT_RADIUS)
-      {
-        LOG_ERROR(
-          "Behavior Tree tick returned FAILURE due to no frontiers in current search radius.");
-        continue;
-      } else if (blackboard->get<ExplorationErrorCode>("error_code_id") ==
-        ExplorationErrorCode::MAX_FRONTIER_SEARCH_RADIUS_EXCEEDED)
-      {
-        LOG_ERROR("Behavior Tree tick returned FAILURE due to max frontier search radius exceeded.");
-      } else if (blackboard->get<ExplorationErrorCode>("error_code_id") ==
-        ExplorationErrorCode::COST_COMPUTATION_FAILURE)
-      {
-        LOG_ERROR("Behavior Tree tick returned FAILURE due to cost computation failure.");
-      } else if (blackboard->get<ExplorationErrorCode>("error_code_id") ==
-        ExplorationErrorCode::FULL_PATH_OPTIMIZATION_FAILURE)
-      {
-        LOG_ERROR("Behavior Tree tick returned FAILURE due to full path optimization failure.");
-      } else if (blackboard->get<ExplorationErrorCode>("error_code_id") ==
-        ExplorationErrorCode::REFINED_PATH_COMPUTATION_FAILURE)
-      {
-        LOG_ERROR("Behavior Tree tick returned FAILURE due to refined path computation failure.");
-      } else if (blackboard->get<ExplorationErrorCode>("error_code_id") ==
-        ExplorationErrorCode::UNHANDLED_ERROR)
-      {
-        LOG_ERROR("Behavior Tree tick returned FAILURE with unhandled error code.");
-      } else if (blackboard->get<ExplorationErrorCode>("error_code_id") ==
-        ExplorationErrorCode::NAV2_GOAL_ABORT)
-      {
-        LOG_ERROR("Behavior Tree tick returned FAILURE due to Nav2 goal abort.");
-        if (parameterInstance.getValue<bool>("explorationBT.abort_exploration_on_nav2_abort")) {
-          LOG_ERROR("Aborting exploration due to Nav2 goal abort.");
-          return;
-        } else {
-          LOG_WARN("Continuing exploration despite Nav2 goal abort. The frontier was blacklisted.");
-          continue;
-        }
+  int bt_sleep_duration = parameterInstance.getValue<int64_t>("explorationBT.bt_sleep_ms");
+  auto status = behaviour_tree.tickRoot();
+  uint16_t return_value = ExploreActionResult::NO_ERROR;
+  if (status == BT::NodeStatus::FAILURE) {
+    if (blackboard->get<ExplorationErrorCode>("error_code_id") ==
+      ExplorationErrorCode::NO_FRONTIERS_IN_CURRENT_RADIUS)
+    {
+      LOG_ERROR(
+        "Behavior Tree tick returned FAILURE due to no frontiers in current search radius.");
+    } else if (blackboard->get<ExplorationErrorCode>("error_code_id") ==
+      ExplorationErrorCode::MAX_FRONTIER_SEARCH_RADIUS_EXCEEDED)
+    {
+      LOG_ERROR("Behavior Tree tick returned FAILURE due to max frontier search radius exceeded.");
+      return_value = ExploreActionResult::NO_MORE_REACHABLE_FRONTIERS;
+    } else if (blackboard->get<ExplorationErrorCode>("error_code_id") ==
+      ExplorationErrorCode::COST_COMPUTATION_FAILURE)
+    {
+      LOG_ERROR("Behavior Tree tick returned FAILURE due to cost computation failure.");
+    } else if (blackboard->get<ExplorationErrorCode>("error_code_id") ==
+      ExplorationErrorCode::FULL_PATH_OPTIMIZATION_FAILURE)
+    {
+      LOG_ERROR("Behavior Tree tick returned FAILURE due to full path optimization failure.");
+    } else if (blackboard->get<ExplorationErrorCode>("error_code_id") ==
+      ExplorationErrorCode::REFINED_PATH_COMPUTATION_FAILURE)
+    {
+      LOG_ERROR("Behavior Tree tick returned FAILURE due to refined path computation failure.");
+    } else if (blackboard->get<ExplorationErrorCode>("error_code_id") ==
+      ExplorationErrorCode::UNHANDLED_ERROR)
+    {
+      return_value = ExploreActionResult::UNKNOWN;
+      LOG_ERROR("Behavior Tree tick returned FAILURE with unhandled error code.");
+    } else if (blackboard->get<ExplorationErrorCode>("error_code_id") ==
+      ExplorationErrorCode::NAV2_GOAL_ABORT)
+    {
+      LOG_ERROR("Behavior Tree tick returned FAILURE due to Nav2 goal abort.");
+      if (parameterInstance.getValue<bool>("explorationBT.abort_exploration_on_nav2_abort")) {
+        LOG_ERROR("Aborting exploration due to Nav2 goal abort.");
+        return_value = ExploreActionResult::NAV2_INTERNAL_FAULT;
       } else {
-        throw std::runtime_error("Behavior Tree tick returned FAILURE with unknown error code.");
+        LOG_WARN("Continuing exploration despite Nav2 goal abort. The frontier was blacklisted.");
       }
-      return;
+    } else {
+      throw std::runtime_error("Behavior Tree tick returned FAILURE with unknown error code.");
     }
-    std::this_thread::sleep_for(std::chrono::milliseconds(bt_sleep_duration));
-    LOG_DEBUG("TICKED ONCE");
   }
+  std::this_thread::sleep_for(std::chrono::milliseconds(bt_sleep_duration));
+  LOG_DEBUG("TICKED ONCE");
+  return return_value;
 }
 
 void RoadmapExplorationBT::halt()
