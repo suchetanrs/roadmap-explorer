@@ -309,6 +309,8 @@ void RosVisualizer::visualizeBlacklistedFrontiers(
     return;
   }
 
+  LOG_TRACE("Visualizing blacklisted frontiers, count: " << blacklisted_frontiers.size());
+
   visualization_msgs::msg::MarkerArray markers;
   int id = 0;
 

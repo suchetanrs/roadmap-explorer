@@ -462,6 +462,7 @@ public:
     LOG_DEBUG("SendNav2Goal onRunning");
     FrontierPtr allocatedFrontier = std::make_shared<Frontier>();
     getInput("allocated_frontier", allocatedFrontier);
+    LOG_DEBUG("Sending goal " << allocatedFrontier);
     if (nav2_interface_->getGoalStatus() == NavGoalStatus::SENDING_GOAL) {
       LOG_INFO("Nav2 goal is being sent, waiting for response...");
       return BT::NodeStatus::RUNNING;
@@ -482,6 +483,8 @@ public:
       LOG_ERROR("Nav2 goal has aborted!");
       config().blackboard->set<ExplorationErrorCode>(
         "error_code_id", ExplorationErrorCode::NAV2_GOAL_ABORT);
+      config().blackboard->set<FrontierPtr>(
+        "latest_failed_frontier", allocatedFrontier);
       return BT::NodeStatus::FAILURE;
     }
     if (nav2_interface_->getGoalStatus() == NavGoalStatus::SUCCEEDED) {
@@ -525,14 +528,10 @@ public:
     EventLoggerInstance.startEvent("BlacklistGoal");
     LOG_FLOW("MODULE BlacklistGoal");
     FrontierPtr allocatedFrontier = std::make_shared<Frontier>();
-    getInput<FrontierPtr>("allocated_frontier", allocatedFrontier);
+    config().blackboard->get<FrontierPtr>("latest_failed_frontier", allocatedFrontier);
+    LOG_WARN("Setting blacklist " << allocatedFrontier);
     blacklistFrontier(allocatedFrontier, config().blackboard);
     return BT::NodeStatus::SUCCESS;
-  }
-
-  static BT::PortsList providedPorts()
-  {
-    return {BT::OutputPort<FrontierPtr>("allocated_frontier")};
   }
 };
 
@@ -665,6 +664,7 @@ void RoadmapExplorationBT::makeBTNodes()
   // -------------------- Control and decorators -----------------------------
   factory.registerNodeType<nav2_behavior_tree::PipelineSequence>("PipelineSequence");
   factory.registerNodeType<nav2_behavior_tree::RateController>("RateController");
+  factory.registerNodeType<nav2_behavior_tree::RecoveryNode>("RecoveryNode");
 
   behaviour_tree =
     factory.createTreeFromFile(

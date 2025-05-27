@@ -234,7 +234,9 @@ bool CostAssigner::assignCosts(
 void CostAssigner::setFrontierBlacklist(std::vector<FrontierPtr> & blacklist)
 {
   std::lock_guard<std::mutex> lock(blacklist_mutex_);
+  LOG_DEBUG("Setting frontier blacklist with size: " << blacklist.size());
   for (auto frontier : blacklist) {
+    LOG_DEBUG("Adding frontier to blacklist: " << frontier);
     frontier_blacklist_[frontier] = true;
   }
 }

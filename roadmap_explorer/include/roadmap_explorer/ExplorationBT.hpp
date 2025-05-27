@@ -10,6 +10,7 @@
 #include <nav2_util/node_thread.hpp>
 #include <nav2_behavior_tree/plugins/control/pipeline_sequence.hpp>
 #include <nav2_behavior_tree/plugins/decorator/rate_controller.hpp>
+#include <nav2_behavior_tree/plugins/control/recovery_node.hpp>
 
 #include <geometry_msgs/msg/point_stamped.hpp>
 #include <geometry_msgs/msg/twist.hpp>
