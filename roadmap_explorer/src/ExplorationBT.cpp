@@ -329,6 +329,21 @@ public:
         ExplorationErrorCode::COST_COMPUTATION_FAILURE);
       return BT::NodeStatus::FAILURE;
     }
+    bool atleast_one_achievable_frontier = false;
+    for (auto& fip : frontierCostsRequestPtr->frontier_list)
+    {
+      if(fip->isAchievable())
+      {
+        atleast_one_achievable_frontier = true;
+        break;
+      }
+    }
+    if(!atleast_one_achievable_frontier)
+    {
+      config().blackboard->set<ExplorationErrorCode>(
+      "error_code_id", ExplorationErrorCode::NO_ACHIEVABLE_FRONTIERS_LEFT);
+      return BT::NodeStatus::FAILURE;
+    }
     setOutput("frontier_costs_result", frontierCostsResultPtr->frontier_list);
     EventLoggerInstance.endEvent("ProcessFrontierCosts", 0);
     RosVisualizer::getInstance().visualizeFrontierMarker(
@@ -698,6 +713,11 @@ uint16_t RoadmapExplorationBT::tickOnceWithSleep()
       ExplorationErrorCode::COST_COMPUTATION_FAILURE)
     {
       LOG_ERROR("Behavior Tree tick returned FAILURE due to cost computation failure.");
+    } else if (blackboard->get<ExplorationErrorCode>("error_code_id") ==
+      ExplorationErrorCode::NO_ACHIEVABLE_FRONTIERS_LEFT)
+    {
+      LOG_ERROR("Behavior Tree tick returned FAILURE due to no achievable frontiers left.");
+      return_value = ExploreActionResult::NO_MORE_REACHABLE_FRONTIERS;
     } else if (blackboard->get<ExplorationErrorCode>("error_code_id") ==
       ExplorationErrorCode::FULL_PATH_OPTIMIZATION_FAILURE)
     {

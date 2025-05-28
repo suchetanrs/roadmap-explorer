@@ -226,6 +226,8 @@ void RosVisualizer::visualizeFrontierMarker(
     marker.color.r = 1.0;     // Red
     marker.color.g = 1.0;     // Green
     marker.color.b = 1.0;     // Blue
+    marker.lifetime.sec = 1;
+    marker.lifetime.nanosec = 1;
 
     if (!frontier->isAchievable()) {
       continue;
@@ -254,6 +256,8 @@ void RosVisualizer::visualizeFrontierMarker(
     arrow_marker.pose.position.z = 0.0;     // On the ground (adjust as needed)
 
     arrow_marker.pose.orientation = frontier->getGoalOrientation();
+    arrow_marker.lifetime.sec = 1;
+    arrow_marker.lifetime.nanosec = 1;
 
     // Set marker scale (sphere diameter)
     arrow_marker.scale.x = 0.25;     // Arrow length
@@ -324,6 +328,8 @@ void RosVisualizer::visualizeBlacklistedFrontiers(
     marker.id = id++;
     marker.type = visualization_msgs::msg::Marker::CYLINDER;       // Change to CYLINDER
     marker.action = visualization_msgs::msg::Marker::ADD;
+    marker.lifetime.sec = 1;
+    marker.lifetime.nanosec = 1;
 
     // Set marker pose (position)
     marker.pose.position.x = frontier->getGoalPoint().x;
