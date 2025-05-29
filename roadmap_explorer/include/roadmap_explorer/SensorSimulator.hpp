@@ -61,6 +61,7 @@ private:
   rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr explored_pub_;
   rclcpp::TimerBase::SharedPtr timer_;
 
+
   /* ==== state ============================================================ */
   std::recursive_mutex latest_map_mutex_;
   nav_msgs::msg::OccupancyGrid::SharedPtr latest_map_;
@@ -71,6 +72,7 @@ private:
   
   std::shared_ptr<nav2_util::LifecycleNode> node_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros_;
+  rclcpp::CallbackGroup::SharedPtr map_subscription_cb_group_;
 };
 
 }  // namespace roadmap_explorer

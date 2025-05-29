@@ -581,7 +581,10 @@ RoadmapExplorationBT::RoadmapExplorationBT(std::shared_ptr<nav2_util::LifecycleN
     std::make_shared<FrontierSearch>(*(explore_costmap_ros_->getLayeredCostmap()->getCostmap()));
   full_path_optimizer_ = std::make_shared<FullPathOptimizer>(bt_node_, explore_costmap_ros_);
 
-  sensor_simulator_ = std::make_shared<SensorSimulator>(bt_node_, explore_costmap_ros_);
+  if(parameterInstance.getValue<bool>("explorationBT.simulate_sensor"))
+  {
+    sensor_simulator_ = std::make_shared<SensorSimulator>(bt_node_, explore_costmap_ros_);
+  }
 
   LOG_INFO("RoadmapExplorationBT::RoadmapExplorationBT()");
 }
@@ -598,7 +601,7 @@ RoadmapExplorationBT::~RoadmapExplorationBT()
 
 void RoadmapExplorationBT::makeBTNodes()
 {
-  while (!explore_costmap_ros_->isCurrent()) {
+  while (!explore_costmap_ros_->isCurrent() && rclcpp::ok()) {
     LOG_WARN("Waiting for explore costmap to be current.");
     std::this_thread::sleep_for(std::chrono::seconds(1));
   }

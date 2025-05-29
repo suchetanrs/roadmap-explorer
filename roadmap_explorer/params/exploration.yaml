@@ -36,3 +36,14 @@ goalHysteresis:
 explorationBT:
   bt_sleep_ms: 70
   abort_exploration_on_nav2_abort: false
+  exploration_boundary: [310.0, 260.0, 310.0, -120.0, -70.0, -120.0, -70.0, 260.0]
+  simulate_sensor: false
+
+sensorSimulator:
+  input_map_topic: "/map"
+  explored_map_topic: "/explored_map"
+  angular_resolution: 0.013
+  sensor_update_rate: 1.0
+  sensor_min_angle: -1.0
+  sensor_max_angle: 1.0
+  sensor_max_range: 1.5

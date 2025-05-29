@@ -14,11 +14,14 @@ SensorSimulator::SensorSimulator(std::shared_ptr<nav2_util::LifecycleNode> node,
 : node_(node)
 {
   explore_costmap_ros_ = explore_costmap_ros;
+  map_subscription_cb_group_ = node->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+  rclcpp::SubscriptionOptions options;
+  options.callback_group = map_subscription_cb_group_;
 
   /* ----------------------------- comms ----------------------------------- */
   map_sub_ = node_->create_subscription<nav_msgs::msg::OccupancyGrid>(
       parameterInstance.getValue<std::string>("sensorSimulator.input_map_topic"), rclcpp::SensorDataQoS(),
-      std::bind(&SensorSimulator::mapCallback, this, _1));
+      std::bind(&SensorSimulator::mapCallback, this, _1), options);
 
   explored_pub_ = node_->create_publisher<nav_msgs::msg::OccupancyGrid>(
       parameterInstance.getValue<std::string>("sensorSimulator.explored_map_topic"), 10);
@@ -26,7 +29,7 @@ SensorSimulator::SensorSimulator(std::shared_ptr<nav2_util::LifecycleNode> node,
   /* ------------------------------ timer ---------------------------------- */
   timer_ = node_->create_wall_timer(
       std::chrono::duration<double>(parameterInstance.getValue<double>("sensorSimulator.sensor_update_rate")),
-      std::bind(&SensorSimulator::timerCallback, this));
+      std::bind(&SensorSimulator::timerCallback, this), map_subscription_cb_group_);
 }
 
 /* ========================================================================== */
@@ -125,7 +128,7 @@ void SensorSimulator::timerCallback()
   /* ----------------------------- ray-casting ----------------------------- */
   auto min_angle = parameterInstance.getValue<double>("sensorSimulator.sensor_min_angle");
   auto max_angle =  parameterInstance.getValue<double>("sensorSimulator.sensor_max_angle");
-  auto delta_theta = parameterInstance.getValue<double>("costCalculator.delta_theta");
+  auto delta_theta = parameterInstance.getValue<double>("sensorSimulator.angular_resolution");
   for (double a = min_angle;
        a <= max_angle;
        a += delta_theta)
@@ -155,7 +158,7 @@ void SensorSimulator::markRay(const geometry_msgs::msg::Pose & base_pose,
 
   const double dx = std::cos(ray_angle);
   const double dy = std::sin(ray_angle);
-  auto sensor_range = parameterInstance.getValue<double>("costCalculator.max_camera_depth");
+  auto sensor_range = parameterInstance.getValue<double>("sensorSimulator.sensor_max_range");
 
   for (double r = 0.0; r <= sensor_range; r += res)
   {

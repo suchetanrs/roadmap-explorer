@@ -40,6 +40,17 @@ roadmap_explorer_node:
     explorationBT:
       bt_sleep_ms: 70
       exploration_boundary: [310.0, 260.0, 310.0, -120.0, -70.0, -120.0, -70.0, 260.0]
+      abort_exploration_on_nav2_abort: false
+      simulate_sensor: false
+    
+    sensorSimulator:
+      input_map_topic: "/map"
+      explored_map_topic: "/explored_map"
+      angular_resolution: 0.013
+      sensor_update_rate: 1.0
+      sensor_min_angle: -1.0
+      sensor_max_angle: 1.0
+      sensor_max_range: 1.5
 
 roadmap_explorer_costmap:
   roadmap_explorer_costmap:
@@ -55,7 +66,7 @@ roadmap_explorer_costmap:
       plugins: ["static_layer"]
       static_layer:
         plugin: "nav2_costmap_2d::StaticLayer"
-        map_topic: /map
+        map_topic: "/map"
         map_subscribe_transient_local: True
         enabled: True
       always_send_full_costmap: True
