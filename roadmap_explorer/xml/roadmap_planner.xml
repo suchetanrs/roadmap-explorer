@@ -1,7 +1,0 @@
-<library path="frontier_roadmap_planner_core">
-    <class name="roadmap_explorer/RoadmapExplorerPlanner" 
-           type="roadmap_explorer::RoadmapExplorerPlanner" 
-           base_class_type="nav2_core::GlobalPlanner">
-        <description>An implementation of the frontier roadmap algorithm</description>
-    </class>
-</library>

@@ -21,7 +21,6 @@ SensorSimulator::SensorSimulator(
   rclcpp::SubscriptionOptions options;
   options.callback_group = map_subscription_cb_group_;
 
-  /* ----------------------------- comms ----------------------------------- */
   map_sub_ = node_->create_subscription<nav_msgs::msg::OccupancyGrid>(
     parameterInstance.getValue<std::string>(
       "sensorSimulator.input_map_topic"), rclcpp::SensorDataQoS(),
@@ -29,8 +28,8 @@ SensorSimulator::SensorSimulator(
 
   explored_pub_ = node_->create_publisher<nav_msgs::msg::OccupancyGrid>(
     parameterInstance.getValue<std::string>("sensorSimulator.explored_map_topic"), 10);
+  explored_pub_->on_activate();
 
-  /* ------------------------------ timer ---------------------------------- */
   timer_ = node_->create_wall_timer(
     std::chrono::duration<double>(
       parameterInstance.getValue<double>(
@@ -38,16 +37,15 @@ SensorSimulator::SensorSimulator(
     std::bind(&SensorSimulator::timerCallback, this), map_subscription_cb_group_);
 }
 
-/* ========================================================================== */
-/* callbacks                                                                  */
-/* ========================================================================== */
+SensorSimulator::~SensorSimulator()
+{
+  explored_pub_->on_deactivate();
+}
 
 void SensorSimulator::mapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg)
 {
-  std::lock_guard<std::recursive_mutex> lock_latest(latest_map_mutex_);
+  std::lock_guard<std::recursive_mutex> lock(map_mutex_);
   latest_map_ = msg;                         // always keep the freshest copy
-
-  std::lock_guard<std::recursive_mutex> lock_explored(explored_map_mutex_);
 
   /* ---------- first ever map ------------------------------------------------ */
   if (explored_map_.data.empty()) {
@@ -78,6 +76,7 @@ void SensorSimulator::mapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr 
 void SensorSimulator::updateAfterChangedGeometry(
   const nav_msgs::msg::OccupancyGrid::SharedPtr updated_msg)
 {
+  std::lock_guard<std::recursive_mutex> lock(map_mutex_);
   /* ---------- rebuild explored map with the new geometry -------------------- */
   nav_msgs::msg::OccupancyGrid old_explored = explored_map_;  // keep a copy
   explored_map_ = *updated_msg;                                       // new metadata
@@ -110,28 +109,29 @@ void SensorSimulator::updateAfterChangedGeometry(
     const std::size_t new_idx =
       static_cast<std::size_t>(new_row) * explored_map_.info.width + new_col;
 
-    explored_map_.data[new_idx] = updated_msg->data[new_idx];   // copy the known value forward
+    explored_map_.data[new_idx] = updated_msg->data[new_idx];   // copy the refreshed value into the explored_map
   }
 
-  RCLCPP_INFO(
-    node_->get_logger(),
-    "Map geometry changed – rebuilt explored map (%ux%u → %ux%u)",
-    old_explored.info.width, old_explored.info.height,
-    explored_map_.info.width, explored_map_.info.height);
+  LOG_INFO("Map geometry changed and rebuilt explored map " <<
+    old_explored.info.width << ", " << old_explored.info.height << " -> " <<
+    explored_map_.info.width << ", " << explored_map_.info.height);
 }
 
 void SensorSimulator::timerCallback()
 {
-  RCLCPP_WARN(node_->get_logger(), "TIMER CB");
-  std::lock_guard<std::recursive_mutex> lock1(latest_map_mutex_);
+  std::lock_guard<std::recursive_mutex> lock(map_mutex_);
+  LOG_DEBUG("TIMER CB");
   if (!latest_map_) {
-    RCLCPP_ERROR(node_->get_logger(), "No latest map");
+    LOG_ERROR("No latest map");
     return;  // no map yet
   }
 
-  /* convert transform → pose for convenience ------------------------------ */
   geometry_msgs::msg::PoseStamped base_pose;
-  explore_costmap_ros_->getRobotPose(base_pose);
+  if(!explore_costmap_ros_->getRobotPose(base_pose))
+  {
+    LOG_ERROR("Could not get robot pose. Returning.");
+    return;
+  }
   const double base_yaw = roadmap_explorer::quatToEuler(base_pose.pose.orientation)[2];
 
   /* ----------------------------- ray-casting ----------------------------- */
@@ -145,22 +145,16 @@ void SensorSimulator::timerCallback()
     markRay(base_pose.pose, base_yaw + a);  // cast in world frame
   }
 
-  std::lock_guard<std::recursive_mutex> lock(explored_map_mutex_);
-  /* publish ---------------------------------------------------------------- */
   explored_map_.header.stamp = node_->now();
   explored_map_.header.frame_id = explore_costmap_ros_->getGlobalFrameID();
   explored_pub_->publish(explored_map_);
 }
 
-/* ========================================================================== */
-/* helpers                                                                    */
-/* ========================================================================== */
-
 void SensorSimulator::markRay(
   const geometry_msgs::msg::Pose & base_pose,
   double ray_angle)
 {
-  std::lock_guard<std::recursive_mutex> lock(explored_map_mutex_);
+  std::lock_guard<std::recursive_mutex> lock(map_mutex_);
   const double res = latest_map_->info.resolution;
   const int w = static_cast<int>(latest_map_->info.width);
   const int h = static_cast<int>(latest_map_->info.height);
@@ -173,7 +167,6 @@ void SensorSimulator::markRay(
   for (double r = 0.0; r <= sensor_range; r += res) {
     const double wx = base_pose.position.x + r * dx;   // world
     const double wy = base_pose.position.y + r * dy;
-    marked_world_points_.push_back(WorldPoint(wx, wy));
 
     const int mx = static_cast<int>((wx - org.x) / res); // map cell
     const int my = static_cast<int>((wy - org.y) / res);
@@ -184,10 +177,8 @@ void SensorSimulator::markRay(
 
     const std::size_t idx = static_cast<std::size_t>(my) * w + mx;
 
-    /* copy value from full map into explored map -------------------------- */
     explored_map_.data[idx] = latest_map_->data[idx];
 
-    /* stop on first occupied cell so we don't see "through" walls --------- */
     if (latest_map_->data[idx] > 80) {
       break;
     }

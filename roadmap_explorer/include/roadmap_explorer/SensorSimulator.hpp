@@ -36,9 +36,9 @@ public:
   SensorSimulator(
     std::shared_ptr<nav2_util::LifecycleNode> node,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros);
+  ~SensorSimulator();
 
 private:
-  /* ==== subscriptions / publications ===================================== */
   void mapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
   void timerCallback();
   void markRay(const geometry_msgs::msg::Pose & base_pose, double ray_angle);
@@ -61,16 +61,12 @@ private:
   }
 
   rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr map_sub_;
-  rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr explored_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::OccupancyGrid>::SharedPtr explored_pub_;
   rclcpp::TimerBase::SharedPtr timer_;
 
-
-  /* ==== state ============================================================ */
-  std::recursive_mutex latest_map_mutex_;
+  std::recursive_mutex map_mutex_;
   nav_msgs::msg::OccupancyGrid::SharedPtr latest_map_;
-  std::recursive_mutex explored_map_mutex_;
   nav_msgs::msg::OccupancyGrid explored_map_;
-  std::vector<WorldPoint> marked_world_points_;
 
 
   std::shared_ptr<nav2_util::LifecycleNode> node_;
