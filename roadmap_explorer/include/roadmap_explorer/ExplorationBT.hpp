@@ -26,6 +26,7 @@
 #include "roadmap_explorer/Nav2Interface.hpp"
 #include "roadmap_explorer/Helpers.hpp"
 #include "roadmap_explorer/FullPathOptimizer.hpp"
+#include "roadmap_explorer/SensorSimulator.hpp"
 
 #include "roadmap_explorer_msgs/action/explore.hpp"
 
@@ -81,6 +82,7 @@ private:
   std::shared_ptr<FrontierSearch> frontierSearchPtr_;
   std::shared_ptr<CostAssigner> cost_assigner_ptr_;
   std::shared_ptr<FullPathOptimizer> full_path_optimizer_;
+  std::shared_ptr<SensorSimulator> sensor_simulator_;
 };
 }
 

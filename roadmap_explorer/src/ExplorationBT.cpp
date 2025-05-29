@@ -581,6 +581,8 @@ RoadmapExplorationBT::RoadmapExplorationBT(std::shared_ptr<nav2_util::LifecycleN
     std::make_shared<FrontierSearch>(*(explore_costmap_ros_->getLayeredCostmap()->getCostmap()));
   full_path_optimizer_ = std::make_shared<FullPathOptimizer>(bt_node_, explore_costmap_ros_);
 
+  sensor_simulator_ = std::make_shared<SensorSimulator>(bt_node_, explore_costmap_ros_);
+
   LOG_INFO("RoadmapExplorationBT::RoadmapExplorationBT()");
 }
 

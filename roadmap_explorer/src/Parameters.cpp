@@ -204,6 +204,18 @@ void ParameterHandler::makeParametersROS(std::shared_ptr<nav2_util::LifecycleNod
   parameter_map_["explorationBT.abort_exploration_on_nav2_abort"] =
     node->get_parameter("explorationBT.abort_exploration_on_nav2_abort").as_bool();
 
+  nav2_util::declare_parameter_if_not_declared(node, "sensorSimulator.input_map_topic", rclcpp::ParameterValue("/map"));
+  nav2_util::declare_parameter_if_not_declared(node, "sensorSimulator.explored_map_topic", rclcpp::ParameterValue("/explored_map"));
+  nav2_util::declare_parameter_if_not_declared(node, "sensorSimulator.sensor_update_rate", rclcpp::ParameterValue(0.5));
+  nav2_util::declare_parameter_if_not_declared(node, "sensorSimulator.sensor_min_angle", rclcpp::ParameterValue(-M_PI/4));
+  nav2_util::declare_parameter_if_not_declared(node, "sensorSimulator.sensor_max_angle", rclcpp::ParameterValue( M_PI/4));
+
+  parameter_map_["sensorSimulator.input_map_topic"] = node->get_parameter("sensorSimulator.input_map_topic").as_string();
+  parameter_map_["sensorSimulator.explored_map_topic"] = node->get_parameter("sensorSimulator.explored_map_topic").as_string();
+  parameter_map_["sensorSimulator.sensor_update_rate"] = node->get_parameter("sensorSimulator.sensor_update_rate").as_double();
+  parameter_map_["sensorSimulator.sensor_min_angle"] = node->get_parameter("sensorSimulator.sensor_min_angle").as_double();
+  parameter_map_["sensorSimulator.sensor_max_angle"] = node->get_parameter("sensorSimulator.sensor_max_angle").as_double();
+
   sanityCheckParameters();
 
   dynamic_param_callback_handle_ =
@@ -284,6 +296,12 @@ void ParameterHandler::makeParametersYAMLcpp()
     loaded_node["explorationBT"]["exploration_boundary"].as<std::vector<double>>();
   parameter_map_["explorationBT.abort_exploration_on_nav2_abort"] =
     loaded_node["explorationBT"]["abort_exploration_on_nav2_abort"].as<bool>();
+
+  parameter_map_["sensorSimulator.input_map_topic"] = loaded_node["sensorSimulator"]["input_map_topic"].as<std::string>();
+  parameter_map_["sensorSimulator.explored_map_topic"] = loaded_node["sensorSimulator"]["explored_map_topic"].as<std::string>();
+  parameter_map_["sensorSimulator.sensor_update_rate"] = loaded_node["sensorSimulator"]["sensor_update_rate"].as<double>();
+  parameter_map_["sensorSimulator.sensor_min_angle"] = loaded_node["sensorSimulator"]["sensor_min_angle"].as<double>();
+  parameter_map_["sensorSimulator.sensor_max_angle"] = loaded_node["sensorSimulator"]["sensor_max_angle"].as<double>();
 
   sanityCheckParameters();
 }

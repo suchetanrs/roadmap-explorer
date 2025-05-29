@@ -84,6 +84,7 @@ src/ExplorationBT.cpp
 src/CostAssigner.cpp
 src/FullPathOptimizer.cpp 
 src/ExplorationServer.cpp
+src/SensorSimulator.cpp
 )
 ament_target_dependencies(roadmap_exploration_bt ${dependencies})
 target_link_libraries(roadmap_exploration_bt ${PCL_LIBRARIES} ${YAML_CPP_LIBRARIES})
@@ -98,6 +99,9 @@ ament_target_dependencies(roadmap_exploration_server ${dependencies})
 target_link_libraries(roadmap_exploration_server ${PCL_LIBRARIES} ${YAML_CPP_LIBRARIES} roadmap_exploration_bt)
 
 # ------------------------------------------------------------------
+# add_executable(sensor_simulator src/SensorSimulator.cpp)
+# ament_target_dependencies(sensor_simulator ${dependencies})
+
 
 
 install(TARGETS roadmap_exploration_bt
