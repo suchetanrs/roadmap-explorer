@@ -113,8 +113,7 @@ void ExplorationServer::execute(const std::shared_ptr<GoalHandleExplore> goal_ha
 
   // Build the tree
   try {
-    while(rclcpp::ok())
-    {
+    while (rclcpp::ok()) {
       auto error_code = exploration_bt_->tickOnceWithSleep();
 
       // Check for cancellation
@@ -125,18 +124,15 @@ void ExplorationServer::execute(const std::shared_ptr<GoalHandleExplore> goal_ha
         return;
       }
 
-      if(error_code == ExploreActionResult::NO_ERROR)
-      {
+      if (error_code == ExploreActionResult::NO_ERROR) {
         continue;
-      }
-      else if (error_code == ExploreActionResult::NO_MORE_REACHABLE_FRONTIERS) {
+      } else if (error_code == ExploreActionResult::NO_MORE_REACHABLE_FRONTIERS) {
         RCLCPP_INFO(get_logger(), "No more reachable frontiers found, exploration complete");
         result->success = true;
         result->error_code = ExploreActionResult::NO_MORE_REACHABLE_FRONTIERS;
         goal_handle->succeed(result);
         return;
-      }
-      else if (error_code == ExploreActionResult::NAV2_INTERNAL_FAULT) {
+      } else if (error_code == ExploreActionResult::NAV2_INTERNAL_FAULT) {
         RCLCPP_ERROR(get_logger(), "Internal fault during exploration, aborting");
         result->success = false;
         result->error_code = ExploreActionResult::NAV2_INTERNAL_FAULT;

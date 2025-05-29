@@ -33,7 +33,9 @@ struct WorldPoint
 class SensorSimulator
 {
 public:
-  SensorSimulator(std::shared_ptr<nav2_util::LifecycleNode> node, std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros);
+  SensorSimulator(
+    std::shared_ptr<nav2_util::LifecycleNode> node,
+    std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros);
 
 private:
   /* ==== subscriptions / publications ===================================== */
@@ -41,21 +43,22 @@ private:
   void timerCallback();
   void markRay(const geometry_msgs::msg::Pose & base_pose, double ray_angle);
   void updateAfterChangedGeometry(const nav_msgs::msg::OccupancyGrid::SharedPtr updated_msg);
-  inline void cellToWorld(const nav_msgs::msg::OccupancyGrid & grid,
-                          std::size_t                         idx,
-                          double                            & wx,
-                          double                            & wy) const
+  inline void cellToWorld(
+    const nav_msgs::msg::OccupancyGrid & grid,
+    std::size_t idx,
+    double & wx,
+    double & wy) const
   {
-    const uint32_t w   = grid.info.width;
-    const double   res = grid.info.resolution;
-    const auto   & org = grid.info.origin.position;
+    const uint32_t w = grid.info.width;
+    const double res = grid.info.resolution;
+    const auto & org = grid.info.origin.position;
 
     const uint32_t col = idx % w;
     const uint32_t row = idx / w;
 
     wx = org.x + (static_cast<double>(col) + 0.5) * res;
     wy = org.y + (static_cast<double>(row) + 0.5) * res;
-  };
+  }
 
   rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr map_sub_;
   rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr explored_pub_;
@@ -69,7 +72,7 @@ private:
   nav_msgs::msg::OccupancyGrid explored_map_;
   std::vector<WorldPoint> marked_world_points_;
 
-  
+
   std::shared_ptr<nav2_util::LifecycleNode> node_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros_;
   rclcpp::CallbackGroup::SharedPtr map_subscription_cb_group_;

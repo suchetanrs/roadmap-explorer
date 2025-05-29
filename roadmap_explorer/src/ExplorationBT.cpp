@@ -330,18 +330,15 @@ public:
       return BT::NodeStatus::FAILURE;
     }
     bool atleast_one_achievable_frontier = false;
-    for (auto& fip : frontierCostsRequestPtr->frontier_list)
-    {
-      if(fip->isAchievable())
-      {
+    for (auto & fip : frontierCostsRequestPtr->frontier_list) {
+      if (fip->isAchievable()) {
         atleast_one_achievable_frontier = true;
         break;
       }
     }
-    if(!atleast_one_achievable_frontier)
-    {
+    if (!atleast_one_achievable_frontier) {
       config().blackboard->set<ExplorationErrorCode>(
-      "error_code_id", ExplorationErrorCode::NO_ACHIEVABLE_FRONTIERS_LEFT);
+        "error_code_id", ExplorationErrorCode::NO_ACHIEVABLE_FRONTIERS_LEFT);
       return BT::NodeStatus::FAILURE;
     }
     setOutput("frontier_costs_result", frontierCostsResultPtr->frontier_list);
@@ -581,8 +578,7 @@ RoadmapExplorationBT::RoadmapExplorationBT(std::shared_ptr<nav2_util::LifecycleN
     std::make_shared<FrontierSearch>(*(explore_costmap_ros_->getLayeredCostmap()->getCostmap()));
   full_path_optimizer_ = std::make_shared<FullPathOptimizer>(bt_node_, explore_costmap_ros_);
 
-  if(parameterInstance.getValue<bool>("explorationBT.simulate_sensor"))
-  {
+  if (parameterInstance.getValue<bool>("explorationBT.simulate_sensor")) {
     sensor_simulator_ = std::make_shared<SensorSimulator>(bt_node_, explore_costmap_ros_);
   }
 
