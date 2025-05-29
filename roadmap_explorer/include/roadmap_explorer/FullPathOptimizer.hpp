@@ -75,7 +75,7 @@ public:
   ~FullPathOptimizer();
 
   bool getNextGoal(
-    std::vector<FrontierPtr> & frontier_list, FrontierPtr & nextFrontier, size_t n,
+    std::vector<FrontierPtr> & frontier_list, FrontierPtr & nextFrontier,
     geometry_msgs::msg::PoseStamped & robotP);
 
   void clearPlanCache()
@@ -84,8 +84,7 @@ public:
   }
 
   double calculateLengthRobotToGoal(
-    const FrontierPtr & robot, const FrontierPtr & goal,
-    geometry_msgs::msg::PoseStamped & robotP);
+    const FrontierPtr & robot, const FrontierPtr & goal);
 
   bool refineAndPublishPath(
     geometry_msgs::msg::PoseStamped & robotP, FrontierPtr & goalFrontier,
@@ -105,7 +104,7 @@ private:
     geometry_msgs::msg::PoseStamped & robotP);
 
   void getFilteredFrontiersN(
-    std::vector<FrontierPtr> & frontier_list, size_t n,
+    std::vector<FrontierPtr> & frontier_list, int n,
     SortedFrontiers & sortedFrontiers,
     geometry_msgs::msg::PoseStamped & robotP);
 

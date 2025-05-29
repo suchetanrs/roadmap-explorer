@@ -101,8 +101,7 @@ double FullPathOptimizer::calculatePathLength(std::vector<FrontierPtr> & path)
 
 double FullPathOptimizer::calculateLengthRobotToGoal(
   const FrontierPtr & robot,
-  const FrontierPtr & goal,
-  geometry_msgs::msg::PoseStamped & robotP)
+  const FrontierPtr & goal)
 {
   std::vector<FrontierPtr> path = {robot, goal};
   return calculatePathLength(path);
@@ -148,7 +147,7 @@ void FullPathOptimizer::getFilteredFrontiers(
 }
 
 void FullPathOptimizer::getFilteredFrontiersN(
-  std::vector<FrontierPtr> & frontier_list, size_t n,
+  std::vector<FrontierPtr> & frontier_list, int n,
   SortedFrontiers & sortedFrontiers,
   geometry_msgs::msg::PoseStamped & robotP)
 {
@@ -157,7 +156,6 @@ void FullPathOptimizer::getFilteredFrontiersN(
   // If there are no local frontiers, add all to global vector and treat closest one as closest_global_frontier
   // If there are both local and global, and local <= n, then all local added to local vector and all global added to global vector with closest one being closest_g_f
   // If there are both local and global, and local > n, then upto n are added to local vector and global ones are added to global vector. Closest global = closest_g_f
-  double closest_global_frontier_length = std::numeric_limits<double>::max();
   std::vector<FrontierPtr> all_frontiers;
 
   for (const auto & frontier : frontier_list) {
@@ -178,7 +176,6 @@ void FullPathOptimizer::getFilteredFrontiersN(
 
   // Separate the frontiers into local and global lists.
   bool global_assigned = false;
-  bool first_case = false;
   // to cater first case.
   if (all_frontiers.size() == 0) {
     LOG_WARN("No achievable frontiers exist during sorting.")
@@ -332,7 +329,7 @@ bool FullPathOptimizer::getBestFullPath(
   // this is useful if there are more than one paths with the same length.
   for (const auto & path : bestPaths) {
     LOG_DEBUG("Getting distance with local frontiers: " << path);
-    auto distance_to_get_minima = calculateLengthRobotToGoal(robotPoseFrontier, path[1], robotP);
+    auto distance_to_get_minima = calculateLengthRobotToGoal(robotPoseFrontier, path[1]);
     LOG_DEBUG("Distance is: " << distance_to_get_minima);
     if (distance_to_get_minima < minLength) {
       minLength = distance_to_get_minima;
@@ -344,7 +341,7 @@ bool FullPathOptimizer::getBestFullPath(
 
 bool FullPathOptimizer::getNextGoal(
   std::vector<FrontierPtr> & frontier_list,
-  FrontierPtr & nextFrontier, size_t n,
+  FrontierPtr & nextFrontier,
   geometry_msgs::msg::PoseStamped & robotP)
 {
   num_frontiers_in_local_area = parameterInstance.getValue<double>(
@@ -389,7 +386,7 @@ bool FullPathOptimizer::getNextGoal(
     nav_msgs::msg::Path bestPathROS;
     bestPathROS.header.frame_id = "map";
     bestPathROS.header.stamp = node_->now();
-    for (int o = 0; o < bestFrontierWaypoint.size() - 1; o++) {
+    for (int o = 0; o < (int)bestFrontierWaypoint.size() - 1; o++) {
       // for (auto &fullPoint : frontier_pair_distances_[FrontierPair(bestFrontierWaypoint[o], bestFrontierWaypoint[o + 1])].path)
       // {
       //     LOG_INFO(fullPoint->frontier << " , ");
@@ -423,6 +420,7 @@ bool FullPathOptimizer::refineAndPublishPath(
   {
     return false;
   }
+  refined_path = nav2_plan;
   frontier_nav2_plan_->publish(nav2_plan);
   return true;
 }

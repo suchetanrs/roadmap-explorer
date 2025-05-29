@@ -10,11 +10,8 @@ void bresenham2D(
   int offset_a,
   int offset_b, unsigned int offset,
   unsigned int max_length,
-  int resolution_cut_factor,
-  nav2_costmap_2d::Costmap2D * exploration_costmap_)
+  int resolution_cut_factor)
 {
-  auto max_offset = exploration_costmap_->getSizeInCellsX() *
-    exploration_costmap_->getSizeInCellsY();
   unsigned int end = std::min(max_length, abs_da);
   for (unsigned int i = 0; i < end; ++i) {
     if (i % resolution_cut_factor == 0) {
@@ -82,13 +79,13 @@ bool getTracedCells(
 
     roadmap_explorer::bresenham2D(
       cell_gatherer, abs_dx, abs_dy, error_y, offset_dx, offset_dy, offset,
-      (unsigned int)(scale * abs_dx), resolution_cut_factor, exploration_costmap_);
+      (unsigned int)(scale * abs_dx), resolution_cut_factor);
   } else {
     // otherwise y is dominant
     int error_x = abs_dy / 2;
     roadmap_explorer::bresenham2D(
       cell_gatherer, abs_dy, abs_dx, error_x, offset_dy, offset_dx, offset,
-      (unsigned int)(scale * abs_dy), resolution_cut_factor, exploration_costmap_);
+      (unsigned int)(scale * abs_dy), resolution_cut_factor);
   }
   return true;
 }
@@ -352,14 +349,12 @@ bool computePathBetweenPointsThetaStar(
     LOG_ERROR("Start point is off the global costmap.");
     return false;
   }
-  int map_start[2] = {static_cast<int>(mx), static_cast<int>(my)};
 
   // Convert goal point from world to map coordinates.
   if (!exploration_costmap_->worldToMap(goal_point.x, goal_point.y, mx, my)) {
     LOG_ERROR("Goal point is off the global costmap.");
     return false;
   }
-  int map_goal[2] = {static_cast<int>(mx), static_cast<int>(my)};
 
   // Create and configure the planner.
   auto planner = std::make_unique<roadmap_explorer::ThetaStar>();

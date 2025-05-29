@@ -3,13 +3,13 @@
 std::unique_ptr<EventLogger> EventLogger::EventLoggerPtr_ = nullptr;
 std::mutex EventLogger::instanceMutex_;
 
-EventLogger::EventLogger(const std::string & baseFilename)
+EventLogger::EventLogger()
 : serialNumber(0)
 {
   // Generate a unique filename by appending a timestamp and a random number
-  auto now = std::chrono::system_clock::now();
-  auto nowTime = std::chrono::system_clock::to_time_t(now);
-  auto nowMs = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
+  // auto now = std::chrono::system_clock::now();
+  // auto nowTime = std::chrono::system_clock::to_time_t(now);
+  // auto nowMs = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
 
   // std::ostringstream oss;
   // oss << baseFilename << "_" << std::put_time(std::localtime(&nowTime), "%Y%m%d_%H%M%S") << "_" << nowMs.count() << ".csv";

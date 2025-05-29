@@ -90,8 +90,7 @@ public:
     all_frontier_cloud_pub_;
 
   void visualizeFrontierMarker(
-    const std::vector<FrontierPtr> & frontier_list,
-    std::string globalFrameID);
+    const std::vector<FrontierPtr> & frontier_list);
   rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::MarkerArray>::SharedPtr
     frontier_marker_array_publisher_;
 
@@ -107,8 +106,7 @@ public:
     trailing_robot_poses_publisher_;
 
   void visualizeBlacklistedFrontiers(
-    const std::vector<FrontierPtr> & blacklisted_frontiers,
-    std::string globalFrameID);
+    const std::vector<FrontierPtr> & blacklisted_frontiers);
   rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::MarkerArray>::SharedPtr
     blacklisted_frontiers_publisher_;
 

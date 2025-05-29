@@ -159,45 +159,45 @@ std::ostream & operator<<(std::ostream & os, const std::unordered_map<K, V> & ma
 
   #define LOG_TRACE(X) \
   if (LOG_LEVEL >= 5) \
-  std::cout << "\e[0;96m" << "[TRACE " << std::chrono::system_clock::to_time_t( \
-    std::chrono::high_resolution_clock::now()) << "]  " << X << "\e[m" << std::endl;
+  std::cout << "\033[0;96m" << "[TRACE " << std::chrono::system_clock::to_time_t( \
+    std::chrono::high_resolution_clock::now()) << "]  " << X << "\033[m" << std::endl;
   #define LOG_DEBUG(X) \
   if (LOG_LEVEL >= 4) \
-  std::cout << "\e[0;32m" << "[DEBUG " << std::chrono::system_clock::to_time_t( \
-    std::chrono::high_resolution_clock::now()) << "]  " << X << "\e[m" << std::endl;
+  std::cout << "\033[0;32m" << "[DEBUG " << std::chrono::system_clock::to_time_t( \
+    std::chrono::high_resolution_clock::now()) << "]  " << X << "\033[m" << std::endl;
   #define LOG_DEBUG_N(X) \
   if (LOG_LEVEL >= 4) \
-  std::cout << "\e[0;32m" << "[DEBUG " << std::chrono::system_clock::to_time_t( \
-    std::chrono::high_resolution_clock::now()) << "]  " << X << "\e[m";
+  std::cout << "\033[0;32m" << "[DEBUG " << std::chrono::system_clock::to_time_t( \
+    std::chrono::high_resolution_clock::now()) << "]  " << X << "\033[m";
   #define LOG_INFO(X) \
   if (LOG_LEVEL >= 3) \
   std::cout << "[INFO " << std::chrono::system_clock::to_time_t( \
     std::chrono::high_resolution_clock::now()) << "]  " << X << std::endl;
   #define LOG_WARN(X) \
   if (LOG_LEVEL >= 2) \
-  std::cout << "\e[0;93m" << "[WARN " << std::chrono::system_clock::to_time_t( \
-    std::chrono::high_resolution_clock::now()) << "]  " << X << "\e[m" << std::endl;
+  std::cout << "\033[0;93m" << "[WARN " << std::chrono::system_clock::to_time_t( \
+    std::chrono::high_resolution_clock::now()) << "]  " << X << "\033[m" << std::endl;
   #define LOG_ERROR(X) \
   if (LOG_LEVEL >= 1) \
-  std::cout << "\e[0;31m" << "[ERROR " << std::chrono::system_clock::to_time_t( \
-    std::chrono::high_resolution_clock::now()) << "]  " << X << "\e[m" << std::endl;
+  std::cout << "\033[0;31m" << "[ERROR " << std::chrono::system_clock::to_time_t( \
+    std::chrono::high_resolution_clock::now()) << "]  " << X << "\033[m" << std::endl;
   #define LOG_CRITICAL(X) \
   if (LOG_LEVEL >= 1) \
-  std::cout << "\e[04;91m" << "[CRITICAL " << std::chrono::system_clock::to_time_t( \
-    std::chrono::high_resolution_clock::now()) << "]  " << X << "\e[m" << std::endl;
+  std::cout << "\033[04;91m" << "[CRITICAL " << std::chrono::system_clock::to_time_t( \
+    std::chrono::high_resolution_clock::now()) << "]  " << X << "\033[m" << std::endl;
   #define LOG_FATAL(X) \
   if (LOG_LEVEL >= 0) \
-  std::cout << "\e[1;37;41m" << "[FATAL " << std::chrono::system_clock::to_time_t( \
-    std::chrono::high_resolution_clock::now()) << "]  " << X << "\e[m" << std::endl;
+  std::cout << "\033[1;37;41m" << "[FATAL " << std::chrono::system_clock::to_time_t( \
+    std::chrono::high_resolution_clock::now()) << "]  " << X << "\033[m" << std::endl;
 
   #define LOG_HIGHLIGHT(X) \
-  std::cout << "\e[1;37;102m" << "[HIGHLIGHT " << std::chrono::system_clock::to_time_t( \
-    std::chrono::high_resolution_clock::now()) << "]  " << X << "\e[m" << std::endl;
+  std::cout << "\033[1;37;102m" << "[HIGHLIGHT " << std::chrono::system_clock::to_time_t( \
+    std::chrono::high_resolution_clock::now()) << "]  " << X << "\033[m" << std::endl;
 
   #define LOG_FLOW(X) \
   if (USE_MODULE_FLOW) \
-  std::cout << "\e[1;37;103m" << "[FLOW " << std::chrono::system_clock::to_time_t( \
-    std::chrono::high_resolution_clock::now()) << "]  " << X << "\e[m" << std::endl;
+  std::cout << "\033[1;37;103m" << "[FLOW " << std::chrono::system_clock::to_time_t( \
+    std::chrono::high_resolution_clock::now()) << "]  " << X << "\033[m" << std::endl;
 
 ////////////////////////////////////////////////////////////////////////////////////////
 

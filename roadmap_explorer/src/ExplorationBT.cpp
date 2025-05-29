@@ -62,7 +62,7 @@ public:
     geometry_msgs::msg::PolygonStamped explore_boundary_;
     explore_boundary_.header.frame_id = "map";
     explore_boundary_.header.stamp = rclcpp::Clock().now();
-    for (int i = 0; i < config_.size(); i += 2) {
+    for (int i = 0; i < (int)config_.size(); i += 2) {
       geometry_msgs::msg::Point32 point;
       point.x = config_[i];
       point.y = config_[i + 1];
@@ -165,7 +165,6 @@ class CleanupRoadMapBT : public BT::SyncActionNode
 public:
   CleanupRoadMapBT(
     const std::string & name, const BT::NodeConfiguration & config,
-    std::shared_ptr<nav2_util::LifecycleNode> ros_node_ptr,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros,
     std::shared_ptr<FullPathOptimizer> full_path_optimizer)
   : BT::SyncActionNode(name, config)
@@ -216,7 +215,6 @@ class UpdateRoadmapBT : public BT::SyncActionNode
 public:
   UpdateRoadmapBT(
     const std::string & name, const BT::NodeConfiguration & config,
-    std::shared_ptr<nav2_util::LifecycleNode> ros_node_ptr,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros)
   : BT::SyncActionNode(name, config)
   {
@@ -344,8 +342,7 @@ public:
     setOutput("frontier_costs_result", frontierCostsResultPtr->frontier_list);
     EventLoggerInstance.endEvent("ProcessFrontierCosts", 0);
     RosVisualizer::getInstance().visualizeFrontierMarker(
-      frontierCostsResultPtr->frontier_list,
-      "map");
+      frontierCostsResultPtr->frontier_list);
     return BT::NodeStatus::SUCCESS;
   }
 
@@ -368,7 +365,6 @@ public:
   OptimizeFullPath(
     const std::string & name, const BT::NodeConfiguration & config,
     std::shared_ptr<FullPathOptimizer> full_path_optimizer,
-    std::shared_ptr<CostAssigner> cost_assigner_ptr,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros,
     std::shared_ptr<nav2_util::LifecycleNode> node)
   : BT::SyncActionNode(name, config)
@@ -394,8 +390,7 @@ public:
     }
     FrontierPtr allocatedFrontier = std::make_shared<Frontier>();
     auto return_state = full_path_optimizer_->getNextGoal(
-      globalFrontierList, allocatedFrontier, 3,
-      robotP);
+      globalFrontierList, allocatedFrontier, robotP);
     if (return_state) {
       setOutput<FrontierPtr>("allocated_frontier", allocatedFrontier);
     } else {
@@ -635,7 +630,7 @@ void RoadmapExplorationBT::makeBTNodes()
   BT::NodeBuilder builder_update_roadmap_data =
     [&](const std::string & name, const BT::NodeConfiguration & config)
     {
-      return std::make_unique<UpdateRoadmapBT>(name, config, bt_node_, explore_costmap_ros_);
+      return std::make_unique<UpdateRoadmapBT>(name, config, explore_costmap_ros_);
     };
   factory.registerBuilder<UpdateRoadmapBT>("UpdateFrontierRoadmap", builder_update_roadmap_data);
 
@@ -643,7 +638,7 @@ void RoadmapExplorationBT::makeBTNodes()
     [&](const std::string & name, const BT::NodeConfiguration & config)
     {
       return std::make_unique<CleanupRoadMapBT>(
-        name, config, bt_node_, explore_costmap_ros_,
+        name, config, explore_costmap_ros_,
         full_path_optimizer_);
     };
   factory.registerBuilder<CleanupRoadMapBT>("CleanupRoadmap", builder_cleanup_roadmap_data);
@@ -660,7 +655,7 @@ void RoadmapExplorationBT::makeBTNodes()
     [&](const std::string & name, const BT::NodeConfiguration & config)
     {
       return std::make_unique<OptimizeFullPath>(
-        name, config, full_path_optimizer_, cost_assigner_ptr_,
+        name, config, full_path_optimizer_,
         explore_costmap_ros_, bt_node_);
     };
   factory.registerBuilder<OptimizeFullPath>("OptimizeFullPath", builder_full_path_optimizer);

@@ -68,7 +68,7 @@ void FrontierRoadMap::mapDataCallback(roadmap_explorer_msgs::msg::MapData mapDat
   // LOG_TRACE("Processing " << mapData.graph.poses_id.size() << " poses");
   latest_keyframe_poses_.clear();
   spatial_kf_map_.clear();
-  for (int i = 0; i < mapData.graph.poses_id.size(); i++) {
+  for (int i = 0; i < (int)mapData.graph.poses_id.size(); i++) {
     // LOG_TRACE("Processing pose " << i << " with ID " << mapData.graph.poses_id[i]);
     latest_keyframe_poses_[mapData.graph.poses_id[i]] = mapData.graph.poses[i];
     if (spatial_kf_map_.count(
@@ -133,7 +133,6 @@ void FrontierRoadMap::mapDataCallback(roadmap_explorer_msgs::msg::MapData mapDat
     }
     // LOG_TRACE("Found " << frontier_parent_kfs.size() << " parent keyframes for frontier");
 
-    double frontierMinDistance = std::numeric_limits<double>::max();
     for (auto kf_id : frontier_parent_kfs) {
       // LOG_TRACE("Processing parent keyframe with ID " << kf_id);
       if (latest_keyframe_poses_.count(kf_id) == 0) {
@@ -784,7 +783,7 @@ void FrontierRoadMap::publishRoadMap()
   marker_pub_roadmap_->publish(marker_array);
 }
 
-const void FrontierRoadMap::publishPlan(
+void FrontierRoadMap::publishPlan(
   const std::vector<std::shared_ptr<Node>> & plan, float r,
   float g, float b) const
 {

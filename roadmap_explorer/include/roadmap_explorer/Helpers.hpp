@@ -99,8 +99,7 @@ void bresenham2D(
   int offset_a,
   int offset_b, unsigned int offset,
   unsigned int max_length,
-  int resolution_cut_factor,
-  nav2_costmap_2d::Costmap2D * exploration_costmap_);
+  int resolution_cut_factor);
 
 bool getTracedCells(
   double start_wx, double start_wy, double end_wx, double end_wy, RayTracedCells & cell_gatherer,

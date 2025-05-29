@@ -192,8 +192,7 @@ void RosVisualizer::visualizeFrontier(
 }
 
 void RosVisualizer::visualizeFrontierMarker(
-  const std::vector<FrontierPtr> & frontier_list,
-  std::string globalFrameID)
+  const std::vector<FrontierPtr> & frontier_list)
 {
   visualization_msgs::msg::MarkerArray markers;
   int id = 0;
@@ -308,8 +307,7 @@ void RosVisualizer::visualizeTrailingPoses(std::deque<geometry_msgs::msg::Pose> 
 }
 
 void RosVisualizer::visualizeBlacklistedFrontiers(
-  const std::vector<FrontierPtr> & blacklisted_frontiers,
-  std::string globalFrameID)
+  const std::vector<FrontierPtr> & blacklisted_frontiers)
 {
   if (blacklisted_frontiers_publisher_->get_subscription_count() == 0) {
     return;

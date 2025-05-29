@@ -27,8 +27,6 @@ void FrontierCostCalculator::setArrivalInformationForFrontier(
   sy = frontier->getGoalPoint().y;
   std::vector<int> information_along_ray;       // stores the information along each ray in 2PI.
   std::vector<geometry_msgs::msg::Pose> vizpoints;
-  // Iterate through each angle in 2PI with DELTA_THETA resolution
-  double maxHitObstacles = 2 * M_PI / DELTA_THETA;
   float hitObstacleCount = 0;
   for (double theta = 0; theta <= (2 * M_PI); theta += DELTA_THETA) {
     std::vector<nav2_costmap_2d::MapLocation> traced_cells;
@@ -108,7 +106,7 @@ void FrontierCostCalculator::setArrivalInformationForFrontier(
   }
   int maxIndex = 0;
   int maxValue = result[0];
-  for (int i = 1; i < result.size(); ++i) {
+  for (int i = 1; i < (int)result.size(); ++i) {
     if (result[i] > maxValue) {
       maxValue = result[i];
       maxIndex = i;
@@ -147,8 +145,6 @@ double FrontierCostCalculator::setArrivalInformationLimits()
   sy = exploration_costmap_->getOriginY() + (exploration_costmap_->getSizeInMetersY() / 2);
   std::vector<int> information_along_ray;       // stores the information along each ray in 2PI.
   std::vector<geometry_msgs::msg::Pose> vizpoints;
-  // Iterate through each angle in 2PI with DELTA_THETA resolution
-  double maxHitObstacles = 2 * M_PI / DELTA_THETA;
   for (double theta = 0; theta <= (2 * M_PI); theta += DELTA_THETA) {
     std::vector<nav2_costmap_2d::MapLocation> traced_cells;
     // treats cells 240 to 254 as obstacles and returns 255 in the traced cells.
@@ -189,12 +185,10 @@ double FrontierCostCalculator::setArrivalInformationLimits()
       result[i] += information_along_ray[i + j] * kernel[j];
     }
   }
-  int maxIndex = 0;
   int maxValue = result[0];
-  for (int i = 1; i < result.size(); ++i) {
+  for (int i = 1; i < (int)result.size(); ++i) {
     if (result[i] > maxValue) {
       maxValue = result[i];
-      maxIndex = i;
     }
   }
   arrival_info_limits_set_ = true;
@@ -290,7 +284,6 @@ void FrontierCostCalculator::setPlanForFrontier(
     return;
   }
 
-  auto cost = planner_->getLastPathCost();
   // extract the plan
   float * x = planner_->getPathX();
   float * y = planner_->getPathY();

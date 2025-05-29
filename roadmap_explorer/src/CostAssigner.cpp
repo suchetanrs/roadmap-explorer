@@ -31,8 +31,7 @@ bool CostAssigner::getFrontierCosts(
 {
   setFrontierBlacklist(requestData->prohibited_frontiers);
   RosVisualizer::getInstance().visualizeBlacklistedFrontiers(
-    requestData->prohibited_frontiers,
-    "map");
+    requestData->prohibited_frontiers);
   bool costsResult =
     processChosenApproach(requestData->frontier_list, requestData->start_pose.pose);
   if (costsResult == false) {
@@ -177,7 +176,7 @@ bool CostAssigner::assignCosts(
     throw std::runtime_error("Duplicate frontiers found.");
   }
   LOG_DEBUG("Blacklist size is: " << frontier_blacklist_.size());
-  for (int frontier_idx = 0; frontier_idx < frontier_list.size(); frontier_idx++) {
+  for (int frontier_idx = 0; frontier_idx < (int)frontier_list.size(); frontier_idx++) {
     auto & frontier = frontier_list[frontier_idx];
     if (frontier_blacklist_.count(frontier) > 0) {
       frontier->setAchievability(false);

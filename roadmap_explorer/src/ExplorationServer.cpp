@@ -84,6 +84,7 @@ rclcpp_action::GoalResponse ExplorationServer::handle_goal(
 rclcpp_action::CancelResponse ExplorationServer::handle_cancel(
   const std::shared_ptr<GoalHandleExplore> goal_handle)
 {
+  (void)goal_handle;
   RCLCPP_WARN(get_logger(), "Cancel requested");
   return rclcpp_action::CancelResponse::ACCEPT;
 }
@@ -91,6 +92,7 @@ rclcpp_action::CancelResponse ExplorationServer::handle_cancel(
 void ExplorationServer::handle_accepted(
   const std::shared_ptr<GoalHandleExplore> goal_handle)
 {
+  (void)goal_handle;
   RCLCPP_WARN(get_logger(), "Goal accepted, starting execution");
   // Spin the work off to a new thread so we don’t block the executor
   std::thread{std::bind(&ExplorationServer::execute, this, goal_handle)}.detach();
@@ -100,6 +102,7 @@ void ExplorationServer::publish_feedback(
   const std::shared_ptr<GoalHandleExplore> & goal_handle,
   const std::string & message)
 {
+  (void)message;
   auto feedback = std::make_shared<ExploreAction::Feedback>();
   goal_handle->publish_feedback(feedback);
 }

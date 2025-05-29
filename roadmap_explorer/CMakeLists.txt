@@ -29,6 +29,8 @@ find_package(nav2_behavior_tree REQUIRED)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+add_compile_options(-Wall -Wextra -Wpedantic -Werror)
+
 set(dependencies
 ament_cmake
 rclcpp

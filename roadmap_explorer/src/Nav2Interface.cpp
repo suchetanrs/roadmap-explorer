@@ -220,6 +220,7 @@ void Nav2Interface<ActionT>::nav2GoalFeedbackCallback(
   typename GoalHandle::SharedPtr, const std::shared_ptr<const typename ActionT::Feedback> feedback)
 {
   std::lock_guard<std::mutex> lock(this->nav2_feedback_mutex_);
+  (void)feedback;
 }
 
 // TODO: suchetan Since the linker cannot find the definitions of many templates if we define this in nav2_navigate_to_pose.cpp, we need to do it here.

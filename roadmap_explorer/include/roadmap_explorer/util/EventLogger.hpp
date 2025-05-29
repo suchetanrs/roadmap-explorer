@@ -22,11 +22,11 @@ class EventLogger
 public:
   ~EventLogger();
 
-  static EventLogger & getInstance(const std::string & baseFilename = "defaultFilename")
+  static EventLogger & getInstance()
   {
     std::lock_guard<std::mutex> lock(instanceMutex_);
     if (EventLoggerPtr_ == nullptr) {
-      EventLoggerPtr_.reset(new EventLogger(baseFilename));
+      EventLoggerPtr_.reset(new EventLogger());
     }
     return *EventLoggerPtr_;
   }
@@ -50,7 +50,7 @@ private:
   // Delete copy constructor and assignment operator to prevent copying
   EventLogger(const EventLogger &) = delete;
   EventLogger & operator=(const EventLogger &) = delete;
-  EventLogger(const std::string & baseFilename);
+  EventLogger();
 
   static std::unique_ptr<EventLogger> EventLoggerPtr_;
   static std::mutex instanceMutex_;

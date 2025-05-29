@@ -93,7 +93,7 @@ public:
     FrontierPtr & startNode, bool useClosestToStart, FrontierPtr & endNode,
     bool useClosestToEnd);
 
-  const void publishPlan(
+  void publishPlan(
     const std::vector<std::shared_ptr<Node>> & plan, float r, float g,
     float b) const;
 

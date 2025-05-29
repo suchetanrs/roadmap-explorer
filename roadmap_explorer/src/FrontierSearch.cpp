@@ -115,7 +115,6 @@ std::vector<FrontierPtr> FrontierSearch::buildNewFrontier(
   costmap_.indexToCells(initial_cell, ix, iy);
   double wix, wiy;
   costmap_.mapToWorld(ix, iy, wix, wiy);
-  double currentGoalX = wix, currentGoalY = wiy;
   every_frontier_list.push_back({wix, wiy});
   frontier_cell_indices.push_back(std::make_pair(wix, wiy));
 
@@ -128,7 +127,6 @@ std::vector<FrontierPtr> FrontierSearch::buildNewFrontier(
   double reference_x, reference_y;
   costmap_.indexToCells(reference, rx, ry);
   costmap_.mapToWorld(rx, ry, reference_x, reference_y);
-  int current_cluster_size = 0;
 
   while (rclcpp::ok() && !bfs.empty()) {
     unsigned int idx = bfs.front();
@@ -189,10 +187,6 @@ std::vector<FrontierPtr> FrontierSearch::buildNewFrontier(
               ")");
           LOG_TRACE("**************");
           calculated_frontiers.push_back(output);
-
-          // reset variables
-          currentGoalX = wx;
-          currentGoalY = wy;
           currentFrontierSize = 0;
         }
       }
