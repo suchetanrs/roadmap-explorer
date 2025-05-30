@@ -47,15 +47,21 @@ protected:
   void publish_feedback(
     const std::shared_ptr<GoalHandleExplore> & goal_handle,
     const std::string & message);
+  
+  void make_exploration_bt(bool exploration_mode);
 
   // Members
   rclcpp_action::Server<ExploreAction>::SharedPtr action_server_;
   std::shared_ptr<RoadmapExplorationBT> exploration_bt_;
   bool server_active_{false};
+  bool localisation_only_mode_{false};
 
   rclcpp::executors::MultiThreadedExecutor::SharedPtr executor_;
   rclcpp::CallbackGroup::SharedPtr action_server_cb_group_;
   std::shared_ptr<nav2_util::LifecycleNode> node_;
+
+  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros_;
+  std::unique_ptr<nav2_util::NodeThread> explore_costmap_thread_;
 };
 
 }  // namespace roadmap_explorer

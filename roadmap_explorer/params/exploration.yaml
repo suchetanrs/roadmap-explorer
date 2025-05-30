@@ -37,7 +37,7 @@ explorationBT:
   bt_sleep_ms: 70
   abort_exploration_on_nav2_abort: false
   exploration_boundary: [310.0, 260.0, 310.0, -120.0, -70.0, -120.0, -70.0, 260.0]
-  simulate_sensor: false
+  localisation_only_mode: false
 
 sensorSimulator:
   input_map_topic: "/map"

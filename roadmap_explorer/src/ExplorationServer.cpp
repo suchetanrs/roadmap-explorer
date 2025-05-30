@@ -9,12 +9,23 @@ ExplorationServer::ExplorationServer(const rclcpp::NodeOptions & options)
 : nav2_util::LifecycleNode("roadmap_explorer_node", "", options)
 {
   RCLCPP_INFO(get_logger(), "Created %s", get_name());
+  server_active_ = false;
+  LOG_INFO("Creating exploration costmap instance");
+  explore_costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "roadmap_explorer_costmap", "", "roadmap_explorer_costmap");
+  // Launch a thread to run the costmap node
+  explore_costmap_thread_ = std::make_unique<nav2_util::NodeThread>(explore_costmap_ros_);
+  LOG_INFO("Created exploration costmap instance");
 }
 
 nav2_util::CallbackReturn ExplorationServer::on_configure(const rclcpp_lifecycle::State &)
 {
   RCLCPP_INFO(get_logger(), "Configured %s", get_name());
   node_ = shared_from_this();
+  node_->declare_parameter("localisation_only_mode", false);
+  node_->get_parameter("localisation_only_mode", localisation_only_mode_);
+
+  explore_costmap_ros_->configure();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -36,10 +47,9 @@ nav2_util::CallbackReturn ExplorationServer::on_activate(const rclcpp_lifecycle:
     std::bind(&ExplorationServer::handle_accepted, this, std::placeholders::_1),
     rcl_action_server_get_default_options(),
     action_server_cb_group_);
-
-
-  exploration_bt_ = std::make_shared<RoadmapExplorationBT>(node_);
-  exploration_bt_->makeBTNodes();
+  
+  explore_costmap_ros_->activate();
+  
   // Create bond connection
   createBond();
 
@@ -107,12 +117,50 @@ void ExplorationServer::publish_feedback(
   goal_handle->publish_feedback(feedback);
 }
 
+void ExplorationServer::make_exploration_bt(bool localisation_only_mode)
+{
+  exploration_bt_ = std::make_shared<RoadmapExplorationBT>(node_, localisation_only_mode, explore_costmap_ros_);
+  exploration_bt_->makeBTNodes();
+}
+
 void ExplorationServer::execute(const std::shared_ptr<GoalHandleExplore> goal_handle)
 {
   RCLCPP_INFO(get_logger(), "Running exploration BT for goal");
 
   auto result = std::make_shared<ExploreAction::Result>();
   result->success = false;
+  if (!exploration_bt_) {
+    RCLCPP_ERROR(get_logger(), "Exploration BT not initialized");
+    make_exploration_bt(localisation_only_mode_);
+    RCLCPP_ERROR(get_logger(), "Exploration BT initialized");
+  }
+
+  switch (goal_handle->get_goal()->exploration_bringup_mode) {
+    case ExploreAction::Goal::NEW_EXPLORATION_SESSION:
+      RCLCPP_ERROR(get_logger(), "New exploration session.");
+      exploration_bt_.reset();
+      RCLCPP_ERROR(get_logger(), "Exploration making new");
+      make_exploration_bt(localisation_only_mode_);
+      break;
+    case ExploreAction::Goal::CONTINUE_FROM_TERMINATED_SESSION:
+      RCLCPP_INFO(get_logger(), "Continue from terminated session. Nothing to reset.");
+      break;
+    case ExploreAction::Goal::CONTINUE_FROM_SAVED_SESSION:
+      if(!localisation_only_mode_)
+      {
+        RCLCPP_ERROR(get_logger(), "You cannot continue from saved session when in mapping mode.");
+        return;
+      }
+      else
+      {
+        // To be implemented
+        RCLCPP_ERROR(get_logger(), "Continue from saved session is not implemented yet.");
+        throw std::runtime_error("Continue from saved session is not implemented yet.");
+        return;
+      }
+    default:
+      throw std::runtime_error("Unknown exploration_bringup_mode value");
+  }
 
   // Build the tree
   try {

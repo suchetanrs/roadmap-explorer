@@ -137,9 +137,11 @@ public:
     LOG_INFO("Recieved " << frontier_list.size() << " frontiers");
     setOutput("frontier_list", frontier_list);
     setOutput("every_frontier", every_frontier);
-    RosVisualizer::getInstance().visualizeFrontier(
+    LOG_DEBUG("Set frontier outputs");
+    rosVisualizerInstance.visualizeFrontier(
       frontier_list, every_frontier,
       explore_costmap_ros_->getLayeredCostmap()->getGlobalFrameID());
+    LOG_DEBUG("Frontiers visualized");
     frontierSearchPtr_->resetSearchDistance();
     EventLoggerInstance.endEvent("SearchForFrontiers", 0);
     explore_costmap_ros_->getCostmap()->getMutex()->unlock();
@@ -189,12 +191,12 @@ public:
     bool correct_loop_closure_;
     getInput("correct_loop_closure", correct_loop_closure_);
     LOG_WARN("Reconstructing roadmap and clearing plan cache!");
-    FrontierRoadMap::getInstance().reConstructGraph(true, correct_loop_closure_);
+    frontierRoadmapInstance.reConstructGraph(true, correct_loop_closure_);
     EventLoggerInstance.endEvent("roadmapReconstructionFull", 1);
     full_path_optimizer_->clearPlanCache();
     // TODO: make sure to add a thing such that the entire roadmap within a certain distance (max frontier search distance) is reconstructed periodically
     EventLoggerInstance.endEvent("CleanupRoadMapBT", 0);
-    // FrontierRoadMap::getInstance().countTotalItemsInSpatialMap();
+    // frontierRoadmapInstance.countTotalItemsInSpatialMap();
     return BT::NodeStatus::SUCCESS;
   }
 
@@ -235,25 +237,25 @@ public:
       LOG_FATAL("Failed to retrieve latest_robot_pose from blackboard.");
       throw std::runtime_error("Failed to retrieve latest_robot_pose from blackboard.");
     }
-    FrontierRoadMap::getInstance().addNodes(frontier_list, true);
+    frontierRoadmapInstance.addNodes(frontier_list, true);
     bool addPose;
     getInput("add_robot_pose_to_roadmap", addPose);
     if (addPose) {
       LOG_FLOW("Adding robot pose as frontier node.");
-      FrontierRoadMap::getInstance().addRobotPoseAsNode(robotP.pose, true);
+      frontierRoadmapInstance.addRobotPoseAsNode(robotP.pose, true);
     }
     EventLoggerInstance.startEvent("roadmapReconstruction");
-    FrontierRoadMap::getInstance().constructNewEdges(frontier_list);
-    FrontierRoadMap::getInstance().constructNewEdgeRobotPose(robotP.pose);
-    // FrontierRoadMap::getInstance().reConstructGraph();
+    frontierRoadmapInstance.constructNewEdges(frontier_list);
+    frontierRoadmapInstance.constructNewEdgeRobotPose(robotP.pose);
+    // frontierRoadmapInstance.reConstructGraph();
     EventLoggerInstance.endEvent("roadmapReconstruction", 1);
 
     EventLoggerInstance.startEvent("publishRoadmap");
-    FrontierRoadMap::getInstance().publishRoadMap();
+    frontierRoadmapInstance.publishRoadMap();
     EventLoggerInstance.endEvent("publishRoadmap", 2);
     // TODO: make sure to add a thing such that the entire roadmap within a certain distance (max frontier search distance) is reconstructed periodically
     EventLoggerInstance.endEvent("UpdateRoadmapBT", 0);
-    // FrontierRoadMap::getInstance().countTotalItemsInSpatialMap();
+    // frontierRoadmapInstance.countTotalItemsInSpatialMap();
     // TODO: remove below line
     return BT::NodeStatus::SUCCESS;
   }
@@ -341,7 +343,7 @@ public:
     }
     setOutput("frontier_costs_result", frontierCostsResultPtr->frontier_list);
     EventLoggerInstance.endEvent("ProcessFrontierCosts", 0);
-    RosVisualizer::getInstance().visualizeFrontierMarker(
+    rosVisualizerInstance.visualizeFrontierMarker(
       frontierCostsResultPtr->frontier_list);
     return BT::NodeStatus::SUCCESS;
   }
@@ -548,32 +550,30 @@ public:
 
 namespace roadmap_explorer
 {
-RoadmapExplorationBT::RoadmapExplorationBT(std::shared_ptr<nav2_util::LifecycleNode> node)
+RoadmapExplorationBT::RoadmapExplorationBT(std::shared_ptr<nav2_util::LifecycleNode> node, bool localisation_only_mode, std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros)
+: bt_node_(node),
+  explore_costmap_ros_(explore_costmap_ros)
 {
-  bt_node_ = node;
   blackboard = BT::Blackboard::create();
+
+  EventLogger::createInstance();
+  ParameterHandler::createInstance();
   parameterInstance.makeParameters(true, node);
+  RosVisualizer::createInstance(bt_node_, explore_costmap_ros_->getCostmap());
+  FrontierRoadMap::createInstance(explore_costmap_ros_, node);
+
 
   nav2_interface_ = std::make_shared<Nav2Interface<nav2_msgs::action::NavigateToPose>>(
     bt_node_,
     "navigate_to_pose",
     "goal_update");
 
-  explore_costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
-    "roadmap_explorer_costmap", "", "roadmap_explorer_costmap");
-  explore_costmap_ros_->configure();
-  // Launch a thread to run the costmap node
-  explore_costmap_thread_ = std::make_unique<nav2_util::NodeThread>(explore_costmap_ros_);
-  explore_costmap_ros_->activate();
-
-  RosVisualizer::createInstance(bt_node_, explore_costmap_ros_->getCostmap());
-  FrontierRoadMap::createInstance(explore_costmap_ros_, node);
   cost_assigner_ptr_ = std::make_shared<CostAssigner>(explore_costmap_ros_);
   frontierSearchPtr_ =
     std::make_shared<FrontierSearch>(*(explore_costmap_ros_->getLayeredCostmap()->getCostmap()));
   full_path_optimizer_ = std::make_shared<FullPathOptimizer>(bt_node_, explore_costmap_ros_);
 
-  if (parameterInstance.getValue<bool>("explorationBT.simulate_sensor")) {
+  if (localisation_only_mode) {
     sensor_simulator_ = std::make_shared<SensorSimulator>(bt_node_, explore_costmap_ros_);
   }
 
@@ -583,11 +583,10 @@ RoadmapExplorationBT::RoadmapExplorationBT(std::shared_ptr<nav2_util::LifecycleN
 RoadmapExplorationBT::~RoadmapExplorationBT()
 {
   LOG_INFO("RoadmapExplorationBT::~RoadmapExplorationBT()");
-  explore_costmap_ros_.reset();
-  explore_costmap_thread_.reset();
-  RosVisualizer::getInstance().cleanupInstance();
-  FrontierRoadMap::getInstance().cleanupInstance();
-  parameterInstance.cleanupInstance();
+  FrontierRoadMap::destroyInstance();
+  RosVisualizer::destroyInstance();
+  ParameterHandler::destroyInstance();
+  EventLogger::destroyInstance();
 }
 
 void RoadmapExplorationBT::makeBTNodes()
@@ -746,19 +745,19 @@ uint16_t RoadmapExplorationBT::tickOnceWithSleep()
   return return_value;
 }
 
-void RoadmapExplorationBT::halt(bool save_exploration_data)
+void RoadmapExplorationBT::halt()
 {
   LOG_INFO("RoadmapExplorationBT::halt()");
   behaviour_tree.haltTree();
-  if(save_exploration_data)
-  {
-    if (sensor_simulator_ == nullptr)
-    {
-      LOG_FATAL("Asked to save map but sensor simulator is inactive. Set to localisation only mode and turn on sensor simulator to save explored occupancy map and the corresponding roadmap!");
-      return;
-    }
-    sensor_simulator_->saveMap("instance1", "/home/suchetan/.ros/roadmap-explorer");
-  }
+  // if(save_exploration_data)
+  // {
+  //   if (sensor_simulator_ == nullptr)
+  //   {
+  //     LOG_FATAL("Asked to save map but sensor simulator is inactive. Set to localisation only mode and turn on sensor simulator to save explored occupancy map and the corresponding roadmap!");
+  //     return;
+  //   }
+  //   sensor_simulator_->saveMap("instance1", "/home/suchetan/.ros/roadmap-explorer");
+  // }
 }
 
 }

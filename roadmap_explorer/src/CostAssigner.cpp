@@ -22,7 +22,6 @@ CostAssigner::CostAssigner(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explor
 CostAssigner::~CostAssigner()
 {
   LOG_INFO("CostAssigner::~CostAssigner()");
-  delete layered_costmap_;
 }
 
 bool CostAssigner::getFrontierCosts(
@@ -30,7 +29,7 @@ bool CostAssigner::getFrontierCosts(
   std::shared_ptr<GetFrontierCostsResponse> resultData)
 {
   setFrontierBlacklist(requestData->prohibited_frontiers);
-  RosVisualizer::getInstance().visualizeBlacklistedFrontiers(
+  rosVisualizerInstance.visualizeBlacklistedFrontiers(
     requestData->prohibited_frontiers);
   bool costsResult =
     processChosenApproach(requestData->frontier_list, requestData->start_pose.pose);

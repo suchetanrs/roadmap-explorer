@@ -1,4 +1,19 @@
-# request
+# REQUEST
+# if exploration in slam mode, this will create a fresh exploration instance. It is recommended to also restart the mapping session from the slam before launching the exploration.
+# if exploration in localisation only mode, this will start a fresh exploration instance.
+uint16 NEW_EXPLORATION_SESSION=0
+
+# if exploration in slam mode, this will continue from the last terminated exploration instance that's in memory but with the updated input map from the slam.
+# if exploration in localisation only mode, this will contine from the last terminated exploration instance but with the last mapping session from sensor simulator.
+uint16 CONTINUE_FROM_TERMINATED_SESSION=1
+
+# if exploration in slam mode, this mode will not run since it relies on sensor simulator.
+# if exploration in localisation only mode, this will continue from the loaded exploration map and the loaded frontier roadmap.
+uint16 CONTINUE_FROM_SAVED_SESSION=2
+
+uint16 exploration_bringup_mode 0
+std_msgs/String load_from_folder
+
 ---
 # result
 uint16 NO_ERROR=0

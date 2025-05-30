@@ -38,18 +38,30 @@ public:
 
   void makeParameters(bool use_ros_parameters, std::shared_ptr<nav2_util::LifecycleNode> node);
 
+  static void createInstance()
+  {
+    LOG_INFO("Creating ParameterHandler instance");
+    if (parameterHandlerPtr_ == nullptr) {
+      parameterHandlerPtr_.reset(new ParameterHandler());
+    }
+    else
+    {
+      throw std::runtime_error("ParameterHandler already exists!");
+    }
+  }
+
   static ParameterHandler & getInstance()
   {
     if (parameterHandlerPtr_ == nullptr) {
-      parameterHandlerPtr_.reset(new ParameterHandler());
+      throw std::runtime_error("Cannot de-reference a null ParameterHandler! :(");
     }
     return *parameterHandlerPtr_;
   }
 
-  void cleanupInstance()
+  static void destroyInstance()
   {
-    LOG_INFO("ParameterHandler::cleanupInstance()");
-    dynamic_param_callback_handle_.reset();
+    LOG_INFO("ParameterHandler::destroyInstance()");
+    parameterHandlerPtr_.reset();
   }
 
 private:
@@ -80,6 +92,6 @@ private:
     ament_index_cpp::get_package_share_directory("roadmap_explorer");
 };
 
-inline ParameterHandler & parameterInstance = ParameterHandler::getInstance();
+#define parameterInstance (ParameterHandler::getInstance())
 
 #endif

@@ -120,7 +120,7 @@ void FrontierCostCalculator::setArrivalInformationForFrontier(
         0)));
 
   // visualize raytraced points
-  // RosVisualizer::getInstance()observableCellsViz(vizpoints);
+  // rosVisualizerInstanceobservableCellsViz(vizpoints);
   frontier->setArrivalInformation(maxValue);
   LOG_DEBUG("Arrival information is: " << frontier->getArrivalInformation());
   if (frontier->getArrivalInformation() < min_arrival_info_gt_) {
@@ -340,7 +340,7 @@ void FrontierCostCalculator::setPlanForFrontierRoadmap(
     goal_point_w->setPathHeading(std::numeric_limits<double>::max());
     return;
   }
-  auto path_length = FrontierRoadMap::getInstance().getPlan(
+  auto path_length = frontierRoadmapInstance.getPlan(
     start_pose_w.position.x,
     start_pose_w.position.y, true,
     goal_point_w->getGoalPoint().x, goal_point_w->getGoalPoint().y, true, false);

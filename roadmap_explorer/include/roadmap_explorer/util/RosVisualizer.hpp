@@ -33,6 +33,21 @@ class RosVisualizer
 public:
   ~RosVisualizer();
 
+  static void createInstance(
+    std::shared_ptr<nav2_util::LifecycleNode> node,
+    nav2_costmap_2d::Costmap2D * costmap)
+  {
+    LOG_INFO("Creating ros visualizer instance");
+    std::lock_guard<std::mutex> lock(instanceMutex_);
+    if (RosVisualizerPtr == nullptr) {
+      RosVisualizerPtr.reset(new RosVisualizer(node, costmap));
+    }
+    else
+    {
+      throw std::runtime_error("RosVisualizer instance already exists!");
+    }
+  }
+
   static RosVisualizer & getInstance()
   {
     std::lock_guard<std::mutex> lock(instanceMutex_);
@@ -42,29 +57,10 @@ public:
     return *RosVisualizerPtr;
   }
 
-  void cleanupInstance()
+  static void destroyInstance()
   {
-    LOG_INFO("RosVisualizer::cleanupInstance()");
-    observable_cells_publisher_.reset();
-    connecting_cells_publisher_.reset();
-    spatial_hashmap_pub_.reset();
-    frontier_cloud_pub_.reset();
-    all_frontier_cloud_pub_.reset();
-    frontier_plan_pub_.reset();
-    frontier_marker_array_publisher_.reset();
-    full_path_plan_pub_.reset();
-    trailing_robot_poses_publisher_.reset();
-  }
-
-  static void createInstance(
-    std::shared_ptr<nav2_util::LifecycleNode> node,
-    nav2_costmap_2d::Costmap2D * costmap)
-  {
-    std::cout << "Creating ros visualizer instance" << std::endl;
-    std::lock_guard<std::mutex> lock(instanceMutex_);
-    if (RosVisualizerPtr == nullptr) {
-      RosVisualizerPtr.reset(new RosVisualizer(node, costmap));
-    }
+    LOG_INFO("RosVisualizer::destroyInstance()");
+    RosVisualizerPtr.reset();
   }
 
   void observableCellsViz(std::vector<geometry_msgs::msg::Point> & points);
@@ -125,5 +121,5 @@ private:
   nav2_costmap_2d::Costmap2D * costmap_;
 };
 
-// using RosVisualizerInstance = RosVisualizer::getInstance;
+#define rosVisualizerInstance (RosVisualizer::getInstance())
 #endif // ROS_VISUALIZER_HPP

@@ -45,6 +45,8 @@ public:
 
   bool saveMap(std::string instance_name, std::string base_path);
 
+  bool loadMap(std::string instance_name, std::string base_path);
+
 private:
   void mapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
   

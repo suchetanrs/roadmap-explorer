@@ -22,13 +22,32 @@ class EventLogger
 public:
   ~EventLogger();
 
-  static EventLogger & getInstance()
+  static void createInstance()
   {
+    LOG_INFO("Creating event logger instance");
     std::lock_guard<std::mutex> lock(instanceMutex_);
     if (EventLoggerPtr_ == nullptr) {
       EventLoggerPtr_.reset(new EventLogger());
     }
+    else
+    {
+      throw std::runtime_error("EventLogger instance already exists!");
+    }
+  }
+
+  static EventLogger & getInstance()
+  {
+    std::lock_guard<std::mutex> lock(instanceMutex_);
+    if (EventLoggerPtr_ == nullptr) {
+      throw std::runtime_error("Cannot dereference a null EventLogger! :(");
+    }
     return *EventLoggerPtr_;
+  }
+
+  static void destroyInstance()
+  {
+    LOG_INFO("EventLogger::destroyInstance()");
+    EventLoggerPtr_.reset();
   }
 
   void startEvent(const std::string & key);
@@ -60,7 +79,7 @@ private:
   std::mutex mapMutex;
 };
 
-inline EventLogger & EventLoggerInstance = EventLogger::getInstance();
+#define EventLoggerInstance (EventLogger::getInstance())
 
 class Profiler
 {

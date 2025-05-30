@@ -51,16 +51,6 @@ RosVisualizer::RosVisualizer(
 RosVisualizer::~RosVisualizer()
 {
   LOG_INFO("RosVisualizer::~RosVisualizer()");
-  // Reset all publishers
-  frontier_cloud_pub_.reset();
-  spatial_hashmap_pub_.reset();
-  all_frontier_cloud_pub_.reset();
-  frontier_marker_array_publisher_.reset();
-  observable_cells_publisher_.reset();
-  connecting_cells_publisher_.reset();
-  frontier_plan_pub_.reset();
-  full_path_plan_pub_.reset();
-  trailing_robot_poses_publisher_.reset();
 
   frontier_cloud_pub_->on_deactivate();
   spatial_hashmap_pub_->on_deactivate();
@@ -72,6 +62,18 @@ RosVisualizer::~RosVisualizer()
   full_path_plan_pub_->on_deactivate();
   trailing_robot_poses_publisher_->on_deactivate();
   blacklisted_frontiers_publisher_->on_deactivate();
+
+  // Reset all publishers
+  frontier_cloud_pub_.reset();
+  spatial_hashmap_pub_.reset();
+  all_frontier_cloud_pub_.reset();
+  frontier_marker_array_publisher_.reset();
+  observable_cells_publisher_.reset();
+  connecting_cells_publisher_.reset();
+  frontier_plan_pub_.reset();
+  full_path_plan_pub_.reset();
+  trailing_robot_poses_publisher_.reset();
+  blacklisted_frontiers_publisher_.reset();
 }
 
 void RosVisualizer::observableCellsViz(std::vector<geometry_msgs::msg::Point> & points)

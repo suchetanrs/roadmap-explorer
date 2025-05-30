@@ -42,6 +42,21 @@ class FrontierRoadMap
 public:
   ~FrontierRoadMap();
 
+  static void createInstance(
+    std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros,
+    std::shared_ptr<nav2_util::LifecycleNode> node_ptr)
+  {
+    LOG_INFO("Creating roadmap instance");
+    std::lock_guard<std::mutex> lock(instanceMutex_);
+    if (frontierRoadmapPtr == nullptr) {
+      frontierRoadmapPtr.reset(new FrontierRoadMap(explore_costmap_ros, node_ptr));
+    }
+    else
+    {
+      throw std::runtime_error("FrontierRoadMap instance already exists!");
+    }
+  }
+
   static FrontierRoadMap & getInstance()
   {
     std::lock_guard<std::mutex> lock(instanceMutex_);
@@ -51,24 +66,10 @@ public:
     return *frontierRoadmapPtr;
   }
 
-  static void createInstance(
-    std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros,
-    std::shared_ptr<nav2_util::LifecycleNode> node_ptr)
+  static void destroyInstance()
   {
-    std::cout << "Creating roadmap instance" << std::endl;
-    std::lock_guard<std::mutex> lock(instanceMutex_);
-    if (frontierRoadmapPtr == nullptr) {
-      frontierRoadmapPtr.reset(new FrontierRoadMap(explore_costmap_ros, node_ptr));
-    }
-  }
-
-  void cleanupInstance()
-  {
-    LOG_INFO("FrontierRoadMap::cleanupInstance()");
-    marker_pub_roadmap_.reset();
-    map_data_subscription_.reset();
-    marker_pub_plan_.reset();
-    roadmap_plan_test_sub_.reset();
+    LOG_INFO("FrontierRoadMap::destroyInstance()");
+    frontierRoadmapPtr.reset();
   }
 
   void addNodes(const std::vector<FrontierPtr> & frontiers, bool populateClosest);
@@ -188,6 +189,9 @@ private:
   double MIN_DISTANCE_BETWEEN_TWO_FRONTIER_NODES;
   double MIN_DISTANCE_BETWEEN_ROBOT_POSE_AND_NODE;
 };
+
+#define frontierRoadmapInstance (FrontierRoadMap::getInstance())
 }
+
 
 #endif // NODE_GRAPH_HPP_

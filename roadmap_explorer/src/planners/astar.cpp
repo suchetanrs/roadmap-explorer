@@ -39,7 +39,7 @@ std::vector<std::shared_ptr<Node>> FrontierRoadmapAStar::getSuccessors(
   std::vector<FrontierPtr>, FrontierHash> & roadmap_)
 {
   // PROFILE_FUNCTION;
-  // std::cout << "Successor size: " << roadmap_[current->frontier].size() << std::endl;
+  // LOG_TRACE("Successor size: " << roadmap_[current->frontier].size());
   std::vector<std::shared_ptr<Node>> successors;
   if (roadmap_.count(current->frontier) == 0) {
     LOG_FATAL(current->frontier << " not present.");

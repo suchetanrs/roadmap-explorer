@@ -51,6 +51,7 @@ void SensorSimulator::cleanupMap()
 
 bool SensorSimulator::saveMap(std::string instance_name, std::string base_path)
 {
+  std::lock_guard<std::recursive_mutex> lock(map_mutex_);
   nav2_map_server::SaveParameters save_params;
   save_params.map_file_name = base_path + "/" + instance_name + "/" + instance_name;
   if (nav2_map_server::saveMapToFile(explored_map_, save_params)) {
@@ -60,6 +61,16 @@ bool SensorSimulator::saveMap(std::string instance_name, std::string base_path)
     LOG_ERROR("Failed to save the map");
     return false;
   }
+}
+
+bool SensorSimulator::loadMap(std::string instance_name, std::string base_path)
+{
+  std::lock_guard<std::recursive_mutex> lock(map_mutex_);
+  if(nav2_map_server::loadMapFromYaml(base_path + "/" + instance_name + "/" + instance_name + ".yaml", explored_map_) == nav2_map_server::LOAD_MAP_STATUS::LOAD_MAP_SUCCESS)
+  {
+    return true;
+  }
+  return false;
 }
 
 void SensorSimulator::mapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg)

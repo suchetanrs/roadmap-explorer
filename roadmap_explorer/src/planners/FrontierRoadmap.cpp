@@ -57,6 +57,8 @@ FrontierRoadMap::~FrontierRoadMap()
   map_data_subscription_.reset();
   marker_pub_roadmap_->on_deactivate();
   marker_pub_plan_->on_deactivate();
+  marker_pub_roadmap_.reset();
+  marker_pub_plan_.reset();
 }
 
 void FrontierRoadMap::mapDataCallback(roadmap_explorer_msgs::msg::MapData mapData)
@@ -683,7 +685,7 @@ bool FrontierRoadMap::isConnectable(const FrontierPtr & f1, const FrontierPtr & 
   if (cell_gatherer.getNumUnknown() > RADIUS_TO_DECIDE_EDGES / costmap_->getResolution() * 0.3) {
     return false;
   }
-  // RosVisualizer::getInstance()observableCellsViz(cell_gatherer.getCells());
+  // rosVisualizerInstanceobservableCellsViz(cell_gatherer.getCells());
   // LOG_INFO("ray trace cell size" << cell_gatherer.getCells().size());
 
   return true;
@@ -700,7 +702,7 @@ std::size_t FrontierRoadMap::countTotalItemsInSpatialMap()
       cell.second.end());
     total_items += cell.second.size();           // Add the size of each grid's list to the total count
   }
-  RosVisualizer::getInstance().visualizeSpatialHashMap(master_frontier_list, "map");
+  rosVisualizerInstance.visualizeSpatialHashMap(master_frontier_list, "map");
   // LOG_INFO("Total items in the spatial map is: " << total_items);
   return total_items;
 }

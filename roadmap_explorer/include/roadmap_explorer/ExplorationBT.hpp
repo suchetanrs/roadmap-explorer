@@ -57,7 +57,7 @@ inline void blacklistFrontier(const FrontierPtr & frontier, BT::Blackboard::Ptr 
 class RoadmapExplorationBT
 {
 public:
-  RoadmapExplorationBT(std::shared_ptr<nav2_util::LifecycleNode> node);
+  RoadmapExplorationBT(std::shared_ptr<nav2_util::LifecycleNode> node, bool localisation_only_mode, std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros);
 
   ~RoadmapExplorationBT();
 
@@ -65,13 +65,12 @@ public:
 
   uint16_t tickOnceWithSleep();
 
-  void halt(bool save_exploration_data);
+  void halt();
 
 private:
   std::shared_ptr<nav2_util::LifecycleNode> bt_node_;
 
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros_;
-  std::unique_ptr<nav2_util::NodeThread> explore_costmap_thread_;
 
   std::shared_ptr<Nav2Interface<nav2_msgs::action::NavigateToPose>> nav2_interface_;
 

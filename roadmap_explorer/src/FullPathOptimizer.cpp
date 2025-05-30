@@ -81,7 +81,7 @@ double FullPathOptimizer::calculatePathLength(std::vector<FrontierPtr> & path)
       continue;
     }
     LOG_TRACE("Could not find path in cache. Computing bw " << path[i] << " to " << path[i + 1]);
-    auto current_length = FrontierRoadMap::getInstance().getPlan(path[i], true, path[i + 1], true);
+    auto current_length = frontierRoadmapInstance.getPlan(path[i], true, path[i + 1], true);
     // LOG_DEBUG(current_length);
     if (current_length.path_exists == true) {
       totalLength += current_length.path_length_m;
@@ -382,7 +382,7 @@ bool FullPathOptimizer::getNextGoal(
   std::vector<std::shared_ptr<Node>> bestPathViz;
   // LOG_INFO("Best full path to follow: ");
   EventLoggerInstance.startEvent("publishPlan");
-  if (RosVisualizer::getInstance().getNumSubscribersFullPathPlan() > 0) {
+  if (rosVisualizerInstance.getNumSubscribersFullPathPlan() > 0) {
     nav_msgs::msg::Path bestPathROS;
     bestPathROS.header.frame_id = "map";
     bestPathROS.header.stamp = node_->now();
@@ -398,8 +398,8 @@ bool FullPathOptimizer::getNextGoal(
         bestFrontierWaypoint[o + 1]->getGoalPoint(), true, explore_costmap_ros_->getCostmap());
       // bestPathViz.insert(bestPathViz.end(), frontier_pair_distances_[FrontierPair(bestFrontierWaypoint[o], bestFrontierWaypoint[o + 1])].path.begin(), frontier_pair_distances_[FrontierPair(bestFrontierWaypoint[o], bestFrontierWaypoint[o + 1])].path.end());
     }
-    // FrontierRoadMap::getInstance().publishPlan(bestPathViz, 1.0, 0.0, 0.0);
-    RosVisualizer::getInstance().fullPathPlanViz(bestPathROS);
+    // frontierRoadmapInstance.publishPlan(bestPathViz, 1.0, 0.0, 0.0);
+    rosVisualizerInstance.fullPathPlanViz(bestPathROS);
   }
   EventLoggerInstance.endEvent("publishPlan", 2);
   // 0 is robot pose. Return the first frontier in the path.
