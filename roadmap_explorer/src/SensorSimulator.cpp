@@ -1,9 +1,9 @@
-#include "roadmap_explorer/SensorSimulator.hpp"
-
 #include <tf2/utils.h>
 #include <algorithm>
 #include <cmath>
 #include <chrono>
+
+#include "roadmap_explorer/SensorSimulator.hpp"
 
 using std::placeholders::_1;
 
@@ -15,6 +15,7 @@ SensorSimulator::SensorSimulator(
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros)
 : node_(node)
 {
+  manual_cleanup_requested_ = false;
   explore_costmap_ros_ = explore_costmap_ros;
   map_subscription_cb_group_ = node->create_callback_group(
     rclcpp::CallbackGroupType::MutuallyExclusive);
@@ -42,6 +43,25 @@ SensorSimulator::~SensorSimulator()
   explored_pub_->on_deactivate();
 }
 
+void SensorSimulator::cleanupMap()
+{
+  std::lock_guard<std::recursive_mutex> lock(map_mutex_);
+  manual_cleanup_requested_ = true;
+}
+
+bool SensorSimulator::saveMap(std::string instance_name, std::string base_path)
+{
+  nav2_map_server::SaveParameters save_params;
+  save_params.map_file_name = base_path + "/" + instance_name + "/" + instance_name;
+  if (nav2_map_server::saveMapToFile(explored_map_, save_params)) {
+    LOG_INFO("Map saved successfully");
+    return true;
+  } else {
+    LOG_ERROR("Failed to save the map");
+    return false;
+  }
+}
+
 void SensorSimulator::mapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg)
 {
   std::lock_guard<std::recursive_mutex> lock(map_mutex_);
@@ -64,11 +84,12 @@ void SensorSimulator::mapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr 
     explored_map_.info.origin.position.x != msg->info.origin.position.x ||
     explored_map_.info.origin.position.y != msg->info.origin.position.y;
 
-  if (!geometry_changed) { // nothing changed → just keep the previous explored grid
+  if (!geometry_changed && !manual_cleanup_requested_) { // nothing changed → just keep the previous explored grid
     return;
   }
 
   updateAfterChangedGeometry(msg);
+  manual_cleanup_requested_ = false;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -79,7 +100,10 @@ void SensorSimulator::updateAfterChangedGeometry(
   std::lock_guard<std::recursive_mutex> lock(map_mutex_);
   /* ---------- rebuild explored map with the new geometry -------------------- */
   nav_msgs::msg::OccupancyGrid old_explored = explored_map_;  // keep a copy
-  explored_map_ = *updated_msg;                                       // new metadata
+  if(updated_msg != nullptr)
+  {
+    explored_map_ = *updated_msg;                                       // new metadata
+  }
   /* new cell indices */
   const double new_res = explored_map_.info.resolution;
   const auto & new_org = explored_map_.info.origin.position;

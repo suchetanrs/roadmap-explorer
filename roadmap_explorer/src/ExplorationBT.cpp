@@ -746,10 +746,19 @@ uint16_t RoadmapExplorationBT::tickOnceWithSleep()
   return return_value;
 }
 
-void RoadmapExplorationBT::halt()
+void RoadmapExplorationBT::halt(bool save_exploration_data)
 {
   LOG_INFO("RoadmapExplorationBT::halt()");
   behaviour_tree.haltTree();
+  if(save_exploration_data)
+  {
+    if (sensor_simulator_ == nullptr)
+    {
+      LOG_FATAL("Asked to save map but sensor simulator is inactive. Set to localisation only mode and turn on sensor simulator to save explored occupancy map and the corresponding roadmap!");
+      return;
+    }
+    sensor_simulator_->saveMap("instance1", "/home/suchetan/.ros/roadmap-explorer");
+  }
 }
 
 }

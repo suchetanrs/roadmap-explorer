@@ -65,7 +65,7 @@ public:
 
   uint16_t tickOnceWithSleep();
 
-  void halt();
+  void halt(bool save_exploration_data);
 
 private:
   std::shared_ptr<nav2_util::LifecycleNode> bt_node_;

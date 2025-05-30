@@ -14,6 +14,7 @@ find_package(nav2_msgs REQUIRED)
 find_package(nav2_costmap_2d REQUIRED)
 find_package(nav2_navfn_planner REQUIRED)
 find_package(nav2_util REQUIRED)
+find_package(nav2_map_server REQUIRED)
 find_package(pcl_ros REQUIRED)
 find_package(PCL REQUIRED)
 find_package(tf2_ros REQUIRED)
@@ -44,6 +45,7 @@ nav2_msgs
 nav2_costmap_2d
 nav2_navfn_planner
 nav2_util
+nav2_map_server
 pcl_ros
 PCL
 tf2_ros

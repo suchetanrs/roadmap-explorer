@@ -6,7 +6,9 @@
 #include <geometry_msgs/msg/transform_stamped.hpp>
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
+
 #include <nav2_costmap_2d/costmap_2d_ros.hpp>
+#include <nav2_map_server/map_io.hpp>
 
 #include "roadmap_explorer/util/GeometryUtils.hpp"
 #include "roadmap_explorer/Parameters.hpp"
@@ -36,13 +38,22 @@ public:
   SensorSimulator(
     std::shared_ptr<nav2_util::LifecycleNode> node,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros);
+  
   ~SensorSimulator();
+
+  void cleanupMap();
+
+  bool saveMap(std::string instance_name, std::string base_path);
 
 private:
   void mapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
+  
   void timerCallback();
+  
   void markRay(const geometry_msgs::msg::Pose & base_pose, double ray_angle);
+  
   void updateAfterChangedGeometry(const nav_msgs::msg::OccupancyGrid::SharedPtr updated_msg);
+
   inline void cellToWorld(
     const nav_msgs::msg::OccupancyGrid & grid,
     std::size_t idx,
@@ -72,6 +83,7 @@ private:
   std::shared_ptr<nav2_util::LifecycleNode> node_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros_;
   rclcpp::CallbackGroup::SharedPtr map_subscription_cb_group_;
+  bool manual_cleanup_requested_;
 };
 
 }  // namespace roadmap_explorer
