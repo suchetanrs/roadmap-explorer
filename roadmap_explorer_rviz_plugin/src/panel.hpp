@@ -6,6 +6,8 @@
 
 #include <QPushButton>
 #include <QVBoxLayout>
+#include <QRadioButton>
+#include <QButtonGroup>
 #include <QTimer>
 
 #include <rclcpp/rclcpp.hpp>
@@ -14,8 +16,15 @@
 
 #include <roadmap_explorer_msgs/action/explore.hpp>
 
-namespace rviz_plugin
+namespace roadmap_explorer
 {
+
+enum class ButtonSetting
+{
+  GOAL_ACTIVE = 0,
+  GOAL_INACTIVE = 1,
+  IN_PROCESS = 2
+};
 
 class RoadmapExplorerPanel : public rviz_common::Panel
 {
@@ -35,7 +44,8 @@ private:
 
   void sendGoal();
   void cancelGoal();
-  void updateButtons(bool goal_active);
+  void updateButtons(ButtonSetting setting);
+  uint16_t  currentMode() const;  // helper to read which radio is checked
 
   // ── Action-related callbacks ────────────────────────────────────────────────
   void goalResponseCallback(const GoalHandle::SharedPtr & goal_handle);
@@ -43,19 +53,25 @@ private:
     GoalHandle::SharedPtr,
     const std::shared_ptr<const Explore::Feedback> feedback);
   void resultCallback(const GoalHandle::WrappedResult & result);
+  void cancelCallback(std::shared_ptr<action_msgs::srv::CancelGoal_Response> response);
 
-  // ── Members ────────────────────────────────────────────────────────────────
+  // ── QT Members ────────────────────────────────────────────────────────────────
+  QRadioButton * rb_new_session_;
+  QRadioButton * rb_continue_terminated_;
+  QRadioButton * rb_continue_saved_;
+  QButtonGroup  * mode_group_;
+
   QPushButton * start_button_;
   QPushButton * stop_button_;
+  
+  std::unique_ptr<std::thread> spin_thread_;
 
+  // ── ROS Members ────────────────────────────────────────────────────────────────
   rclcpp::Node::SharedPtr node_;
   rclcpp_action::Client<Explore>::SharedPtr client_;
   GoalHandle::SharedPtr goal_handle_;
-
-  // spin_some() from Qt side so we don’t need a separate thread
-  QTimer spin_timer_;
 };
 
-}  // namespace rviz_plugin
+}  // namespace roadmap_explorer
 
 #endif  // ROADMAP_EXPLORER_PANEL_HPP_
