@@ -10,12 +10,6 @@ ExplorationServer::ExplorationServer(const rclcpp::NodeOptions & options)
 {
   RCLCPP_INFO(get_logger(), "Created %s", get_name());
   server_active_ = false;
-  LOG_INFO("Creating exploration costmap instance");
-  explore_costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
-    "roadmap_explorer_costmap", "", "roadmap_explorer_costmap");
-  // Launch a thread to run the costmap node
-  explore_costmap_thread_ = std::make_unique<nav2_util::NodeThread>(explore_costmap_ros_);
-  LOG_INFO("Created exploration costmap instance");
 }
 
 nav2_util::CallbackReturn ExplorationServer::on_configure(const rclcpp_lifecycle::State &)
@@ -24,8 +18,6 @@ nav2_util::CallbackReturn ExplorationServer::on_configure(const rclcpp_lifecycle
   node_ = shared_from_this();
   node_->declare_parameter("localisation_only_mode", false);
   node_->get_parameter("localisation_only_mode", localisation_only_mode_);
-
-  explore_costmap_ros_->configure();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -47,8 +39,6 @@ nav2_util::CallbackReturn ExplorationServer::on_activate(const rclcpp_lifecycle:
     std::bind(&ExplorationServer::handle_accepted, this, std::placeholders::_1),
     rcl_action_server_get_default_options(),
     action_server_cb_group_);
-  
-  explore_costmap_ros_->activate();
   
   // Create bond connection
   createBond();
@@ -96,6 +86,11 @@ rclcpp_action::CancelResponse ExplorationServer::handle_cancel(
 {
   (void)goal_handle;
   RCLCPP_WARN(get_logger(), "Cancel requested");
+  if (!exploration_bt_)
+  {
+    RCLCPP_WARN(get_logger(), "Rejecting cancel request because an instance of exploration is yet to be created.");
+    return rclcpp_action::CancelResponse::REJECT;    
+  }
   return rclcpp_action::CancelResponse::ACCEPT;
 }
 
@@ -119,59 +114,61 @@ void ExplorationServer::publish_feedback(
 
 void ExplorationServer::make_exploration_bt(bool localisation_only_mode)
 {
-  exploration_bt_ = std::make_shared<RoadmapExplorationBT>(node_, localisation_only_mode, explore_costmap_ros_);
+  exploration_bt_ = std::make_shared<RoadmapExplorationBT>(node_, localisation_only_mode);
   exploration_bt_->makeBTNodes();
 }
 
 void ExplorationServer::execute(const std::shared_ptr<GoalHandleExplore> goal_handle)
 {
   RCLCPP_INFO(get_logger(), "Running exploration BT for goal");
-
   auto result = std::make_shared<ExploreAction::Result>();
   result->success = false;
-  if (!exploration_bt_) {
-    RCLCPP_ERROR(get_logger(), "Exploration BT not initialized");
-    make_exploration_bt(localisation_only_mode_);
-    RCLCPP_ERROR(get_logger(), "Exploration BT initialized");
-  }
 
-  switch (goal_handle->get_goal()->exploration_bringup_mode) {
-    case ExploreAction::Goal::NEW_EXPLORATION_SESSION:
-      RCLCPP_ERROR(get_logger(), "New exploration session.");
-      exploration_bt_.reset();
-      RCLCPP_ERROR(get_logger(), "Exploration making new");
-      make_exploration_bt(localisation_only_mode_);
-      break;
-    case ExploreAction::Goal::CONTINUE_FROM_TERMINATED_SESSION:
-      RCLCPP_INFO(get_logger(), "Continue from terminated session. Nothing to reset.");
-      break;
-    case ExploreAction::Goal::CONTINUE_FROM_SAVED_SESSION:
-      if(!localisation_only_mode_)
-      {
-        RCLCPP_ERROR(get_logger(), "You cannot continue from saved session when in mapping mode.");
-        return;
-      }
-      else
-      {
-        // To be implemented
-        RCLCPP_ERROR(get_logger(), "Continue from saved session is not implemented yet.");
-        throw std::runtime_error("Continue from saved session is not implemented yet.");
-        return;
-      }
-    default:
-      throw std::runtime_error("Unknown exploration_bringup_mode value");
-  }
+  // const auto & plugins = *(explore_costmap_ros_->getLayeredCostmap()->getPlugins());
+  // for (auto & plugin_base : plugins) {
+  //   plugin_base->activate();
+  // }
 
   // Build the tree
   try {
+
+    switch (goal_handle->get_goal()->exploration_bringup_mode) {
+      case ExploreAction::Goal::NEW_EXPLORATION_SESSION:
+        exploration_bt_.reset();
+        make_exploration_bt(localisation_only_mode_);
+        break;
+      case ExploreAction::Goal::CONTINUE_FROM_TERMINATED_SESSION:
+        RCLCPP_INFO(get_logger(), "Continue from terminated session. Nothing to reset.");
+        if(exploration_bt_ == nullptr)
+        {
+          RCLCPP_ERROR(get_logger(), "Exploration BT not initialized yet to continue from a session. Please start a new session first");
+          throw RoadmapExplorerException("Exploration BT not initialized yet to continue from a session. Please start a new session first");
+        }
+        break;
+      case ExploreAction::Goal::CONTINUE_FROM_SAVED_SESSION:
+        if(!localisation_only_mode_)
+        {
+          RCLCPP_ERROR(get_logger(), "You cannot continue from saved session when in mapping mode.");
+          throw RoadmapExplorerException("You cannot continue from saved session when in mapping mode.");
+        }
+        else
+        {
+          // To be implemented
+          RCLCPP_ERROR(get_logger(), "Continue from saved session is not implemented yet.");
+          throw RoadmapExplorerException("Continue from saved session is not implemented yet.");
+          return;
+        }
+      default:
+        throw RoadmapExplorerException("Unknown exploration_bringup_mode value");
+    }
+
     while (rclcpp::ok()) {
       auto error_code = exploration_bt_->tickOnceWithSleep();
 
       // Check for cancellation
       if (goal_handle->is_canceling()) {
-        RCLCPP_WARN(get_logger(), "Goal canceled; aborting");
-        exploration_bt_->halt();
-        goal_handle->canceled(result);
+        RCLCPP_WARN(get_logger(), "Cancelling goal");
+        terminateGoal(ActionTerminalState::CANCEL, goal_handle, result);
         return;
       }
 
@@ -181,28 +178,50 @@ void ExplorationServer::execute(const std::shared_ptr<GoalHandleExplore> goal_ha
         RCLCPP_INFO(get_logger(), "No more reachable frontiers found, exploration complete");
         result->success = true;
         result->error_code = ExploreActionResult::NO_MORE_REACHABLE_FRONTIERS;
-        goal_handle->succeed(result);
+        terminateGoal(ActionTerminalState::SUCCEED, goal_handle, result);
         return;
       } else if (error_code == ExploreActionResult::NAV2_INTERNAL_FAULT) {
         RCLCPP_ERROR(get_logger(), "Internal fault during exploration, aborting");
         result->success = false;
         result->error_code = ExploreActionResult::NAV2_INTERNAL_FAULT;
-        goal_handle->abort(result);
+        terminateGoal(ActionTerminalState::ABORT, goal_handle, result);
         return;
       } else {
         RCLCPP_ERROR(get_logger(), "Unknown error occurred during exploration");
         result->success = false;
         result->error_code = ExploreActionResult::UNKNOWN;
-        goal_handle->abort(result);
+        terminateGoal(ActionTerminalState::ABORT, goal_handle, result);
         return;
       }
     }
 
-  } catch (const std::exception & ex) {
-    RCLCPP_ERROR(get_logger(), "Exploration error: %s", ex.what());
+  } catch (const RoadmapExplorerException & ex) {
     result->success = false;
     result->error_code = ExploreActionResult::UNKNOWN;
-    goal_handle->abort(result);
+    terminateGoal(ActionTerminalState::ABORT, goal_handle, result);
+  }
+}
+
+void ExplorationServer::terminateGoal(
+    const ActionTerminalState terminal_state,
+    const std::shared_ptr<GoalHandleExplore> goal_handle,
+    std::shared_ptr<ExploreAction::Result> result)
+{
+  if(exploration_bt_)
+  {
+    exploration_bt_->halt();
+  }
+
+  switch (terminal_state) {
+    case ActionTerminalState::SUCCEED:
+      goal_handle->succeed(result);
+      break;
+    case ActionTerminalState::ABORT:
+      goal_handle->abort(result);
+      break;
+    case ActionTerminalState::CANCEL:
+      goal_handle->canceled(result);
+      break;
   }
 }
 

@@ -44,7 +44,7 @@ public:
     }
     else
     {
-      throw std::runtime_error("RosVisualizer instance already exists!");
+      throw RoadmapExplorerException("RosVisualizer instance already exists!");
     }
   }
 
@@ -52,7 +52,7 @@ public:
   {
     std::lock_guard<std::mutex> lock(instanceMutex_);
     if (RosVisualizerPtr == nullptr) {
-      throw std::runtime_error("Cannot de-reference a null RosVisualizer! :(");
+      throw RoadmapExplorerException("Cannot de-reference a null RosVisualizer! :(");
     }
     return *RosVisualizerPtr;
   }

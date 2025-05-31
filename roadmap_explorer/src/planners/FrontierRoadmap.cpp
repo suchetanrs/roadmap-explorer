@@ -88,7 +88,7 @@ void FrontierRoadMap::mapDataCallback(roadmap_explorer_msgs::msg::MapData mapDat
   }
   // LOG_TRACE("Processing no_kf_parent_queue len: " << no_kf_parent_queue_.size());
 
-  while (1) {
+  while (rclcpp::ok()) {
     // LOG_TRACE("Processing no_kf_parent_queue len: " << no_kf_parent_queue_.size());
     if (no_kf_parent_queue_.empty()) {
       // LOG_TRACE("no_kf_parent_queue is empty");
@@ -107,11 +107,11 @@ void FrontierRoadMap::mapDataCallback(roadmap_explorer_msgs::msg::MapData mapDat
       auto grid_cell = frontier_grid_cell;
       bool foundClosestNode = false;
       int searchRadiusMultiplier = 1;
-      while (!foundClosestNode) {
+      while (!foundClosestNode && rclcpp::ok()) {
         int searchRadius = GRID_CELL_SIZE * searchRadiusMultiplier;
         if (searchRadius > 7) {
           LOG_CRITICAL("Cannot find closest KF node within 7m. This is not ok.")
-          // throw std::runtime_error("FrontierPtr parent keyframe not found in spatial hash map");
+          // throw RoadmapExplorerException("FrontierPtr parent keyframe not found in spatial hash map");
           break;
         }
         for (int dx = -searchRadius; dx <= searchRadius; ++dx) {
@@ -266,7 +266,7 @@ void FrontierRoadMap::populateNodes(
         no_kf_parent_queue_.push(new_frontier);
       }
       if (spatial_hash_map_[grid_cell].size() > 20) {
-        throw std::runtime_error("The size is too big");
+        throw RoadmapExplorerException("The size is too big");
       }
     }
   }
@@ -518,7 +518,7 @@ void FrontierRoadMap::getClosestNodeInHashmap(
   double min_distance = std::numeric_limits<double>::max();
   bool foundClosestNode = false;
   int searchRadiusMultiplier = 1;
-  while (!foundClosestNode) {
+  while (!foundClosestNode && rclcpp::ok()) {
     int searchRadius = GRID_CELL_SIZE * searchRadiusMultiplier;
     if (searchRadius > 10) {
       LOG_CRITICAL("Cannot find closest node within 10m in hashmap. This is not ok.")
@@ -554,7 +554,7 @@ void FrontierRoadMap::getClosestNodeInRoadMap(
   double min_distance = std::numeric_limits<double>::max();
   bool foundClosestNode = false;
   int searchRadiusMultiplier = 1;
-  while (!foundClosestNode) {
+  while (!foundClosestNode && rclcpp::ok()) {
     int searchRadius = GRID_CELL_SIZE * searchRadiusMultiplier;
     if (searchRadius > 10) {
       LOG_CRITICAL("Cannot find closest node within 10m in roadmap. This is not ok.")

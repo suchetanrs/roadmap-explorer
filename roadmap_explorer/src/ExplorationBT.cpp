@@ -2,45 +2,6 @@
 namespace roadmap_explorer
 {
 
-class WaitForCurrent : public BT::StatefulActionNode
-{
-public:
-  WaitForCurrent(
-    const std::string & name, const BT::NodeConfiguration & config,
-    std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros,
-    std::shared_ptr<nav2_util::LifecycleNode> ros_node_ptr)
-  : BT::StatefulActionNode(name, config)
-  {
-    explore_costmap_ros_ = explore_costmap_ros;
-    ros_node_ptr_ = ros_node_ptr;
-    LOG_DEBUG("WaitForCurrentBT Constructor");
-  }
-
-  BT::NodeStatus onStart() override
-  {
-    LOG_FLOW("MODULE WaitForCurrent");
-    return BT::NodeStatus::RUNNING;
-  }
-
-  BT::NodeStatus onRunning() override
-  {
-    if (!explore_costmap_ros_->isCurrent()) {
-      LOG_DEBUG("Waiting for costmap to be current");
-      return BT::NodeStatus::RUNNING;
-    }
-    LOG_DEBUG("CostMap is current.");
-    return BT::NodeStatus::SUCCESS;
-  }
-
-  void onHalted()
-  {
-    return;
-  }
-
-  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros_;
-  std::shared_ptr<nav2_util::LifecycleNode> ros_node_ptr_;
-};
-
 class UpdateBoundaryPolygonBT : public BT::SyncActionNode
 {
 public:
@@ -111,7 +72,16 @@ public:
     explore_costmap_ros_->getRobotPose(robotP);
     config().blackboard->set<geometry_msgs::msg::PoseStamped>("latest_robot_pose", robotP);
     LOG_INFO("Using robot pose: " << robotP.pose.position.x << ", " << robotP.pose.position.y);
-    auto frontier_list = frontierSearchPtr_->searchFrom(robotP.pose.position);
+    std::vector<FrontierPtr> frontier_list;
+    auto searchResult = frontierSearchPtr_->searchFrom(robotP.pose.position, frontier_list);
+    if (searchResult != FrontierSearchResult::SUCCESSFUL_SEARCH)
+    {
+      explore_costmap_ros_->getCostmap()->getMutex()->unlock();
+      config().blackboard->set<ExplorationErrorCode>(
+        "error_code_id",
+        ExplorationErrorCode::NO_FRONTIERS_IN_CURRENT_RADIUS);
+      return BT::NodeStatus::FAILURE;
+    }
     auto every_frontier = frontierSearchPtr_->getAllFrontiers();
     if (frontier_list.size() == 0) {
       double increment_value = 0.1;
@@ -235,7 +205,7 @@ public:
     if (!config().blackboard->get<geometry_msgs::msg::PoseStamped>("latest_robot_pose", robotP)) {
       // Handle the case when "latest_robot_pose" is not found
       LOG_FATAL("Failed to retrieve latest_robot_pose from blackboard.");
-      throw std::runtime_error("Failed to retrieve latest_robot_pose from blackboard.");
+      throw RoadmapExplorerException("Failed to retrieve latest_robot_pose from blackboard.");
     }
     frontierRoadmapInstance.addNodes(frontier_list, true);
     bool addPose;
@@ -315,7 +285,13 @@ public:
     {
       // Handle the case when "latest_robot_pose" is not found
       LOG_FATAL("Failed to retrieve latest_robot_pose from blackboard.");
-      throw std::runtime_error("Failed to retrieve latest_robot_pose from blackboard.");
+      throw RoadmapExplorerException("Failed to retrieve latest_robot_pose from blackboard.");
+    }
+    if (!getInput<bool>(
+        "force_grid_based_planning",
+        frontierCostsRequestPtr->force_grid_base_planning))
+    {
+      BT::RuntimeError("No correct input recieved for force_grid_based_planning");
     }
     LOG_INFO("Request to get frontier costs sent");
     bool frontierCostsSuccess = cost_assigner_ptr_->getFrontierCosts(
@@ -352,6 +328,7 @@ public:
   {
     return {BT::InputPort<std::vector<FrontierPtr>>("frontier_list"),
       BT::InputPort<std::vector<std::vector<double>>>("every_frontier"),
+      BT::InputPort<bool>("force_grid_based_planning"),
       BT::OutputPort<std::vector<FrontierPtr>>("frontier_costs_result")};
   }
 
@@ -388,7 +365,7 @@ public:
     if (!config().blackboard->get<geometry_msgs::msg::PoseStamped>("latest_robot_pose", robotP)) {
       // Handle the case when "latest_robot_pose" is not found
       LOG_FATAL("Failed to retrieve latest_robot_pose from blackboard.");
-      throw std::runtime_error("Failed to retrieve latest_robot_pose from blackboard.");
+      throw RoadmapExplorerException("Failed to retrieve latest_robot_pose from blackboard.");
     }
     FrontierPtr allocatedFrontier = std::make_shared<Frontier>();
     auto return_state = full_path_optimizer_->getNextGoal(
@@ -507,7 +484,7 @@ public:
   {
     LOG_WARN("SendNav2Goal onHalted");
     nav2_interface_->cancelAllGoals();
-    while (!nav2_interface_->isGoalTerminated()) {
+    while (!nav2_interface_->isGoalTerminated() && rclcpp::ok()) {
       rclcpp::sleep_for(std::chrono::milliseconds(100));
       LOG_INFO("Waiting for Nav2 goal to be cancelled...");
     }
@@ -550,10 +527,19 @@ public:
 
 namespace roadmap_explorer
 {
-RoadmapExplorationBT::RoadmapExplorationBT(std::shared_ptr<nav2_util::LifecycleNode> node, bool localisation_only_mode, std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros)
-: bt_node_(node),
-  explore_costmap_ros_(explore_costmap_ros)
+RoadmapExplorationBT::RoadmapExplorationBT(std::shared_ptr<nav2_util::LifecycleNode> node, bool localisation_only_mode)
+: bt_node_(node)
 {
+  LOG_INFO("Creating exploration costmap instance");
+  explore_costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "roadmap_explorer_costmap", "", "roadmap_explorer_costmap");
+  // Launch a thread to run the costmap node
+  explore_costmap_thread_ = std::make_unique<nav2_util::NodeThread>(explore_costmap_ros_);
+  LOG_INFO("Created exploration costmap instance");
+
+  explore_costmap_ros_->configure();
+  explore_costmap_ros_->activate();
+
   blackboard = BT::Blackboard::create();
 
   EventLogger::createInstance();
@@ -587,25 +573,18 @@ RoadmapExplorationBT::~RoadmapExplorationBT()
   RosVisualizer::destroyInstance();
   ParameterHandler::destroyInstance();
   EventLogger::destroyInstance();
+  explore_costmap_ros_->deactivate();
+  explore_costmap_ros_->cleanup();
+  explore_costmap_ros_.reset();
+  explore_costmap_thread_.reset();
 }
 
 void RoadmapExplorationBT::makeBTNodes()
 {
-  while (!explore_costmap_ros_->isCurrent() && rclcpp::ok()) {
-    LOG_WARN("Waiting for explore costmap to be current.");
-    std::this_thread::sleep_for(std::chrono::seconds(1));
-  }
   EventLoggerInstance.startEvent("clearRoadmap");
   EventLoggerInstance.startEvent("replanTimeout");
 
   // ------------------- Nodes ----------------------------------------------
-
-  BT::NodeBuilder builder_wait_for_current =
-    [&](const std::string & name, const BT::NodeConfiguration & config)
-    {
-      return std::make_unique<WaitForCurrent>(name, config, explore_costmap_ros_, bt_node_);
-    };
-  factory.registerBuilder<WaitForCurrent>("WaitForCurrent", builder_wait_for_current);
 
   BT::NodeBuilder builder_update_boundary_polygon =
     [&](const std::string & name, const BT::NodeConfiguration & config)
@@ -691,7 +670,20 @@ void RoadmapExplorationBT::makeBTNodes()
 uint16_t RoadmapExplorationBT::tickOnceWithSleep()
 {
   int bt_sleep_duration = parameterInstance.getValue<int64_t>("explorationBT.bt_sleep_ms");
+  std::this_thread::sleep_for(std::chrono::milliseconds(bt_sleep_duration));
+  if(sensor_simulator_)
+  {
+    sensor_simulator_->startMappingIfNotStarted();
+  }
+  explore_costmap_ros_->resume();
+  
+  if(!explore_costmap_ros_->isCurrent()) {
+    LOG_WARN("Waiting for explore costmap to be current.");
+    return ExploreActionResult::NO_ERROR;
+  }
+  
   auto status = behaviour_tree.tickRoot();
+
   uint16_t return_value = ExploreActionResult::NO_ERROR;
   if (status == BT::NodeStatus::FAILURE) {
     if (blackboard->get<ExplorationErrorCode>("error_code_id") ==
@@ -737,10 +729,9 @@ uint16_t RoadmapExplorationBT::tickOnceWithSleep()
         LOG_WARN("Continuing exploration despite Nav2 goal abort. The frontier was blacklisted.");
       }
     } else {
-      throw std::runtime_error("Behavior Tree tick returned FAILURE with unknown error code.");
+      throw RoadmapExplorerException("Behavior Tree tick returned FAILURE with unknown error code.");
     }
   }
-  std::this_thread::sleep_for(std::chrono::milliseconds(bt_sleep_duration));
   LOG_DEBUG("TICKED ONCE");
   return return_value;
 }
@@ -749,6 +740,11 @@ void RoadmapExplorationBT::halt()
 {
   LOG_INFO("RoadmapExplorationBT::halt()");
   behaviour_tree.haltTree();
+  if(sensor_simulator_)
+  {
+    sensor_simulator_->stopMapping();
+  }
+  explore_costmap_ros_->pause();
   // if(save_exploration_data)
   // {
   //   if (sensor_simulator_ == nullptr)

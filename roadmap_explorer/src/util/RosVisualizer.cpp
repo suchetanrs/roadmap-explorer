@@ -7,17 +7,15 @@ RosVisualizer::RosVisualizer(
   nav2_costmap_2d::Costmap2D * costmap)
 {
   node_ = node;
-  // Creating publishers with custom QoS settings
-  auto custom_qos = rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable();
   frontier_cloud_pub_ = node_->create_publisher<sensor_msgs::msg::PointCloud2>(
     "frontiers",
-    custom_qos);
+    10);
   spatial_hashmap_pub_ = node_->create_publisher<sensor_msgs::msg::PointCloud2>(
-    "spatial_hashmap_points", custom_qos);
+    "spatial_hashmap_points", 10);
 
   all_frontier_cloud_pub_ = node_->create_publisher<sensor_msgs::msg::PointCloud2>(
     "all_frontiers",
-    custom_qos);
+    10);
 
   frontier_marker_array_publisher_ = node->create_publisher<visualization_msgs::msg::MarkerArray>(
     "frontier_cell_markers", 10);
@@ -26,7 +24,7 @@ RosVisualizer::RosVisualizer(
     "observable_cells", 10);
   connecting_cells_publisher_ = node->create_publisher<visualization_msgs::msg::Marker>(
     "connecting_cells", 10);
-  frontier_plan_pub_ = node->create_publisher<nav_msgs::msg::Path>("frontier_plan", 10);
+  frontier_plan_pub_ = node->create_publisher<nav_msgs::msg::Path>("grid_based_frontier_plan", 10);
   full_path_plan_pub_ = node->create_publisher<nav_msgs::msg::Path>("full_path", 10);
   trailing_robot_poses_publisher_ = node->create_publisher<geometry_msgs::msg::PoseArray>(
     "trailing_robot_poses", 10);
@@ -79,7 +77,7 @@ RosVisualizer::~RosVisualizer()
 void RosVisualizer::observableCellsViz(std::vector<geometry_msgs::msg::Point> & points)
 {
   if (costmap_ == nullptr) {
-    throw std::runtime_error("You called the wrong constructor. Costmap is a nullptr");
+    throw RoadmapExplorerException("You called the wrong constructor. Costmap is a nullptr");
   }
   visualization_msgs::msg::Marker marker_msg_;
   // Initialize the Marker message
@@ -105,7 +103,7 @@ void RosVisualizer::observableCellsViz(std::vector<geometry_msgs::msg::Point> & 
 void RosVisualizer::observableCellsViz(std::vector<nav2_costmap_2d::MapLocation> & points)
 {
   if (costmap_ == nullptr) {
-    throw std::runtime_error("You called the wrong constructor. Costmap is a nullptr");
+    throw RoadmapExplorerException("You called the wrong constructor. Costmap is a nullptr");
   }
   visualization_msgs::msg::Marker marker_msg_;
   // Initialize the Marker message

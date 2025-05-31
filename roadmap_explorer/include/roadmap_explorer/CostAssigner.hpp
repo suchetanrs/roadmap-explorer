@@ -45,6 +45,7 @@ struct GetFrontierCostsRequest
   std::vector<FrontierPtr> frontier_list;
   std::vector<std::vector<double>> every_frontier;
   std::vector<FrontierPtr> prohibited_frontiers;
+  bool force_grid_base_planning = false;
 };
 
 struct GetFrontierCostsResponse
@@ -71,7 +72,7 @@ public:
 private:
   bool processChosenApproach(
     std::vector<FrontierPtr> & frontier_list,
-    geometry_msgs::msg::Pose & start_pose_w);
+    geometry_msgs::msg::Pose & start_pose_w, bool force_grid_base_planning);
 
   /**
        * @param costTypes can take the values

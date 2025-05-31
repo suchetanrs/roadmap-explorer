@@ -57,7 +57,7 @@ inline void blacklistFrontier(const FrontierPtr & frontier, BT::Blackboard::Ptr 
 class RoadmapExplorationBT
 {
 public:
-  RoadmapExplorationBT(std::shared_ptr<nav2_util::LifecycleNode> node, bool localisation_only_mode, std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros);
+  RoadmapExplorationBT(std::shared_ptr<nav2_util::LifecycleNode> node, bool localisation_only_mode);
 
   ~RoadmapExplorationBT();
 
@@ -70,8 +70,6 @@ public:
 private:
   std::shared_ptr<nav2_util::LifecycleNode> bt_node_;
 
-  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros_;
-
   std::shared_ptr<Nav2Interface<nav2_msgs::action::NavigateToPose>> nav2_interface_;
 
   BT::BehaviorTreeFactory factory;
@@ -82,6 +80,9 @@ private:
   std::shared_ptr<CostAssigner> cost_assigner_ptr_;
   std::shared_ptr<FullPathOptimizer> full_path_optimizer_;
   std::shared_ptr<SensorSimulator> sensor_simulator_;
+
+  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros_;
+  std::unique_ptr<nav2_util::NodeThread> explore_costmap_thread_;
 };
 }
 

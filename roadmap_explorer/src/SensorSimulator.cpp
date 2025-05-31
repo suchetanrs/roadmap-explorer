@@ -36,11 +36,16 @@ SensorSimulator::SensorSimulator(
       parameterInstance.getValue<double>(
         "sensorSimulator.sensor_update_rate")),
     std::bind(&SensorSimulator::timerCallback, this), map_subscription_cb_group_);
+  
+  should_map_ = false;
+  explored_map_ = nullptr;
+  latest_map_ = nullptr;
 }
 
 SensorSimulator::~SensorSimulator()
 {
   explored_pub_->on_deactivate();
+  explored_pub_.reset();
 }
 
 void SensorSimulator::cleanupMap()
@@ -54,7 +59,7 @@ bool SensorSimulator::saveMap(std::string instance_name, std::string base_path)
   std::lock_guard<std::recursive_mutex> lock(map_mutex_);
   nav2_map_server::SaveParameters save_params;
   save_params.map_file_name = base_path + "/" + instance_name + "/" + instance_name;
-  if (nav2_map_server::saveMapToFile(explored_map_, save_params)) {
+  if (nav2_map_server::saveMapToFile(*explored_map_, save_params)) {
     LOG_INFO("Map saved successfully");
     return true;
   } else {
@@ -66,7 +71,7 @@ bool SensorSimulator::saveMap(std::string instance_name, std::string base_path)
 bool SensorSimulator::loadMap(std::string instance_name, std::string base_path)
 {
   std::lock_guard<std::recursive_mutex> lock(map_mutex_);
-  if(nav2_map_server::loadMapFromYaml(base_path + "/" + instance_name + "/" + instance_name + ".yaml", explored_map_) == nav2_map_server::LOAD_MAP_STATUS::LOAD_MAP_SUCCESS)
+  if(nav2_map_server::loadMapFromYaml(base_path + "/" + instance_name + "/" + instance_name + ".yaml", *explored_map_) == nav2_map_server::LOAD_MAP_STATUS::LOAD_MAP_SUCCESS)
   {
     return true;
   }
@@ -79,21 +84,21 @@ void SensorSimulator::mapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr 
   latest_map_ = msg;                         // always keep the freshest copy
 
   /* ---------- first ever map ------------------------------------------------ */
-  if (explored_map_.data.empty()) {
-    explored_map_ = *msg;
-    std::fill(explored_map_.data.begin(), explored_map_.data.end(), -1);
+  if (!explored_map_) {
+    explored_map_ = std::make_shared<nav_msgs::msg::OccupancyGrid>(*msg);
+    std::fill(explored_map_->data.begin(), explored_map_->data.end(), -1);
     return;
   }
 
   /* ---------- has geometry (size/origin/resolution) changed? ---------------- */
   const bool geometry_changed =
-    explored_map_.info.width != msg->info.width ||
-    explored_map_.info.height != msg->info.height ||
+    explored_map_->info.width != msg->info.width ||
+    explored_map_->info.height != msg->info.height ||
     std::fabs(
-    explored_map_.info.resolution -
+    explored_map_->info.resolution -
     msg->info.resolution) > 1e-6 ||
-    explored_map_.info.origin.position.x != msg->info.origin.position.x ||
-    explored_map_.info.origin.position.y != msg->info.origin.position.y;
+    explored_map_->info.origin.position.x != msg->info.origin.position.x ||
+    explored_map_->info.origin.position.y != msg->info.origin.position.y;
 
   if (!geometry_changed && !manual_cleanup_requested_) { // nothing changed → just keep the previous explored grid
     return;
@@ -110,15 +115,15 @@ void SensorSimulator::updateAfterChangedGeometry(
 {
   std::lock_guard<std::recursive_mutex> lock(map_mutex_);
   /* ---------- rebuild explored map with the new geometry -------------------- */
-  nav_msgs::msg::OccupancyGrid old_explored = explored_map_;  // keep a copy
+  nav_msgs::msg::OccupancyGrid old_explored = *explored_map_;  // keep a copy
   if(updated_msg != nullptr)
   {
-    explored_map_ = *updated_msg;                                       // new metadata
+    explored_map_ = std::make_shared<nav_msgs::msg::OccupancyGrid>(*updated_msg);                                       // new metadata
   }
   /* new cell indices */
-  const double new_res = explored_map_.info.resolution;
-  const auto & new_org = explored_map_.info.origin.position;
-  std::fill(explored_map_.data.begin(), explored_map_.data.end(), -1);
+  const double new_res = explored_map_->info.resolution;
+  const auto & new_org = explored_map_->info.origin.position;
+  std::fill(explored_map_->data.begin(), explored_map_->data.end(), -1);
 
   /* ---------- project every previously known cell into the new grid --------- */
   for (std::size_t idx = 0; idx < old_explored.data.size(); ++idx) {
@@ -135,26 +140,30 @@ void SensorSimulator::updateAfterChangedGeometry(
     const int new_row = static_cast<int>((wy - new_org.y) / new_res);
 
     if (new_col < 0 || new_row < 0 ||
-      new_col >= static_cast<int>(explored_map_.info.width) ||
-      new_row >= static_cast<int>(explored_map_.info.height))
+      new_col >= static_cast<int>(explored_map_->info.width) ||
+      new_row >= static_cast<int>(explored_map_->info.height))
     {
       continue;               // world point lies outside the new map
 
     }
     const std::size_t new_idx =
-      static_cast<std::size_t>(new_row) * explored_map_.info.width + new_col;
+      static_cast<std::size_t>(new_row) * explored_map_->info.width + new_col;
 
-    explored_map_.data[new_idx] = updated_msg->data[new_idx];   // copy the refreshed value into the explored_map
+    explored_map_->data[new_idx] = updated_msg->data[new_idx];   // copy the refreshed value into the explored_map
   }
 
   LOG_INFO("Map geometry changed and rebuilt explored map " <<
     old_explored.info.width << ", " << old_explored.info.height << " -> " <<
-    explored_map_.info.width << ", " << explored_map_.info.height);
+    explored_map_->info.width << ", " << explored_map_->info.height);
 }
 
 void SensorSimulator::timerCallback()
 {
   std::lock_guard<std::recursive_mutex> lock(map_mutex_);
+  if(!should_map_)
+  {
+    return;
+  }
   LOG_DEBUG("TIMER CB");
   if (!latest_map_) {
     LOG_ERROR("No latest map");
@@ -173,6 +182,7 @@ void SensorSimulator::timerCallback()
   auto min_angle = parameterInstance.getValue<double>("sensorSimulator.sensor_min_angle");
   auto max_angle = parameterInstance.getValue<double>("sensorSimulator.sensor_max_angle");
   auto delta_theta = parameterInstance.getValue<double>("sensorSimulator.angular_resolution");
+  LOG_TRACE("Marking rays: " << min_angle << " to " << max_angle << " with " << delta_theta);
   for (double a = min_angle;
     a <= max_angle;
     a += delta_theta)
@@ -180,9 +190,11 @@ void SensorSimulator::timerCallback()
     markRay(base_pose.pose, base_yaw + a);  // cast in world frame
   }
 
-  explored_map_.header.stamp = node_->now();
-  explored_map_.header.frame_id = explore_costmap_ros_->getGlobalFrameID();
-  explored_pub_->publish(explored_map_);
+  explored_map_->header.stamp = node_->now();
+  explored_map_->header.frame_id = explore_costmap_ros_->getGlobalFrameID();
+  auto explored_map_msg = std::make_unique<nav_msgs::msg::OccupancyGrid>(*explored_map_);
+  LOG_DEBUG("Publishing explored map with address" << explored_map_msg.get());
+  explored_pub_->publish(std::move(explored_map_msg));
 }
 
 void SensorSimulator::markRay(
@@ -211,8 +223,9 @@ void SensorSimulator::markRay(
     }
 
     const std::size_t idx = static_cast<std::size_t>(my) * w + mx;
+    LOG_TRACE("Marking ray " << mx << ", " << my << " -> " << idx);
 
-    explored_map_.data[idx] = latest_map_->data[idx];
+    explored_map_->data[idx] = latest_map_->data[idx];
 
     if (latest_map_->data[idx] > 80) {
       break;

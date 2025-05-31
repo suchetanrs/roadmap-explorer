@@ -49,7 +49,7 @@ Attributes	        Foreground color	   Background color
                                            106 = turquoise
 **/
 
-#define LOG_LEVEL 50
+#define LOG_LEVEL 3
 #define TIME_LEVEL 0
 #define USE_MODULE_FLOW true
 
@@ -220,5 +220,14 @@ std::ostream & operator<<(std::ostream & os, const std::unordered_map<K, V> & ma
   std::cout << "\033[1;37;44m" << " MODULE: " << eventName << ": Execution Time: " << seconds << \
     " Seconds\033[0m" << std::endl;
 #endif
+
+class RoadmapExplorerException : public std::runtime_error
+{
+public:
+  explicit RoadmapExplorerException(const std::string & description)
+  : std::runtime_error(description) {
+    LOG_FATAL("RoadmapExplorerException: " << description);
+  }
+};
 
 #endif // COLOR_H

@@ -1,7 +1,7 @@
 roadmap_explorer_node:
   ros__parameters:
     use_sim_time: False
-    localisation_only_mode: False # false if in slam mode (mapping is active and you want the exploration to run on that)
+    localisation_only_mode: True # false if in slam mode (mapping is active and you want the exploration to run on that)
     
     frontierSearch:
       min_frontier_cluster_size: 1.0
@@ -67,7 +67,7 @@ roadmap_explorer_costmap:
       plugins: ["static_layer"]
       static_layer:
         plugin: "nav2_costmap_2d::StaticLayer"
-        map_topic: "/map"
+        map_topic: "/explored_map"
         map_subscribe_transient_local: False
         enabled: True
       always_send_full_costmap: True

@@ -53,7 +53,7 @@ public:
     }
     else
     {
-      throw std::runtime_error("FrontierRoadMap instance already exists!");
+      throw RoadmapExplorerException("FrontierRoadMap instance already exists!");
     }
   }
 
@@ -61,7 +61,7 @@ public:
   {
     std::lock_guard<std::mutex> lock(instanceMutex_);
     if (frontierRoadmapPtr == nullptr) {
-      throw std::runtime_error("Cannot de-reference a null FrontierRoadMap! :(");
+      throw RoadmapExplorerException("Cannot de-reference a null FrontierRoadMap! :(");
     }
     return *frontierRoadmapPtr;
   }

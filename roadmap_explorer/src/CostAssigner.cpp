@@ -32,7 +32,7 @@ bool CostAssigner::getFrontierCosts(
   rosVisualizerInstance.visualizeBlacklistedFrontiers(
     requestData->prohibited_frontiers);
   bool costsResult =
-    processChosenApproach(requestData->frontier_list, requestData->start_pose.pose);
+    processChosenApproach(requestData->frontier_list, requestData->start_pose.pose, requestData->force_grid_base_planning);
   if (costsResult == false) {
     resultData->success = false;
     return resultData->success;
@@ -52,7 +52,7 @@ bool CostAssigner::getFrontierCosts(
   resultData->frontier_distances = frontier_distances;
   resultData->frontier_arrival_information = frontier_arrival_information;
   if (resultData->frontier_list != requestData->frontier_list) {
-    throw std::runtime_error("Lists are not SAME!");
+    throw RoadmapExplorerException("Lists are not SAME!");
   }
   LOG_DEBUG("Res frontier distances size: " << resultData->frontier_distances.size());
   LOG_DEBUG("Res frontier list size: " << resultData->frontier_list.size());
@@ -108,18 +108,31 @@ void CostAssigner::updateBoundaryPolygon(geometry_msgs::msg::PolygonStamped & ex
 
 bool CostAssigner::processChosenApproach(
   std::vector<FrontierPtr> & frontier_list,
-  geometry_msgs::msg::Pose & start_pose_w)
+  geometry_msgs::msg::Pose & start_pose_w, bool force_grid_base_planning)
 {
   LOG_DEBUG("CostAssigner::processChosenApproach");
   EventLoggerInstance.startEvent("processChosenApproach");
 
   std::vector<std::string> chosenMethods = parameterInstance.getValue<std::vector<std::string>>(
     "costAssigner.cost_calculation_methods");
+  if (force_grid_base_planning)
+  {
+    // resort to grid-based planning
+    chosenMethods.clear();
+    chosenMethods.push_back("ArrivalInformation");
+    chosenMethods.push_back("A*PlannerDistance");
+  }
   LOG_INFO("Methods chosen are: " << chosenMethods);
   std::vector<std::vector<std::string>> costTypes;
   for (auto frontier : frontier_list) {
     // for each frontier, we need to assign the costs that it should use.
     costTypes.push_back(chosenMethods);
+    if (force_grid_base_planning)
+    {
+      // make all frontiers achieveable. They will become unachievable if they cant find a path.
+      frontier->setAchievability(true);
+      frontier->setBlacklisted(true);
+    }
   }
   bool costsResult;
   costsResult = assignCosts(frontier_list, polygon_xy_min_max_, start_pose_w, costTypes);
@@ -172,7 +185,7 @@ bool CostAssigner::assignCosts(
   // Iterate through each frontier
   LOG_DEBUG("FrontierPtr list size is (loop): " + std::to_string(frontier_list.size()));
   if (findDuplicates(frontier_list).size() > 0) {
-    throw std::runtime_error("Duplicate frontiers found.");
+    throw RoadmapExplorerException("Duplicate frontiers found.");
   }
   LOG_DEBUG("Blacklist size is: " << frontier_blacklist_.size());
   for (int frontier_idx = 0; frontier_idx < (int)frontier_list.size(); frontier_idx++) {

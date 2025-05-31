@@ -19,7 +19,7 @@ EventLogger::EventLogger()
   // std::ofstream outFile(csvFilename, std::ios::out | std::ios::app);
   // if (!outFile)
   // {
-  //     throw std::runtime_error("Unable to open file: " + csvFilename);
+  //     throw RoadmapExplorerException("Unable to open file: " + csvFilename);
   // }
   // outFile << "SerialNumber,Event,Duration(seconds)\n";
 }

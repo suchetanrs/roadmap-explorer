@@ -247,7 +247,7 @@ bool nearestFreeCell(
   visited_flag[start] = true;
 
   // search for neighbouring cell matching value
-  while (!bfs.empty()) {
+  while (!bfs.empty() && rclcpp::ok()) {
     unsigned int idx = bfs.front();
     bfs.pop();
 

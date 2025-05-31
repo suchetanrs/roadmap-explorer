@@ -31,7 +31,7 @@ public:
     }
     else
     {
-      throw std::runtime_error("EventLogger instance already exists!");
+      throw RoadmapExplorerException("EventLogger instance already exists!");
     }
   }
 
@@ -39,7 +39,7 @@ public:
   {
     std::lock_guard<std::mutex> lock(instanceMutex_);
     if (EventLoggerPtr_ == nullptr) {
-      throw std::runtime_error("Cannot dereference a null EventLogger! :(");
+      throw RoadmapExplorerException("Cannot dereference a null EventLogger! :(");
     }
     return *EventLoggerPtr_;
   }

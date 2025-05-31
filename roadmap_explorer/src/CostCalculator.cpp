@@ -84,7 +84,7 @@ void FrontierCostCalculator::setArrivalInformationForFrontier(
   unsigned int sxm, sym;
   if (!exploration_costmap_->worldToMap(sx, sy, sxm, sym)) {
     LOG_ERROR("The detected frontier is outside the map. What is going on?")
-    throw std::runtime_error("The detected frontier is outside the map. What is going on?");
+    throw RoadmapExplorerException("The detected frontier is outside the map. What is going on?");
   }
   bool footprintInLethalPenalty = isCircleFootprintInLethal(
     exploration_costmap_, sxm, sym, std::ceil(
@@ -156,7 +156,7 @@ double FrontierCostCalculator::setArrivalInformationLimits()
     if (!getTracedCells(sx, sy, wx, wy, cell_gatherer, max_length, exploration_costmap_)) {
       LOG_ERROR("Error in raytracing. Cannot set arrival information limits.");
       LOG_ERROR("Max length is: " << max_length);
-      throw std::runtime_error(
+      throw RoadmapExplorerException(
               "Error in raytracing. Cannot set arrival information limits.");
       return 0;
     }
@@ -321,6 +321,7 @@ void FrontierCostCalculator::setPlanForFrontier(
     return;
   }
 
+  rosVisualizerInstance.frontierPlanViz(plan);
   goal_point_w->setAchievability(true);
   goal_point_w->setPathLength(plan.poses.size());
   goal_point_w->setPathLengthInM(path_length_m);

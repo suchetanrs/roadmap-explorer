@@ -18,7 +18,7 @@ FrontierSearch::~FrontierSearch()
   every_frontier_list.clear();
 }
 
-std::vector<FrontierPtr> FrontierSearch::searchFrom(geometry_msgs::msg::Point position)
+FrontierSearchResult FrontierSearch::searchFrom(geometry_msgs::msg::Point position, std::vector<FrontierPtr> & output_frontier_list)
 {
   min_frontier_cluster_size_ = parameterInstance.getValue<double>(
     "frontierSearch.min_frontier_cluster_size");
@@ -34,7 +34,7 @@ std::vector<FrontierPtr> FrontierSearch::searchFrom(geometry_msgs::msg::Point po
   unsigned int mx, my;
   if (!costmap_.worldToMap(position.x, position.y, mx, my)) {
     LOG_CRITICAL("Robot out of costmap bounds, cannot search for frontiers");
-    return frontier_list;
+    return FrontierSearchResult::ROBOT_OUT_OF_BOUNDS;
   }
 
   map_ = costmap_.getCharMap();
@@ -56,6 +56,7 @@ std::vector<FrontierPtr> FrontierSearch::searchFrom(geometry_msgs::msg::Point po
     bfs.push(pos);
     LOG_WARN(
       "Could not find nearby clear cell to start search, pushing current position of robot to start search");
+    return FrontierSearchResult::CANNOT_FIND_CELL_TO_SEARCH;
   }
   visited_flag[bfs.front()] = true;
 
@@ -99,7 +100,8 @@ std::vector<FrontierPtr> FrontierSearch::searchFrom(geometry_msgs::msg::Point po
       }
     }
   }
-  return frontier_list;
+  output_frontier_list = frontier_list;
+  return FrontierSearchResult::SUCCESSFUL_SEARCH;
 }
 
 std::vector<FrontierPtr> FrontierSearch::buildNewFrontier(

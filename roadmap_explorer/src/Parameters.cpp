@@ -345,19 +345,19 @@ void ParameterHandler::sanityCheckParameters()
   if (getValue<bool>("goalHysteresis.use_euclidean_distance") == true &&
     getValue<bool>("goalHysteresis.use_roadmap_planner_distance") == true)
   {
-    throw std::runtime_error(
+    throw RoadmapExplorerException(
             "Both use_euclidean_distance and use_roadmap_planner_distance are set to true. Please set only one of them to true.");
   } else if (getValue<bool>("goalHysteresis.use_euclidean_distance") == false &&
     getValue<bool>("goalHysteresis.use_roadmap_planner_distance") == false)
   {
-    throw std::runtime_error(
+    throw RoadmapExplorerException(
             "Both use_euclidean_distance and use_roadmap_planner_distance are set to false. Please set only one of them to true.");
   }
 
   if (getValue<int64_t>("frontierSearch.lethal_threshold") > 255 ||
     getValue<int64_t>("frontierSearch.lethal_threshold") < 0)
   {
-    throw std::runtime_error("Lethal thresholds out of unsigned char range.");
+    throw RoadmapExplorerException("Lethal thresholds out of unsigned char range.");
   }
 }
 
@@ -403,7 +403,7 @@ rcl_interfaces::msg::SetParametersResult ParameterHandler::dynamicReconfigureCal
 
   try {
     sanityCheckParameters();
-  } catch (const std::exception & e) {
+  } catch (const RoadmapExplorerException & e) {
     result.successful = false;
     result.reason = e.what();
   }

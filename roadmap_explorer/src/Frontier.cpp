@@ -105,14 +105,14 @@ void Frontier::setBlacklisted(bool value)
 bool Frontier::operator==(const Frontier & other) const
 {
   // if (!unique_id)
-  //     throw std::runtime_error("Cannot check equality. unique_id is null");
+  //     throw RoadmapExplorerException("Cannot check equality. unique_id is null");
   // if (!size)
-  //     throw std::runtime_error("Cannot check equality. size is null");
+  //     throw RoadmapExplorerException("Cannot check equality. size is null");
   if (!goal_point || !other.goal_point) {
-    throw std::runtime_error("Cannot check equality. goal_point is null");
+    throw RoadmapExplorerException("Cannot check equality. goal_point is null");
   }
   // if (!best_orientation)
-  //     throw std::runtime_error("Cannot check equality. best_orientation is null");
+  //     throw RoadmapExplorerException("Cannot check equality. best_orientation is null");
 
   // if (*unique_id != *other.unique_id ||
   //     *size != *other.size)
@@ -136,7 +136,7 @@ size_t Frontier::getUID() const
 {
   if (unique_id == nullptr) {
     LOG_CRITICAL("is null for: " << getGoalPoint().x << ", " << getGoalPoint().y);
-    throw std::runtime_error("Goal uid frontier property is null");
+    throw RoadmapExplorerException("Goal uid frontier property is null");
   }
   return *unique_id;
 }
@@ -144,7 +144,7 @@ size_t Frontier::getUID() const
 int Frontier::getSize() const
 {
   if (size == nullptr) {
-    throw std::runtime_error("Size frontier property is null");
+    throw RoadmapExplorerException("Size frontier property is null");
   }
   return *size;
 }
@@ -152,7 +152,7 @@ int Frontier::getSize() const
 geometry_msgs::msg::Point & Frontier::getGoalPoint() const
 {
   if (goal_point == nullptr) {
-    throw std::runtime_error("Goal point frontier property is null");
+    throw RoadmapExplorerException("Goal point frontier property is null");
   }
   return *goal_point;
 }
@@ -160,7 +160,7 @@ geometry_msgs::msg::Point & Frontier::getGoalPoint() const
 geometry_msgs::msg::Quaternion & Frontier::getGoalOrientation() const
 {
   if (best_orientation == nullptr || theta_s_star == nullptr) {
-    throw std::runtime_error("Goal orientation frontier property is null");
+    throw RoadmapExplorerException("Goal orientation frontier property is null");
   }
   return *best_orientation;
 }
@@ -168,7 +168,7 @@ geometry_msgs::msg::Quaternion & Frontier::getGoalOrientation() const
 double Frontier::getArrivalInformation() const
 {
   if (information == nullptr) {
-    throw std::runtime_error("Arrival information frontier property is null");
+    throw RoadmapExplorerException("Arrival information frontier property is null");
   }
   return *information;
 }
@@ -176,7 +176,7 @@ double Frontier::getArrivalInformation() const
 double Frontier::getPathLength() const
 {
   if (path_length == nullptr) {
-    throw std::runtime_error("Path length frontier property is null");
+    throw RoadmapExplorerException("Path length frontier property is null");
   }
   return *path_length;
 }
@@ -184,7 +184,7 @@ double Frontier::getPathLength() const
 double Frontier::getPathLengthInM() const
 {
   if (path_length_m == nullptr) {
-    throw std::runtime_error("Path length in m frontier property is null");
+    throw RoadmapExplorerException("Path length in m frontier property is null");
   }
   return *path_length_m;
 }
@@ -192,7 +192,7 @@ double Frontier::getPathLengthInM() const
 double Frontier::getPathHeading() const
 {
   if (path_heading == nullptr) {
-    throw std::runtime_error("Path heading frontier property is null");
+    throw RoadmapExplorerException("Path heading frontier property is null");
   }
   return *path_heading;
 }
@@ -200,19 +200,19 @@ double Frontier::getPathHeading() const
 double Frontier::getCost(const std::string & costName) const
 {
   if (costs == nullptr) {
-    throw std::runtime_error("Costs map is null");
+    throw RoadmapExplorerException("Costs map is null");
   }
   auto it = costs->find(costName);
   if (it != costs->end()) {
     return it->second;
   }
-  throw std::runtime_error("Cost requested for not a defined field");
+  throw RoadmapExplorerException("Cost requested for not a defined field");
 }
 
 double Frontier::getWeightedCost() const
 {
   if (weighted_cost == nullptr) {
-    throw std::runtime_error("Weighted cost frontier property is null");
+    throw RoadmapExplorerException("Weighted cost frontier property is null");
   }
   return *weighted_cost;
 }
@@ -220,7 +220,7 @@ double Frontier::getWeightedCost() const
 bool Frontier::isAchievable() const
 {
   if (is_achievable == nullptr) {
-    throw std::runtime_error("Is achievable property is null");
+    throw RoadmapExplorerException("Is achievable property is null");
   }
   return *is_achievable;
 }
@@ -228,7 +228,7 @@ bool Frontier::isAchievable() const
 bool Frontier::isBlacklisted() const
 {
   if (is_blacklisted == nullptr) {
-    throw std::runtime_error("Is blacklisted property is null");
+    throw RoadmapExplorerException("Is blacklisted property is null");
   }
   return *is_blacklisted;
 }

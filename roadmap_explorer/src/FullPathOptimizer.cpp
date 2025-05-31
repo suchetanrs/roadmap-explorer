@@ -34,6 +34,8 @@ FullPathOptimizer::~FullPathOptimizer()
   frontier_pair_distances_.clear();
   local_search_area_publisher_->on_deactivate();
   frontier_nav2_plan_->on_deactivate();
+  local_search_area_publisher_.reset();
+  frontier_nav2_plan_.reset();
 }
 
 void FullPathOptimizer::addToMarkerArraySolidPolygon(
@@ -318,7 +320,7 @@ bool FullPathOptimizer::getBestFullPath(
 
   } while (std::next_permutation(
     sortedFrontiers.local_frontiers.begin(),
-    sortedFrontiers.local_frontiers.end()));
+    sortedFrontiers.local_frontiers.end()) && rclcpp::ok());
   if (minLength >= local_frontier_search_radius * 100000) {
     LOG_ERROR("Zero frontiers were reasonable post FI check...returning zero frontier.");
     return false;

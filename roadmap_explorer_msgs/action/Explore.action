@@ -1,5 +1,6 @@
 # REQUEST
-# if exploration in slam mode, this will create a fresh exploration instance. It is recommended to also restart the mapping session from the slam before launching the exploration.
+# If exploration in slam mode, this will create a fresh exploration instance. 
+# it is recommended to also restart the mapping session from the slam before launching the exploration in this configuration.
 # if exploration in localisation only mode, this will start a fresh exploration instance.
 uint16 NEW_EXPLORATION_SESSION=0
 
@@ -19,7 +20,8 @@ std_msgs/String load_from_folder
 uint16 NO_ERROR=0
 uint16 NO_MORE_REACHABLE_FRONTIERS=1
 uint16 NAV2_INTERNAL_FAULT=2
-uint16 UNKNOWN=3
+uint16 TIMED_OUT_WAITING_FOR_MAP=3
+uint16 UNKNOWN=4
 
 uint16 error_code 0
 bool success True

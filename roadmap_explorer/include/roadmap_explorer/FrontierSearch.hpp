@@ -23,6 +23,13 @@
 namespace roadmap_explorer
 {
 
+enum class FrontierSearchResult
+{
+  ROBOT_OUT_OF_BOUNDS = 0,
+  CANNOT_FIND_CELL_TO_SEARCH = 1,
+  SUCCESSFUL_SEARCH = 2
+};
+
 class FrontierSearch
 {
 
@@ -39,6 +46,7 @@ public:
   bool incrementSearchDistance(double value)
   {
     frontier_search_distance_ += value;
+    LOG_INFO("Incrementing search distance to: " << frontier_search_distance_);
     if (frontier_search_distance_ > parameterInstance.getValue<double>(
         "frontierSearch.max_frontier_search_distance"))
     {
@@ -55,7 +63,7 @@ public:
     frontier_search_distance_ = original_search_distance_;
   }
 
-  std::vector<FrontierPtr> searchFrom(geometry_msgs::msg::Point position);
+  FrontierSearchResult searchFrom(geometry_msgs::msg::Point position, std::vector<FrontierPtr> & output_frontier_list);
 
   std::vector<std::vector<double>> getAllFrontiers();
 

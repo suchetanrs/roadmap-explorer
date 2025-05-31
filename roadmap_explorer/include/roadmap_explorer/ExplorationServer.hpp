@@ -15,6 +15,8 @@
 namespace roadmap_explorer
 {
 
+enum class ActionTerminalState { SUCCEED, ABORT, CANCEL };
+
 class ExplorationServer : public nav2_util::LifecycleNode
 {
 public:
@@ -43,6 +45,11 @@ protected:
   // Spawned per‐goal execution
   void execute(const std::shared_ptr<GoalHandleExplore> goal_handle);
 
+  void terminateGoal(
+    const ActionTerminalState terminal_state,
+    const std::shared_ptr<GoalHandleExplore> goal_handle,
+    std::shared_ptr<ExploreAction::Result> result);
+
   // Utility to publish feedback
   void publish_feedback(
     const std::shared_ptr<GoalHandleExplore> & goal_handle,
@@ -59,9 +66,6 @@ protected:
   rclcpp::executors::MultiThreadedExecutor::SharedPtr executor_;
   rclcpp::CallbackGroup::SharedPtr action_server_cb_group_;
   std::shared_ptr<nav2_util::LifecycleNode> node_;
-
-  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros_;
-  std::unique_ptr<nav2_util::NodeThread> explore_costmap_thread_;
 };
 
 }  // namespace roadmap_explorer

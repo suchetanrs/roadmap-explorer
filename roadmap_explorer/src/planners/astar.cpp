@@ -43,7 +43,7 @@ std::vector<std::shared_ptr<Node>> FrontierRoadmapAStar::getSuccessors(
   std::vector<std::shared_ptr<Node>> successors;
   if (roadmap_.count(current->frontier) == 0) {
     LOG_FATAL(current->frontier << " not present.");
-    throw std::runtime_error("This should never happen. FrontierPtr not found in roadmap.");
+    throw RoadmapExplorerException("This should never happen. FrontierPtr not found in roadmap.");
   }
 
 
@@ -72,7 +72,7 @@ std::pair<std::vector<std::shared_ptr<Node>>, double> FrontierRoadmapAStar::getP
   openList.push(start_);
   allNodes[start_->frontier->getUID()] = start_;
 
-  while (!openList.empty()) {
+  while (!openList.empty() && rclcpp::ok()) {
     std::shared_ptr<Node> current = openList.top();
     openList.pop();
 
@@ -83,7 +83,7 @@ std::pair<std::vector<std::shared_ptr<Node>>, double> FrontierRoadmapAStar::getP
       std::vector<std::shared_ptr<Node>> path;
       std::shared_ptr<Node> node = allNodes[current->frontier->getUID()];
       double total_path_length = 0;
-      while (node != nullptr) {
+      while (node != nullptr && rclcpp::ok()) {
         path.push_back(node);
         if (path.size() > 1) {
           total_path_length += sqrt(heuristic(path[path.size() - 2], node));

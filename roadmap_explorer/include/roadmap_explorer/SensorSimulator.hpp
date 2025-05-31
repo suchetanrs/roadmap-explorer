@@ -43,6 +43,23 @@ public:
 
   void cleanupMap();
 
+  void startMappingIfNotStarted()
+  {
+    if (!should_map_)
+    {
+      std::lock_guard<std::recursive_mutex> lock(map_mutex_);
+      should_map_ = true;
+      // manually fire a callback to start mapping instantly and don't wait for ros timer to trigger first time.
+      timerCallback();
+    }
+  };
+
+  void stopMapping()
+  {
+    std::lock_guard<std::recursive_mutex> lock(map_mutex_);
+    should_map_ = false;
+  };
+
   bool saveMap(std::string instance_name, std::string base_path);
 
   bool loadMap(std::string instance_name, std::string base_path);
@@ -79,13 +96,14 @@ private:
 
   std::recursive_mutex map_mutex_;
   nav_msgs::msg::OccupancyGrid::SharedPtr latest_map_;
-  nav_msgs::msg::OccupancyGrid explored_map_;
+  nav_msgs::msg::OccupancyGrid::SharedPtr explored_map_;
 
 
   std::shared_ptr<nav2_util::LifecycleNode> node_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros_;
   rclcpp::CallbackGroup::SharedPtr map_subscription_cb_group_;
   bool manual_cleanup_requested_;
+  std::atomic<bool> should_map_;
 };
 
 }  // namespace roadmap_explorer

@@ -32,7 +32,7 @@ public:
       return boost::any_cast<T>(parameter_map_[parameterKey]);
     } else {
       // TODO(suchetanrs) : Handle this runtime error.
-      throw std::runtime_error("Parameter " + parameterKey + " is not found in the map");
+      throw RoadmapExplorerException("Parameter " + parameterKey + " is not found in the map");
     }
   }
 
@@ -46,14 +46,14 @@ public:
     }
     else
     {
-      throw std::runtime_error("ParameterHandler already exists!");
+      throw RoadmapExplorerException("ParameterHandler already exists!");
     }
   }
 
   static ParameterHandler & getInstance()
   {
     if (parameterHandlerPtr_ == nullptr) {
-      throw std::runtime_error("Cannot de-reference a null ParameterHandler! :(");
+      throw RoadmapExplorerException("Cannot de-reference a null ParameterHandler! :(");
     }
     return *parameterHandlerPtr_;
   }
