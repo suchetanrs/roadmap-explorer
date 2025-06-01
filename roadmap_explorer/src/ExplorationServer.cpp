@@ -123,13 +123,6 @@ void ExplorationServer::execute(const std::shared_ptr<GoalHandleExplore> goal_ha
   RCLCPP_INFO(get_logger(), "Running exploration BT for goal");
   auto result = std::make_shared<ExploreAction::Result>();
   result->success = false;
-
-  // const auto & plugins = *(explore_costmap_ros_->getLayeredCostmap()->getPlugins());
-  // for (auto & plugin_base : plugins) {
-  //   plugin_base->activate();
-  // }
-
-  // Build the tree
   try {
 
     switch (goal_handle->get_goal()->exploration_bringup_mode) {
