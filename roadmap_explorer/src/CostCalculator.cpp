@@ -341,6 +341,14 @@ void FrontierCostCalculator::setPlanForFrontierRoadmap(
     goal_point_w->setPathHeading(std::numeric_limits<double>::max());
     return;
   }
+  setPlanForFrontierEuclidean(start_pose_w, goal_point_w);
+  if(goal_point_w->getPathLengthInM() > 6.0)
+  {
+    goal_point_w->setAchievability(true);
+    goal_point_w->setPathLength(goal_point_w->getPathLength() * 5.0);
+    goal_point_w->setPathLengthInM(goal_point_w->getPathLengthInM() * 5.0);
+    return;
+  }
   auto path_length = frontierRoadmapInstance.getPlan(
     start_pose_w.position.x,
     start_pose_w.position.y, true,

@@ -26,6 +26,7 @@ RosVisualizer::RosVisualizer(
     "connecting_cells", 10);
   frontier_plan_pub_ = node->create_publisher<nav_msgs::msg::Path>("grid_based_frontier_plan", 10);
   full_path_plan_pub_ = node->create_publisher<nav_msgs::msg::Path>("full_path", 10);
+  global_repos_path_plan_pub_ = node->create_publisher<nav_msgs::msg::Path>("global_repositioning_path", 10);
   trailing_robot_poses_publisher_ = node->create_publisher<geometry_msgs::msg::PoseArray>(
     "trailing_robot_poses", 10);
 
@@ -40,6 +41,7 @@ RosVisualizer::RosVisualizer(
   connecting_cells_publisher_->on_activate();
   frontier_plan_pub_->on_activate();
   full_path_plan_pub_->on_activate();
+  global_repos_path_plan_pub_->on_activate();
   trailing_robot_poses_publisher_->on_activate();
   blacklisted_frontiers_publisher_->on_activate();
 
@@ -58,6 +60,7 @@ RosVisualizer::~RosVisualizer()
   connecting_cells_publisher_->on_deactivate();
   frontier_plan_pub_->on_deactivate();
   full_path_plan_pub_->on_deactivate();
+  global_repos_path_plan_pub_->on_deactivate();
   trailing_robot_poses_publisher_->on_deactivate();
   blacklisted_frontiers_publisher_->on_deactivate();
 
@@ -70,6 +73,7 @@ RosVisualizer::~RosVisualizer()
   connecting_cells_publisher_.reset();
   frontier_plan_pub_.reset();
   full_path_plan_pub_.reset();
+  global_repos_path_plan_pub_.reset();
   trailing_robot_poses_publisher_.reset();
   blacklisted_frontiers_publisher_.reset();
 }
@@ -279,6 +283,11 @@ void RosVisualizer::visualizeFrontierMarker(
 void RosVisualizer::frontierPlanViz(nav_msgs::msg::Path & path)
 {
   frontier_plan_pub_->publish(path);
+}
+
+void RosVisualizer::globalRepositionPlanViz(nav_msgs::msg::Path & path)
+{
+  global_repos_path_plan_pub_->publish(path);
 }
 
 void RosVisualizer::fullPathPlanViz(nav_msgs::msg::Path & path)

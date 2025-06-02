@@ -6,7 +6,7 @@
       <RateController hz="1.0">
         <RecoveryNode number_of_retries="3" name="ComputePathToPose">
           <ReactiveSequence>
-            <PlannerSelector selected_planner="{selected_planner}" default_planner="GridBased" topic_name="planner_selector"/>
+            <PlannerSelector selected_planner="{selected_planner}" default_planner="ThetaStar" topic_name="planner_selector"/>
             <GoalUpdater input_goal="{goal}" output_goal="{updated_goal}">
               <ComputePathToPose goal="{updated_goal}" path="{path}" planner_id="{selected_planner}"/>
             </GoalUpdater>
@@ -17,7 +17,7 @@
       </RateController>
       <RecoveryNode number_of_retries="6" name="FollowPath">
         <ReactiveSequence>
-          <ControllerSelector selected_controller="{selected_controller}" default_controller="FollowPath" topic_name="controller_selector"/>
+          <ControllerSelector selected_controller="{selected_controller}" default_controller="MPPI" topic_name="controller_selector"/>
           <FollowPath path="{path}" controller_id="{selected_controller}"/>
         </ReactiveSequence>
         <ClearEntireCostmap name="ClearLocalCostmap-Context" service_name="local_costmap/clear_entirely_local_costmap"/>
