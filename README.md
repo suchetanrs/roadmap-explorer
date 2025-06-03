@@ -35,13 +35,44 @@ This exploration framework primarily provides the following key advantages when 
 
 This experiment was done outdoors at BITS Pilani, India. The image on the right shows the generated 2.5D map.
 
-## Run this with the turtlebot simulation now!
+## Run the exploration with the turtlebot simulation!
 
-TODO.
+This project currently only supports humble. Please follow the docs [here](https://docs.nav2.org/getting_started/index.html) to setup your turtlebot3 simulation. Once you are able to navigate the robot around, you can follow the steps below:
+
+1. Clone this repository using the following commands:
+```bash
+cd && mkdir -p exploration_ws/src && cd exploration_ws/src
+git clone https://github.com/suchetanrs/roadmap-explorer.git
+cd .. && colcon build --symlink-install
+source install/setup.bash
+```
+
+2. Run the turtlebot3 simulation using the following command:
+```
+ros2 launch nav2_bringup tb3_simulation_launch.py
+```
+
+3. Set the `/initialpose` on RViz to start localisation.
+
+4. On a new terminal, launch the exploration module:
+```
+ros2 launch roadmap_explorer tb3_exploration.launch.py
+```
+
+Watch it explore!
 
 ## The included RViz plugin:
 
-TODO:
+The module ships with an RViz plugin that can be used to command the exploration server with your preferred method as well as to save and load past sessions.
+
+<!-- ![rviz_plugin](/images/rviz_plugin.png?raw=true "RViz Plugin") -->
+<div align="center">
+  <img src="images/rviz_plugin.png" alt="Logo" width="400"/>
+</div>
+
+- "Continue from previous session" will start the exploration from it left off. This does not write the exploration data to the disk and is useful when you simply want to pause and resume the session.
+- Save session will save the exploration data (Explored map and the constructed navigation roadmap) to the disk. This allows users to restart exploration upon clicking the "Continue from saved session" button before starting the exploration.
+- The "stop exploration" button merely pauses the exploration. No data is lost (yet) and you can freely continue exploring from the same place.
 
 ## Exposed topics / services:
 
