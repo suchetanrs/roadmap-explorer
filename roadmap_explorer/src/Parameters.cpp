@@ -208,6 +208,9 @@ void ParameterHandler::makeParametersROS(std::shared_ptr<nav2_util::LifecycleNod
     node, "sensorSimulator.input_map_topic", rclcpp::ParameterValue(
       "/map"));
   nav2_util::declare_parameter_if_not_declared(
+    node, "sensorSimulator.input_map_is_transient_local", rclcpp::ParameterValue(
+      true));
+  nav2_util::declare_parameter_if_not_declared(
     node, "sensorSimulator.explored_map_topic", rclcpp::ParameterValue(
       "/explored_map"));
   nav2_util::declare_parameter_if_not_declared(
@@ -228,6 +231,8 @@ void ParameterHandler::makeParametersROS(std::shared_ptr<nav2_util::LifecycleNod
 
   parameter_map_["sensorSimulator.input_map_topic"] = node->get_parameter(
     "sensorSimulator.input_map_topic").as_string();
+  parameter_map_["sensorSimulator.input_map_is_transient_local"] = node->get_parameter(
+    "sensorSimulator.input_map_is_transient_local").as_bool();
   parameter_map_["sensorSimulator.explored_map_topic"] = node->get_parameter(
     "sensorSimulator.explored_map_topic").as_string();
   parameter_map_["sensorSimulator.angular_resolution"] = node->get_parameter(
@@ -324,6 +329,8 @@ void ParameterHandler::makeParametersYAMLcpp()
 
   parameter_map_["sensorSimulator.input_map_topic"] =
     loaded_node["sensorSimulator"]["input_map_topic"].as<std::string>();
+  parameter_map_["sensorSimulator.input_map_is_transient_local"] =
+    loaded_node["sensorSimulator"]["input_map_is_transient_local"].as<bool>();
   parameter_map_["sensorSimulator.explored_map_topic"] =
     loaded_node["sensorSimulator"]["explored_map_topic"].as<std::string>();
   parameter_map_["sensorSimulator.angular_resolution"] =

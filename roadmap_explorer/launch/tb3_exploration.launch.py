@@ -29,14 +29,14 @@ def generate_launch_description():
         get_package_share_directory('roadmap_explorer'))
 
     params_file = os.path.join(
-        exploration_dir, 'params', 'exploration_params.yaml')
+        exploration_dir, 'params', 'tb3_exploration_params.yaml')
     rviz_file = os.path.join(
         exploration_dir, 'rviz', 'exploration.rviz')
     
     use_sim_time = LaunchConfiguration('use_sim_time')
     declare_use_sim_time_cmd = DeclareLaunchArgument(
         'use_sim_time',
-        default_value='False',
+        default_value='True',
         description='Use simulation (Gazebo) clock if true')
 
     roadmap_explorer_node = Node(

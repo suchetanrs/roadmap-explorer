@@ -579,7 +579,7 @@ RoadmapExplorationBT::~RoadmapExplorationBT()
   explore_costmap_thread_.reset();
 }
 
-void RoadmapExplorationBT::makeBTNodes()
+bool RoadmapExplorationBT::makeBTNodes()
 {
   EventLoggerInstance.startEvent("clearRoadmap");
   EventLoggerInstance.startEvent("replanTimeout");
@@ -665,6 +665,45 @@ void RoadmapExplorationBT::makeBTNodes()
   blackboard->set<std::shared_ptr<std::vector<FrontierPtr>>>(
     "blacklisted_frontiers",
     std::make_shared<std::vector<FrontierPtr>>());
+  
+  {
+    /* This entire thing is a workaround for now. These should be addressed once there is the capability to update the obstacle rejection thresholds in the Nav2 global planners*/
+    auto client_planner = std::make_shared<rclcpp::AsyncParametersClient>(bt_node_, "/planner_server");
+    auto client_global_costmap = std::make_shared<rclcpp::AsyncParametersClient>(bt_node_, "/global_costmap/global_costmap");
+    
+    if (!client_planner->wait_for_service(std::chrono::seconds(1)) || !client_global_costmap->wait_for_service(std::chrono::seconds(1)))
+    {
+      LOG_ERROR("Dynamic parameter service unavailable");
+      return false;
+    }
+    
+    auto future = client_global_costmap->set_parameters({ rclcpp::Parameter("robot_radius", 0.10) });
+    future.wait();
+    
+    const auto results = future.get();
+    for (const auto & result : results)
+    {
+      if (!result.successful)
+      {
+        LOG_ERROR("Failed to set parameter robot_radius on node global_costmap");
+        return false;
+      }
+    }
+    
+    future = client_planner->set_parameters({ rclcpp::Parameter("GridBased.allow_unknown", true) });
+    future.wait();
+    const auto results2 = future.get();
+    for (const auto & result : results2)
+    {
+      if (!result.successful)
+      {
+        LOG_ERROR("Failed to set parameter allow unknown on node planner_server");
+        return false;
+      }
+    }
+  }
+  return true;
+
 }
 
 uint16_t RoadmapExplorationBT::tickOnceWithSleep()
@@ -733,6 +772,7 @@ uint16_t RoadmapExplorationBT::tickOnceWithSleep()
     }
   }
   LOG_DEBUG("TICKED ONCE");
+
   return return_value;
 }
 

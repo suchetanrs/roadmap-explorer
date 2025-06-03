@@ -61,7 +61,7 @@ public:
 
   ~RoadmapExplorationBT();
 
-  void makeBTNodes();
+  bool makeBTNodes();
 
   uint16_t tickOnceWithSleep();
 

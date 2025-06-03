@@ -55,7 +55,7 @@ protected:
     const std::shared_ptr<GoalHandleExplore> & goal_handle,
     const std::string & message);
   
-  void make_exploration_bt(bool exploration_mode);
+  bool make_exploration_bt(bool exploration_mode);
 
   // Members
   rclcpp_action::Server<ExploreAction>::SharedPtr action_server_;

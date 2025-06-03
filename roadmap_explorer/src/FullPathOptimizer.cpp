@@ -53,10 +53,11 @@ void FullPathOptimizer::addToMarkerArraySolidPolygon(
   marker.scale.x = radius * 2;       // Ensure this is suitable for a cylinder
   marker.scale.y = radius * 2;
   marker.scale.z = 1.0;
-  marker.color.a = 0.15;       // Semi-transparent
+  marker.color.a = 0.30;       // Semi-transparent
   marker.color.r = r;          // Red color
   marker.color.g = g;
   marker.color.b = b;
+  marker.lifetime = rclcpp::Duration::from_seconds(2.5);
   marker_array.markers.push_back(marker);
 }
 
@@ -228,12 +229,12 @@ bool FullPathOptimizer::getBestFullPath(
     id++;
     addToMarkerArraySolidPolygon(
       marker_array,
-      lf->getGoalPoint(), 1.0, "local_frontier", 0.5, 1.0, 0.5, id);
+      lf->getGoalPoint(), 0.3, "local_frontier", 0.5, 1.0, 0.5, id);
   }
 
   addToMarkerArraySolidPolygon(
     marker_array,
-    sortedFrontiers.closest_global_frontier->getGoalPoint(), 1.0, "closest_global_frontier", 1.0, 0.5, 0.3,
+    sortedFrontiers.closest_global_frontier->getGoalPoint(), 0.3, "closest_global_frontier", 1.0, 0.5, 0.3,
     0);
   LOG_INFO(
     "Closest global frontier with reasonable information is: " <<

@@ -122,7 +122,7 @@ install(DIRECTORY include/
   DESTINATION include/
 )
 
-install(DIRECTORY launch params include xml
+install(DIRECTORY launch params include xml rviz
 DESTINATION share/${PROJECT_NAME}
 )
 

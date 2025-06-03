@@ -22,10 +22,22 @@ SensorSimulator::SensorSimulator(
   rclcpp::SubscriptionOptions options;
   options.callback_group = map_subscription_cb_group_;
 
-  map_sub_ = node_->create_subscription<nav_msgs::msg::OccupancyGrid>(
+  if(parameterInstance.getValue<bool>("sensorSimulator.input_map_is_transient_local"))
+  {
+    options.use_intra_process_comm = rclcpp::IntraProcessSetting::Disable;
+    auto qos = rclcpp::QoS(rclcpp::KeepLast(10)).transient_local();
+    map_sub_ = node_->create_subscription<nav_msgs::msg::OccupancyGrid>(
     parameterInstance.getValue<std::string>(
-      "sensorSimulator.input_map_topic"), rclcpp::SensorDataQoS(),
-    std::bind(&SensorSimulator::mapCallback, this, _1), options);
+      "sensorSimulator.input_map_topic"), qos,
+    std::bind(&SensorSimulator::mapCallback, this, _1), options); 
+  }
+  else
+  {
+    map_sub_ = node_->create_subscription<nav_msgs::msg::OccupancyGrid>(
+      parameterInstance.getValue<std::string>(
+        "sensorSimulator.input_map_topic"), rclcpp::SensorDataQoS(),
+        std::bind(&SensorSimulator::mapCallback, this, _1), options);
+  }
 
   explored_pub_ = node_->create_publisher<nav_msgs::msg::OccupancyGrid>(
     parameterInstance.getValue<std::string>("sensorSimulator.explored_map_topic"), 10);

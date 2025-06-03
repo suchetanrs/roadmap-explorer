@@ -112,10 +112,10 @@ void ExplorationServer::publish_feedback(
   goal_handle->publish_feedback(feedback);
 }
 
-void ExplorationServer::make_exploration_bt(bool localisation_only_mode)
+bool ExplorationServer::make_exploration_bt(bool localisation_only_mode)
 {
   exploration_bt_ = std::make_shared<RoadmapExplorationBT>(node_, localisation_only_mode);
-  exploration_bt_->makeBTNodes();
+  return exploration_bt_->makeBTNodes();
 }
 
 void ExplorationServer::execute(const std::shared_ptr<GoalHandleExplore> goal_handle)
@@ -128,7 +128,12 @@ void ExplorationServer::execute(const std::shared_ptr<GoalHandleExplore> goal_ha
     switch (goal_handle->get_goal()->exploration_bringup_mode) {
       case ExploreAction::Goal::NEW_EXPLORATION_SESSION:
         exploration_bt_.reset();
-        make_exploration_bt(localisation_only_mode_);
+        if(!make_exploration_bt(localisation_only_mode_))
+        {
+          result->success = false;
+          terminateGoal(ActionTerminalState::ABORT, goal_handle, result);
+          return;
+        }
         break;
       case ExploreAction::Goal::CONTINUE_FROM_TERMINATED_SESSION:
         RCLCPP_INFO(get_logger(), "Continue from terminated session. Nothing to reset.");

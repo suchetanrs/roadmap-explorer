@@ -725,7 +725,7 @@ void FrontierRoadMap::publishRoadMap()
   node_marker.scale.x = 0.2;       // Size of each sphere
   node_marker.scale.y = 0.2;
   node_marker.scale.z = 0.2;
-  node_marker.color.a = 0.50;       // 1.0: Fully opaque
+  node_marker.color.a = 0.02;       // 1.0: Fully opaque
   node_marker.color.r = 0.0;
   node_marker.color.g = 1.0;
   node_marker.color.b = 0.0;
@@ -739,7 +739,7 @@ void FrontierRoadMap::publishRoadMap()
   edge_marker.action = visualization_msgs::msg::Marker::ADD;
   edge_marker.pose.orientation.w = 1.0;
   edge_marker.scale.x = 0.02;       // Thickness of the lines
-  edge_marker.color.a = 0.10;       // 1.0 - Fully opaque
+  edge_marker.color.a = 0.02;       // 1.0 - Fully opaque
   edge_marker.color.r = 0.3;        // Red channel
   edge_marker.color.g = 0.7;        // Green channel
   edge_marker.color.b = 1.0;        // Blue channel
@@ -754,7 +754,7 @@ void FrontierRoadMap::publishRoadMap()
     FrontierPtr parent = pair.first;
     LOG_TRACE(parent);
     geometry_msgs::msg::Point parent_point = parent->getGoalPoint();
-    parent_point.z = 0.15;
+    parent_point.z = 0.02;
     node_marker.points.push_back(parent_point);
     int roadmap_children = 0;
 
@@ -763,9 +763,9 @@ void FrontierRoadMap::publishRoadMap()
       LOG_TRACE("Children:")
       LOG_TRACE(child);
       geometry_msgs::msg::Point child_point = child->getGoalPoint();
-      child_point.z = 0.35;
+      child_point.z = 0.02;
       node_marker.points.push_back(child_point);
-      child_point.z = 0.15;
+      child_point.z = 0.02;
 
       edge_marker.points.push_back(parent_point);
       edge_marker.points.push_back(child_point);
