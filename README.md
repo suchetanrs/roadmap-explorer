@@ -1,7 +1,7 @@
 <!-- <div align="center">
   <img src="images/roadmap-explorer-logo.png" alt="Logo" width="200"/>
 </div> -->
-## Roadmap-Explorer: A fast and reliable robot exploration framework
+## Roadmap-Explorer: Roadmap-Explorer: A fast and reliable roadmap-based robot exploration module
 
 This repository contains the complete implementation of the exploration algorithm for UGVs that I've developed over the course of the last 15 months.
 
@@ -9,11 +9,10 @@ This repository contains the complete implementation of the exploration algorith
 If you consider this work was useful to you, please consider citing the following paper which contain the theoretical background of the algorithm.
 
 > S. Saravanan, A. Bains, C. Chanel, D. Vivet: "FIT-SLAM 2: Efficient 3d Exploration with Fisher Information and Traversability Based Adaptive Roadmap"
-
+ 
 ![exploration_image](/images/exploration-session.gif?raw=true "Exploration Image")
 
 This GIF was recorded during an exploration session at the [Clutterbot](https://www.clutterbot.com/) office.
-
 
 ## Introduction:
 
@@ -28,4 +27,10 @@ This exploration framework primarily provides the following key advantages when 
     - Explore in localisation only mode: In certain use cases, when the robot is running in localisation only mode, it might still need to explore the environment. For example, to find new objects to pickup, clean and tidy or to re-explore the area with a secondary sensor on board such as a camera to detect tags / visual landmarks. This is well supported within this framework with the ability to configure different FOVs.
     - An RViz plugin that can be used to command the exploration server with your preferred method as well as to save and load past sessions.
 5. (Probably the most important): The result is a much more structured exploration than most other popular frameworks I've tried out there. As a result, the total time taken to explore the environment is much lower. Roughly 25% faster than [GB-Planner 2](https://github.com/ntnu-arl/gbplanner_ros), 45% faster than [NBVP](https://github.com/ethz-asl/nbvplanner) or [frontier based approaches](https://github.com/paulbovbel/frontier_exploration) that are greedy in nature and 30% imporovement when comparted to approaches that couple arrival utility with path length [FIT-SLAM](https://ieeexplore.ieee.org/document/10553174). This framework is also the most computationally efficient among the other Frontier based approaches that I've tried out.
-6. If the exploration is running in mapping mode, this inherently prioritizes loop closures during global repositioning (switching from one exploration space to the other) which means accurate maps of the environment but now autonomously! :) If there are major loop closures and the underlying map changes significantly, a mode that also aligns the frontier roadmap with the SLAM's pose graph to correct overtime with the SLAM.
+6. If the exploration is running in mapping mode, this inherently prioritizes loop closures during global repositioning (switching from one exploration space to the other) which means accurate maps of the environment but now autonomously! :) If there are major loop closures and the underlying map changes significantly, a mode that also aligns the frontier roadmap with the SLAM's pose graph to correct overtime with the SLAM is also available.
+
+## More experiments outdoor:
+| ![Image 1](/images/outdoor-session.gif) | ![Image 2](/images/outdoor-session-map.png) |
+|-------------------------|-------------------------|
+
+This experiment was done outdoors at BITS Pilani, India. The image on the right shows the generated 2.5D map.
