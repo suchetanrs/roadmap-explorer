@@ -1,7 +1,7 @@
 <!-- <div align="center">
   <img src="images/roadmap-explorer-logo.png" alt="Logo" width="200"/>
 </div> -->
-## Roadmap-Explorer: Roadmap-Explorer: A fast and reliable roadmap-based robot exploration module
+## Roadmap-Explorer: A fast and reliable roadmap-based robot exploration module
 
 This repository contains the complete implementation of the exploration algorithm for UGVs that I've developed over the course of the last 15 months.
 
