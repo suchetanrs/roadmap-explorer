@@ -27,10 +27,22 @@ This exploration framework primarily provides the following key advantages when 
     - Explore in localisation only mode: In certain use cases, when the robot is running in localisation only mode, it might still need to explore the environment. For example, to find new objects to pickup, clean and tidy or to re-explore the area with a secondary sensor on board such as a camera to detect tags / visual landmarks. This is well supported within this framework with the ability to configure different FOVs.
     - An RViz plugin that can be used to command the exploration server with your preferred method as well as to save and load past sessions.
 5. (Probably the most important): The result is a much more structured exploration than most other popular frameworks I've tried out there. As a result, the total time taken to explore the environment is much lower. Roughly 25% faster than [GB-Planner 2](https://github.com/ntnu-arl/gbplanner_ros), 45% faster than [NBVP](https://github.com/ethz-asl/nbvplanner) or [frontier based approaches](https://github.com/paulbovbel/frontier_exploration) that are greedy in nature and 30% imporovement when comparted to approaches that couple arrival utility with path length [FIT-SLAM](https://ieeexplore.ieee.org/document/10553174). This framework is also the most computationally efficient among the other Frontier based approaches that I've tried out.
-6. If the exploration is running in mapping mode, this inherently prioritizes loop closures during global repositioning (switching from one exploration space to the other) which means accurate maps of the environment but now autonomously! :) If there are major loop closures and the underlying map changes significantly, a mode that also aligns the frontier roadmap with the SLAM's pose graph to correct overtime with the SLAM is also available.
+6. If there are major loop closures and the underlying map changes significantly, a mode that also aligns the frontier roadmap with the SLAM's pose graph to correct overtime with the SLAM is also available.
 
 ## More experiments outdoor:
 | ![Image 1](/images/outdoor-session.gif) | ![Image 2](/images/outdoor-session-map.png) |
 |-------------------------|-------------------------|
 
 This experiment was done outdoors at BITS Pilani, India. The image on the right shows the generated 2.5D map.
+
+## Run this with the turtlebot simulation now!
+
+TODO.
+
+## The included RViz plugin:
+
+TODO:
+
+## Exposed topics / services:
+
+TODO:
