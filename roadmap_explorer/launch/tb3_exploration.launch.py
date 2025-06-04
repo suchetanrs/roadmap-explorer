@@ -44,6 +44,7 @@ def generate_launch_description():
         executable='roadmap_exploration_server',
         name='roadmap_explorer_node',
         # prefix=['gdbserver localhost:3000'],
+        # prefix=['gdb -ex run --args'],
         output='screen',
         parameters=[params_file,
                     {'use_sim_time': use_sim_time}],

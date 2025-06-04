@@ -65,14 +65,16 @@ Watch it explore!
 
 The module ships with an RViz plugin that can be used to command the exploration server with your preferred method as well as to save and load past sessions.
 
+1. "New exploration session" button will start a new exploration session (a clean roadmap and a fresh exploration map in case of localisation only mode).
+2. "Continue from previous session" will start the exploration from it left off. This does not write the exploration data to the disk and is useful when you simply want to pause and resume the session.
+3. Save session will save the exploration data (Explored map and the constructed navigation roadmap) to the disk. This allows users to restart exploration upon clicking the "Continue from saved session" button before starting the exploration.
+4. The "stop exploration" button merely pauses the exploration. No data is lost (yet) and you can freely continue exploring from the same place.
+
+An image of the plugin is below:
 <!-- ![rviz_plugin](/images/rviz_plugin.png?raw=true "RViz Plugin") -->
-<div align="center">
+<div align="left">
   <img src="images/rviz_plugin.png" alt="Logo" width="400"/>
 </div>
-
-- "Continue from previous session" will start the exploration from it left off. This does not write the exploration data to the disk and is useful when you simply want to pause and resume the session.
-- Save session will save the exploration data (Explored map and the constructed navigation roadmap) to the disk. This allows users to restart exploration upon clicking the "Continue from saved session" button before starting the exploration.
-- The "stop exploration" button merely pauses the exploration. No data is lost (yet) and you can freely continue exploring from the same place.
 
 ## Known issues:
 
