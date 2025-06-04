@@ -6,7 +6,7 @@
 This repository contains the complete implementation of the exploration algorithm for UGVs that I've developed over the course of the last 15 months.
 
 ## Citations:
-If you consider this work was useful to you, please consider citing the following paper which contain the theoretical background of the algorithm.
+If this work was useful to you, please consider citing the following [paper](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5238498) which contain the theoretical background of the algorithm.
 
 > S. Saravanan, A. Bains, C. Chanel, D. Vivet: "FIT-SLAM 2: Efficient 3d Exploration with Fisher Information and Traversability Based Adaptive Roadmap"
  
