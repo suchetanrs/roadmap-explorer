@@ -74,6 +74,10 @@ The module ships with an RViz plugin that can be used to command the exploration
 - Save session will save the exploration data (Explored map and the constructed navigation roadmap) to the disk. This allows users to restart exploration upon clicking the "Continue from saved session" button before starting the exploration.
 - The "stop exploration" button merely pauses the exploration. No data is lost (yet) and you can freely continue exploring from the same place.
 
+## Known issues:
+
+1. This module does not work well with FastDDS at the moment. Initial RCA suggests that when starting a "new exploration session", the costmap 2D's node persists even after the context has been cleared leading to the segfault. (See [here](https://github.com/ros2/rmw_fastrtps/issues/478)). It is recommended to use CycloneDDS for running this module with Nav2.
+
 ## Exposed topics / services:
 
 TODO:
