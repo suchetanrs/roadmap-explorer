@@ -35,6 +35,10 @@ This exploration framework primarily provides the following key advantages when 
 
 This experiment was done outdoors at BITS Pilani, India. The image on the right shows the generated 2.5D map.
 
+## The overall exploration system:
+
+![Exploration System](/images/exploration-system.jpg)
+
 ## Run the exploration with the turtlebot simulation!
 
 This project currently only supports humble. Please follow the docs [here](https://docs.nav2.org/getting_started/index.html) to setup your turtlebot3 simulation. Once you are able to navigate the robot around, you can follow the steps below:
