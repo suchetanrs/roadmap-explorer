@@ -2,7 +2,7 @@ name: Humble build
 on:
   push:
     branches:
-    - 'integrate_ci'
+    - 'main'
   pull_request:
     branches:
     - '*'
