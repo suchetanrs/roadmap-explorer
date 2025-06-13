@@ -16,7 +16,13 @@
 #include <geometry_msgs/msg/twist.hpp>
 #include <std_msgs/msg/int32.hpp>
 
-#include <behaviortree_cpp_v3/bt_factory.h>
+#ifdef ROS_DISTRO_HUMBLE
+  #include <behaviortree_cpp_v3/bt_factory.h>
+#elif ROS_DISTRO_JAZZY
+  #include <behaviortree_cpp/bt_factory.h>
+#else
+  #error "Unsupported ROS distro"
+#endif
 
 #include "roadmap_explorer/util/RosVisualizer.hpp"
 #include "roadmap_explorer/util/Logger.hpp"

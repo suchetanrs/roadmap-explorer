@@ -302,11 +302,24 @@ bool computePathBetweenPoints(
   planner->setStart(map_goal);
   planner->setGoal(map_start);
 
+#ifdef ROS_DISTRO_HUMBLE
   // Run the A* search to compute the navigation function.
   if (!planner->calcNavFnDijkstra()) {
     LOG_WARN("Planner failed to compute the navigation function.");
     return false;
   }
+#elif ROS_DISTRO_JAZZY
+  // Run the A* search to compute the navigation function.
+  std::function<bool()> cancelChecker = []() {
+    return !rclcpp::ok();
+  };
+  if (!planner->calcNavFnDijkstra(cancelChecker)) {
+    LOG_WARN("Planner failed to compute the navigation function.");
+    return false;
+  }
+#else
+  #error Unsupported ROS DISTRO
+#endif
 
   // Determine the maximum cycles to search.
   const int max_cycles =
