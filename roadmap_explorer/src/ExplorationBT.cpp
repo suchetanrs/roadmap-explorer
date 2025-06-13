@@ -516,7 +516,10 @@ public:
     EventLoggerInstance.startEvent("BlacklistGoal");
     LOG_FLOW("MODULE BlacklistGoal");
     FrontierPtr allocatedFrontier = std::make_shared<Frontier>();
-    config().blackboard->get<FrontierPtr>("latest_failed_frontier", allocatedFrontier);
+    if(!config().blackboard->get<FrontierPtr>("latest_failed_frontier", allocatedFrontier))
+    {
+      throw RoadmapExplorerException("Could not get latest allocated frontier from blackboard");
+    }
     LOG_WARN("Setting blacklist " << allocatedFrontier);
     blacklistFrontier(allocatedFrontier, config().blackboard);
     return BT::NodeStatus::SUCCESS;
@@ -531,9 +534,17 @@ RoadmapExplorationBT::RoadmapExplorationBT(std::shared_ptr<nav2_util::LifecycleN
 : bt_node_(node)
 {
   LOG_INFO("Creating exploration costmap instance");
+#ifdef ROS_DISTRO_HUMBLE
   explore_costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "roadmap_explorer_costmap", "", "roadmap_explorer_costmap");
-  // Launch a thread to run the costmap node
+#elif ROS_DISTRO_JAZZY
+  explore_costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "roadmap_explorer_costmap", "", "roadmap_explorer_costmap", node->get_parameter("use_sim_time").as_bool());
+#else
+   #error Unsupported ROS DISTRO
+#endif
+
+    // Launch a thread to run the costmap node
   explore_costmap_thread_ = std::make_unique<nav2_util::NodeThread>(explore_costmap_ros_);
   LOG_INFO("Created exploration costmap instance");
 
@@ -720,8 +731,14 @@ uint16_t RoadmapExplorationBT::tickOnceWithSleep()
     LOG_WARN("Waiting for explore costmap to be current.");
     return ExploreActionResult::NO_ERROR;
   }
-  
+
+#ifdef ROS_DISTRO_HUMBLE
   auto status = behaviour_tree.tickRoot();
+#elif ROS_DISTRO_JAZZY
+  auto status = behaviour_tree.tickOnce();
+#else
+  #error Unsupported ROS DISTRO
+#endif
 
   uint16_t return_value = ExploreActionResult::NO_ERROR;
   if (status == BT::NodeStatus::FAILURE) {

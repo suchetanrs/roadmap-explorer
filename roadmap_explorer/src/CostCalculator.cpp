@@ -259,6 +259,7 @@ void FrontierCostCalculator::setPlanForFrontier(
   planner_->setStart(map_goal);
   planner_->setGoal(map_start);
 
+#ifdef ROS_DISTRO_HUMBLE
   if (!planner_->calcNavFnAstar()) {
     LOG_WARN(
       "Plan not Found for frontier at x: " << goal_point_w->getGoalPoint().x << " y: " <<
@@ -269,6 +270,24 @@ void FrontierCostCalculator::setPlanForFrontier(
     goal_point_w->setPathHeading(std::numeric_limits<double>::max());
     return;
   }
+#elif ROS_DISTRO_JAZZY
+  // Run the A* search to compute the navigation function.
+  std::function<bool()> cancelChecker = []() {
+    return !rclcpp::ok();
+  };
+  if (!planner_->calcNavFnAstar(cancelChecker)) {
+    LOG_WARN(
+      "Plan not Found for frontier at x: " << goal_point_w->getGoalPoint().x << " y: " <<
+        goal_point_w->getGoalPoint().y);
+    goal_point_w->setAchievability(false);
+    goal_point_w->setPathLength(std::numeric_limits<double>::max());
+    goal_point_w->setPathLengthInM(std::numeric_limits<double>::max());
+    goal_point_w->setPathHeading(std::numeric_limits<double>::max());
+    return;
+  }
+#else
+  #error Unsupported ROS DISTRO
+#endif
 
   const int & max_cycles =
     (exploration_costmap_->getSizeInCellsX() >=

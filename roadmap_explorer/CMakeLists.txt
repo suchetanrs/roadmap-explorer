@@ -24,6 +24,7 @@ find_package(roadmap_explorer_msgs REQUIRED)
 find_package(eigen3_cmake_module REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(behaviortree_cpp_v3 REQUIRED)
+find_package(behaviortree_cpp REQUIRED)
 find_package(yaml-cpp REQUIRED)
 find_package(nav2_behavior_tree REQUIRED)
 
@@ -55,9 +56,18 @@ roadmap_explorer_msgs
 eigen3_cmake_module
 Eigen3
 behaviortree_cpp_v3
+behaviortree_cpp
 yaml-cpp
 nav2_behavior_tree
 )
+
+if(NOT DEFINED ENV{ROS_DISTRO})
+  message(FATAL_ERROR "ROS_DISTRO environment variable not set—are you sourcing your ROS2 installation?")
+endif()
+
+string(TOUPPER "$ENV{ROS_DISTRO}" ROS_DISTRO_UPPER)
+message(STATUS "Building for ROS distro: ${ROS_DISTRO_UPPER}")
+add_compile_definitions(ROS_DISTRO_${ROS_DISTRO_UPPER})
 
 # add_compile_definitions(
 #   USE_RCLCPP_LOGGER
