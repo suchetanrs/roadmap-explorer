@@ -1,4 +1,4 @@
-name: Humble build
+name: Humble
 on:
   push:
     branches:
@@ -7,7 +7,7 @@ on:
     branches:
     - '*'
 jobs:
-  build-test:
+  build:
     runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
