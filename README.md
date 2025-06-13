@@ -5,6 +5,13 @@
 
 This repository contains the complete implementation of the exploration algorithm for UGVs that I've developed over the course of the last 15 months.
 
+## Build status
+
+| ROS 2 Distro           | Status                                                                                         |
+| ---------------------- | ---------------------------------------------------------------------------------------------- |
+| **Humble (tested)**    | ![Humble build status](https://github.com/suchetanrs/roadmap-explorer/actions/workflows/build_humble.yml/badge.svg) |
+| **Jazzy (untested)**   | ![Jazzy build status](https://github.com/suchetanrs/roadmap-explorer/actions/workflows/build_jazzy.yml/badge.svg)   |
+
 ## Citations:
 If this work was useful to you, please consider citing the following [paper](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5238498) which contain the theoretical background of the algorithm.
 
