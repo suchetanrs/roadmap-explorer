@@ -28,6 +28,9 @@
   <depend>nav2_util</depend>
   <depend>behaviortree_cpp_v3</depend>
   <depend>nav2_behavior_tree</depend>
+  <depend>nav2_navfn_planner</depend>
+  <depend>nav2_theta_star_planner</depend>
+  <depend>nav2_map_server</depend>
   
   <export>
     <build_type>ament_cmake</build_type>

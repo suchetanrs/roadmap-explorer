@@ -1,6 +1,6 @@
 **.vscode**
-**build**
-**install**
-**log**
+build/
+install/
+log/
 **rosbag2**
 launch_bag.sh
