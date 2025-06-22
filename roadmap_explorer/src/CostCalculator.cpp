@@ -342,7 +342,7 @@ void FrontierCostCalculator::setPlanForFrontierRoadmap(
     return;
   }
   setPlanForFrontierEuclidean(start_pose_w, goal_point_w);
-  if(goal_point_w->getPathLengthInM() > 6.0)
+  if(goal_point_w->getPathLengthInM() > parameterInstance.getValue<double>("costCalculator.max_planning_distance_roadmap"))
   {
     goal_point_w->setAchievability(true);
     goal_point_w->setPathLength(goal_point_w->getPathLength() * 5.0);
