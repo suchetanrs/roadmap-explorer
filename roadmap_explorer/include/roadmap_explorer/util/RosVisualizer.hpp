@@ -94,8 +94,10 @@ public:
   rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr frontier_plan_pub_;
 
   void fullPathPlanViz(nav_msgs::msg::Path & path);
+  void globalRepositionPlanViz(nav_msgs::msg::Path & path);
   size_t getNumSubscribersFullPathPlan();
   rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr full_path_plan_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr global_repos_path_plan_pub_;
 
   void visualizeTrailingPoses(std::deque<geometry_msgs::msg::Pose> robot_queue);
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PoseArray>::SharedPtr

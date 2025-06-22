@@ -17,6 +17,7 @@ roadmap_explorer_node:
       factor_of_max_is_min: 0.70
       closeness_rejection_threshold: 0.5
       planner_allow_unknown: true
+      max_planning_distance_roadmap: 12.5
 
     costAssigner:
       cost_calculation_methods: ["RoadmapPlannerDistance", "ArrivalInformation"]
