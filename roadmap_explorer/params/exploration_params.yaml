@@ -42,7 +42,7 @@ roadmap_explorer_node:
       bt_sleep_ms: 70
       exploration_boundary: [310.0, 260.0, 310.0, -120.0, -70.0, -120.0, -70.0, 260.0]
       abort_exploration_on_nav2_abort: false
-      localisation_only_mode: True
+      localisation_only_mode: true
     
     sensorSimulator:
       input_map_topic: "/map"
@@ -67,7 +67,7 @@ roadmap_explorer_costmap:
       plugins: ["static_layer"]
       static_layer:
         plugin: "nav2_costmap_2d::StaticLayer"
-        map_topic: "/map"
+        map_topic: "/explored_map"
         map_subscribe_transient_local: False
         enabled: True
       always_send_full_costmap: True
