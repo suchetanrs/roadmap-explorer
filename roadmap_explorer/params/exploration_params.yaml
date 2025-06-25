@@ -1,14 +1,14 @@
 roadmap_explorer_node:
   ros__parameters:
     use_sim_time: False
-    localisation_only_mode: True # false if in slam mode (mapping is active and you want the exploration to run on that)
+    localisation_only_mode: False # false if in slam mode (mapping is active and you want the exploration to run on that)
     
     frontierSearch:
       min_frontier_cluster_size: 1.0
       max_frontier_cluster_size: 20.0
       frontier_search_distance: 25.0 # This should be equal to the parameter frontier_search_distance in frontier_roadmap_node
       lethal_threshold: 160 # >= is lethal, < is free space.
-      max_frontier_search_distance: 100.0
+      max_frontier_search_distance: 140.0
 
     costCalculator:
       max_camera_depth: 2.0
@@ -23,7 +23,7 @@ roadmap_explorer_node:
       cost_calculation_methods: ["RoadmapPlannerDistance", "ArrivalInformation"]
 
     frontierRoadmap:
-      max_graph_reconstruction_distance: 25.0
+      max_graph_reconstruction_distance: 10.0
       grid_cell_size: 1.0                           # Assuming each cell is 1x1 in size
       radius_to_decide_edges: 6.1                   # a node within this radius of another node is considered a child of the other node.
       min_distance_between_two_frontier_nodes: 0.25  # minimum distance between any node in the graph and the frontier node that will be added.
@@ -43,7 +43,7 @@ roadmap_explorer_node:
       bt_sleep_ms: 70
       exploration_boundary: [310.0, 260.0, 310.0, -120.0, -70.0, -120.0, -70.0, 260.0]
       abort_exploration_on_nav2_abort: false
-      localisation_only_mode: true
+      localisation_only_mode: False
     
     sensorSimulator:
       input_map_topic: "/map"
@@ -59,7 +59,7 @@ roadmap_explorer_costmap:
   roadmap_explorer_costmap:
     ros__parameters:
       update_frequency: 5.0
-      publish_frequency: 5.0
+      publish_frequency: 0.1
       global_frame: map
       robot_base_frame: base_footprint
       use_sim_time: False
@@ -69,7 +69,7 @@ roadmap_explorer_costmap:
       plugins: ["static_layer"]
       static_layer:
         plugin: "nav2_costmap_2d::StaticLayer"
-        map_topic: "/explored_map"
+        map_topic: "/traversability_thresholded"
         map_subscribe_transient_local: False
         enabled: True
       always_send_full_costmap: True

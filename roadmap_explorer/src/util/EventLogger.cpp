@@ -7,29 +7,30 @@ EventLogger::EventLogger()
 : serialNumber(0)
 {
   // Generate a unique filename by appending a timestamp and a random number
-  // auto now = std::chrono::system_clock::now();
-  // auto nowTime = std::chrono::system_clock::to_time_t(now);
-  // auto nowMs = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
+  auto now = std::chrono::system_clock::now();
+  auto nowTime = std::chrono::system_clock::to_time_t(now);
+  auto nowMs = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
 
-  // std::ostringstream oss;
-  // oss << baseFilename << "_" << std::put_time(std::localtime(&nowTime), "%Y%m%d_%H%M%S") << "_" << nowMs.count() << ".csv";
-  // csvFilename = oss.str();
+  std::ostringstream oss;
+  oss << "events_roadmap" << "_" << std::put_time(std::localtime(&nowTime), "%Y%m%d_%H%M%S") << "_" << nowMs.count() << ".csv";
+  csvFilename = oss.str();
 
   // // Open the new CSV file and write the header
-  // std::ofstream outFile(csvFilename, std::ios::out | std::ios::app);
-  // if (!outFile)
-  // {
-  //     throw RoadmapExplorerException("Unable to open file: " + csvFilename);
-  // }
-  // outFile << "SerialNumber,Event,Duration(seconds)\n";
+  std::ofstream outFile(csvFilename, std::ios::out | std::ios::app);
+  if (!outFile)
+  {
+      throw RoadmapExplorerException("Unable to open file: " + csvFilename);
+  }
+  planningCount = 0;
+  outFile << "SerialNumber,Event,Duration(seconds)\n";
 }
 
 EventLogger::~EventLogger()
 {
   LOG_INFO("EventLogger::~EventLogger()");
   // Close the CSV file if it was opened
-  // std::ofstream outFile(csvFilename, std::ios::out | std::ios::app);
-  // outFile.close();
+  std::ofstream outFile(csvFilename, std::ios::out | std::ios::app);
+  outFile.close();
   startTimes.clear();
 }
 
@@ -62,8 +63,11 @@ void EventLogger::endEvent(const std::string & key, int eventLevel)
     }
 
     // // Write to CSV file
-    // std::ofstream outFile(csvFilename, std::ios::out | std::ios::app);
-    // outFile << ++serialNumber << "," << key << "," << duration.count() << "\n";
+    if (eventLevel == 0)
+    {
+      std::ofstream outFile(csvFilename, std::ios::out | std::ios::app);
+      outFile << ++serialNumber << "," << key << "," << duration.count() << "\n";
+    }
 
     startTimes.erase(key);
   } else {

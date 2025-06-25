@@ -69,5 +69,5 @@ def generate_launch_description():
         declare_use_sim_time_cmd,
         roadmap_explorer_node,
         lifecycle_manager,
-        rviz_launch
+        # rviz_launch
     ])

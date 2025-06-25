@@ -73,6 +73,7 @@ public:
     config().blackboard->set<geometry_msgs::msg::PoseStamped>("latest_robot_pose", robotP);
     LOG_INFO("Using robot pose: " << robotP.pose.position.x << ", " << robotP.pose.position.y);
     std::vector<FrontierPtr> frontier_list;
+    LOG_WARN("Current search radius: " << frontierSearchPtr_->frontier_search_distance_);
     auto searchResult = frontierSearchPtr_->searchFrom(robotP.pose.position, frontier_list);
     if (searchResult != FrontierSearchResult::SUCCESSFUL_SEARCH)
     {
@@ -83,13 +84,14 @@ public:
       return BT::NodeStatus::FAILURE;
     }
     auto every_frontier = frontierSearchPtr_->getAllFrontiers();
-    if (frontier_list.size() == 0) {
+    if (config().blackboard->get<ExplorationErrorCode>("error_code_id") ==
+      ExplorationErrorCode::NO_ACHIEVABLE_FRONTIERS_LEFT || frontier_list.size() == 0) {
       double increment_value = 0.1;
       getInput("increment_search_distance_by", increment_value);
       auto result_distance = frontierSearchPtr_->incrementSearchDistance(increment_value);
       if (!result_distance) {
         LOG_ERROR("Maximum frontier search distance exceeded. Returning BT Failure.");
-        EventLoggerInstance.endEvent("SearchForFrontiers", 0);
+        // EventLoggerInstance.endEvent("SearchForFrontiers", 0);
         explore_costmap_ros_->getCostmap()->getMutex()->unlock();
         config().blackboard->set<ExplorationErrorCode>(
           "error_code_id",
@@ -97,7 +99,7 @@ public:
         return BT::NodeStatus::FAILURE;
       }
       LOG_WARN("No frontiers found in search. Incrementing search radius and returning BT Failure.");
-      EventLoggerInstance.endEvent("SearchForFrontiers", 0);
+      // EventLoggerInstance.endEvent("SearchForFrontiers", 0);
       explore_costmap_ros_->getCostmap()->getMutex()->unlock();
       config().blackboard->set<ExplorationErrorCode>(
         "error_code_id",
@@ -112,6 +114,7 @@ public:
       frontier_list, every_frontier,
       explore_costmap_ros_->getLayeredCostmap()->getGlobalFrameID());
     LOG_DEBUG("Frontiers visualized");
+    LOG_WARN("Resetting search distance");
     frontierSearchPtr_->resetSearchDistance();
     EventLoggerInstance.endEvent("SearchForFrontiers", 0);
     explore_costmap_ros_->getCostmap()->getMutex()->unlock();
@@ -161,7 +164,7 @@ public:
     bool correct_loop_closure_;
     getInput("correct_loop_closure", correct_loop_closure_);
     LOG_WARN("Reconstructing roadmap and clearing plan cache!");
-    frontierRoadmapInstance.reConstructGraph(true, correct_loop_closure_);
+    frontierRoadmapInstance.reConstructGraph(false, correct_loop_closure_);
     EventLoggerInstance.endEvent("roadmapReconstructionFull", 1);
     full_path_optimizer_->clearPlanCache();
     // TODO: make sure to add a thing such that the entire roadmap within a certain distance (max frontier search distance) is reconstructed periodically
@@ -196,6 +199,7 @@ public:
 
   BT::NodeStatus tick() override
   {
+    EventLoggerInstance.incrementPlanningCount();
     EventLoggerInstance.startEvent("UpdateRoadmapBT");
     LOG_FLOW("MODULE UpdateRoadmapBT");
     std::vector<FrontierPtr> frontier_list;
@@ -552,6 +556,7 @@ RoadmapExplorationBT::RoadmapExplorationBT(std::shared_ptr<nav2_util::LifecycleN
   explore_costmap_ros_->activate();
 
   blackboard = BT::Blackboard::create();
+  blackboard->set<ExplorationErrorCode>("error_code_id", ExplorationErrorCode::NO_ERROR);
 
   EventLogger::createInstance();
   ParameterHandler::createInstance();
@@ -760,7 +765,7 @@ uint16_t RoadmapExplorationBT::tickOnceWithSleep()
       ExplorationErrorCode::NO_ACHIEVABLE_FRONTIERS_LEFT)
     {
       LOG_ERROR("Behavior Tree tick returned FAILURE due to no achievable frontiers left.");
-      return_value = ExploreActionResult::NO_MORE_REACHABLE_FRONTIERS;
+      // return_value = ExploreActionResult::NO_MORE_REACHABLE_FRONTIERS;
     } else if (blackboard->get<ExplorationErrorCode>("error_code_id") ==
       ExplorationErrorCode::FULL_PATH_OPTIMIZATION_FAILURE)
     {

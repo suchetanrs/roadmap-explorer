@@ -6,9 +6,9 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
+        - /TF1
         - /TF1/Frames1
         - /roadmap_explorer_costmap1/Topic1
-        - /Pose1/Status1
       Splitter Ratio: 0.5
     Tree Height: 400
   - Class: rviz_common/Selection
@@ -64,34 +64,24 @@ Visualization Manager:
         base_footprint:
           Value: true
         base_link:
-          Value: true
-        base_scan:
-          Value: true
-        camera_depth_frame:
-          Value: true
-        camera_depth_optical_frame:
-          Value: true
+          Value: false
         camera_link:
-          Value: true
-        camera_rgb_frame:
-          Value: true
-        camera_rgb_optical_frame:
-          Value: true
-        caster_back_left_link:
-          Value: true
-        caster_back_right_link:
-          Value: true
+          Value: false
+        camera_link_optical:
+          Value: false
+        camera_link_stand:
+          Value: false
+        chassis:
+          Value: false
         imu_link:
-          Value: true
+          Value: false
+        lidar_link:
+          Value: false
         map:
-          Value: true
+          Value: false
         odom:
-          Value: true
-        wheel_left_link:
-          Value: true
-        wheel_right_link:
-          Value: true
-      Marker Scale: 1
+          Value: false
+      Marker Scale: 5
       Name: TF
       Show Arrows: true
       Show Axes: true
@@ -101,32 +91,23 @@ Visualization Manager:
           odom:
             base_footprint:
               base_link:
-                base_scan:
-                  {}
-                camera_link:
-                  camera_depth_frame:
-                    camera_depth_optical_frame:
+                chassis:
+                  camera_link:
+                    camera_link_optical:
                       {}
-                  camera_rgb_frame:
-                    camera_rgb_optical_frame:
-                      {}
-                caster_back_left_link:
-                  {}
-                caster_back_right_link:
-                  {}
-                imu_link:
-                  {}
-                wheel_left_link:
-                  {}
-                wheel_right_link:
-                  {}
+                  camera_link_stand:
+                    {}
+                  imu_link:
+                    {}
+                  lidar_link:
+                    {}
       Update Interval: 0
       Value: true
     - Alpha: 0.699999988079071
       Class: rviz_default_plugins/Map
       Color Scheme: map
       Draw Behind: false
-      Enabled: true
+      Enabled: false
       Name: roadmap_explorer_costmap
       Topic:
         Depth: 5
@@ -142,7 +123,7 @@ Visualization Manager:
         Reliability Policy: Reliable
         Value: /roadmap_explorer_costmap/costmap_updates
       Use Timestamp: false
-      Value: true
+      Value: false
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -224,18 +205,17 @@ Visualization Manager:
         Value: /blacklisted_frontiers
       Value: true
     - Class: rviz_default_plugins/MarkerArray
-      Enabled: true
+      Enabled: false
       Name: roadmap
       Namespaces:
-        edges: true
-        nodes: true
+        {}
       Topic:
         Depth: 5
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /frontier_roadmap
-      Value: true
+      Value: false
     - Class: rviz_default_plugins/MarkerArray
       Enabled: false
       Name: frontier_cost_info
@@ -252,7 +232,7 @@ Visualization Manager:
       Buffer Length: 1
       Class: rviz_default_plugins/Path
       Color: 25; 255; 0
-      Enabled: true
+      Enabled: false
       Head Diameter: 0.30000001192092896
       Head Length: 0.20000000298023224
       Length: 0.30000001192092896
@@ -275,7 +255,7 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /full_path
-      Value: true
+      Value: false
     - Alpha: 1
       Buffer Length: 1
       Class: rviz_default_plugins/Path
@@ -356,7 +336,7 @@ Visualization Manager:
       Class: rviz_default_plugins/Map
       Color Scheme: map
       Draw Behind: false
-      Enabled: false
+      Enabled: true
       Name: Map
       Topic:
         Depth: 5
@@ -364,15 +344,15 @@ Visualization Manager:
         Filter size: 10
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /map
+        Value: /traversability_thresholded
       Update Topic:
         Depth: 5
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /map_updates
+        Value: /traversability_thresholded_updates
       Use Timestamp: false
-      Value: false
+      Value: true
     - Class: rviz_default_plugins/MarkerArray
       Enabled: true
       Name: local_global_spaces
@@ -431,7 +411,7 @@ Visualization Manager:
   Value: true
   Views:
     Current:
-      Angle: 0.009999999776482582
+      Angle: -3.145000696182251
       Class: rviz_default_plugins/TopDownOrtho
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
@@ -441,11 +421,11 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Scale: 123.2359390258789
+      Scale: -27.1323299407959
       Target Frame: map
       Value: TopDownOrtho (rviz_default_plugins)
-      X: -0.10395550727844238
-      Y: 0.27065595984458923
+      X: 76.3656997680664
+      Y: 1.5490790605545044
     Saved: ~
 Window Geometry:
   Displays:
