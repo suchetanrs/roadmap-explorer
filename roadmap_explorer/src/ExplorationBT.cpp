@@ -413,6 +413,92 @@ public:
   std::shared_ptr<nav2_util::LifecycleNode> node_;
 };
 
+
+
+class ChooseClosestFrontierBT : public BT::StatefulActionNode
+{
+public:
+  ChooseClosestFrontierBT(
+    const std::string & name,
+    const BT::NodeConfiguration & config,
+    std::shared_ptr<nav2_util::LifecycleNode> ros_node_ptr)
+  : BT::StatefulActionNode(name, config),
+    ros_node_ptr_(ros_node_ptr)
+  {
+    LOG_INFO("ChooseClosestFrontierBT Constructor");
+  }
+
+  // On starting: pick the closest achievable frontier
+  BT::NodeStatus onStart() override
+  {
+    LOG_FLOW("MODULE ChooseClosestFrontierBT onStart");
+
+    // 1) Grab the input list of frontiers
+    std::vector<FrontierPtr> frontiers;
+    if (!getInput<std::vector<FrontierPtr>>("frontier_costs_result", frontiers)) {
+      LOG_ERROR("ChooseClosestFrontierBT: failed to get frontier_costs_result");
+      config().blackboard->set<ExplorationErrorCode>(
+        "error_code_id", ExplorationErrorCode::NO_ACHIEVABLE_FRONTIERS_LEFT);
+      return BT::NodeStatus::FAILURE;
+    }
+
+    // 2) Filter only achievable ones and find minimum pathLengthM()
+    FrontierPtr best = nullptr;
+    double best_dist = std::numeric_limits<double>::infinity();
+    for (auto & f : frontiers) {
+      if (!f->isAchievable()) {
+        continue;
+      }
+      double d = f->getPathLengthInM();
+      LOG_DEBUG("Frontier at " <<
+                f->getGoalPoint().x << "," << f->getGoalPoint().y <<
+                " has pathLengthM=" << d);
+      if (d < best_dist) {
+        best_dist = d;
+        best = f;
+      }
+    }
+
+    if (!best) {
+      LOG_WARN("ChooseClosestFrontierBT: no achievable frontiers found");
+      config().blackboard->set<ExplorationErrorCode>(
+        "error_code_id", ExplorationErrorCode::NO_ACHIEVABLE_FRONTIERS_LEFT);
+      return BT::NodeStatus::FAILURE;
+    }
+
+    // 3) Write it into the blackboard
+    setOutput<FrontierPtr>("allocated_frontier", best);
+    LOG_INFO("ChooseClosestFrontierBT: selected closest frontier at " <<
+             best->getGoalPoint().x << ", " << best->getGoalPoint().y <<
+             " (distance " << best_dist << ")");
+
+    return BT::NodeStatus::SUCCESS;
+  }
+
+  // No ongoing behavior needed; immediately return SUCCESS
+  BT::NodeStatus onRunning() override
+  {
+    return BT::NodeStatus::SUCCESS;
+  }
+
+  void onHalted() override
+  {
+    // Nothing special to do when halted
+    LOG_DEBUG("ChooseClosestFrontierBT onHalted");
+  }
+
+  static BT::PortsList providedPorts()
+  {
+    return {
+      BT::InputPort<std::vector<FrontierPtr>>("frontier_costs_result"),
+      BT::OutputPort<FrontierPtr>("allocated_frontier")
+    };
+  }
+
+private:
+  std::shared_ptr<nav2_util::LifecycleNode> ros_node_ptr_;
+};
+
 class SendNav2Goal : public BT::StatefulActionNode
 {
 public:
@@ -654,6 +740,13 @@ bool RoadmapExplorationBT::makeBTNodes()
     };
   factory.registerBuilder<OptimizeFullPath>("OptimizeFullPath", builder_full_path_optimizer);
 
+  BT::NodeBuilder builder_choose_closest_frontier =
+    [&](const std::string & name, const BT::NodeConfiguration & config)
+    {
+      return std::make_unique<ChooseClosestFrontierBT>(name, config, bt_node_);
+    };
+  factory.registerBuilder<ChooseClosestFrontierBT>("ChooseClosestFrontier", builder_choose_closest_frontier);
+  
   BT::NodeBuilder builder_send_goal =
     [&](const std::string & name, const BT::NodeConfiguration & config)
     {

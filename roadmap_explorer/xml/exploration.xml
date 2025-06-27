@@ -1,7 +1,7 @@
 <root BTCPP_format="4">
     <BehaviorTree ID="MainTree">
         <PipelineSequence>
-            <RateController hz="1.0">
+            <RateController hz="10.0">
                 <Sequence name="root">
                     <UpdateBoundaryPolygon />
                     <SearchForFrontiers frontier_list="{the_frontier_list}" every_frontier="{the_every_frontier}" increment_search_distance_by="30.0"/>
@@ -13,8 +13,9 @@
                         <ProcessFrontierCosts force_grid_based_planning="false" frontier_list="{the_frontier_list}" every_frontier="{the_every_frontier}" frontier_costs_result="{the_frontier_costs}"/>
                         <ProcessFrontierCosts force_grid_based_planning="true" frontier_list="{the_frontier_list}" every_frontier="{the_every_frontier}" frontier_costs_result="{the_frontier_costs}"/>
                     </Fallback>
+                    <ChooseClosestFrontier frontier_costs_result="{the_frontier_costs}" allocated_frontier="{the_allocated_frontier}" />
                     <RecoveryNode number_of_retries="2">
-                        <OptimizeFullPath frontier_costs_result="{the_frontier_costs}" allocated_frontier="{the_allocated_frontier}" optimized_path="{optimized_path}"/>
+                        <OptimizeFullPath frontier_costs_result="{the_frontier_costs}" allocated_frontier="{the_allocated_frontier2}" optimized_path="{optimized_path}"/>
                         <ForceSuccess>
                             <CleanupRoadmap frontier_list="{the_frontier_list}" time_between_cleanup="0.0" correct_loop_closure="false"/>
                         </ForceSuccess>
