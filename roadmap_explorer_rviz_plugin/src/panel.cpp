@@ -35,7 +35,7 @@ RoadmapExplorerPanel::RoadmapExplorerPanel(QWidget * parent)
 
     mode_group_->setExclusive(true);
     // Check the “New session” one by default
-    rb_continue_terminated_->setChecked(true);
+    rb_new_session_->setChecked(true);
 
     // Add them to the layout (stacked vertically)
     layout->addWidget(rb_new_session_);
