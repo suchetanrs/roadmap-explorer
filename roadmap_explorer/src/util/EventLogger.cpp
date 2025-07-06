@@ -1,94 +1,104 @@
-#include <roadmap_explorer/util/EventLogger.hpp>
+#ifndef EVENT_LOGGER_HPP_
+#define EVENT_LOGGER_HPP_
 
-std::unique_ptr<EventLogger> EventLogger::EventLoggerPtr_ = nullptr;
-std::mutex EventLogger::instanceMutex_;
+#include <iostream>
+#include <unordered_map>
+#include <chrono>
+#include <string>
+#include <fstream>
+#include <thread>
+#include <mutex>
+#include <random>
+#include <ctime>
 
-EventLogger::EventLogger()
-: serialNumber(0)
+#include <iomanip>
+#include <sstream>
+#include <ctime>
+
+#include "roadmap_explorer/util/Logger.hpp"
+
+class EventLogger
 {
-  // Generate a unique filename by appending a timestamp and a random number
-  auto now = std::chrono::system_clock::now();
-  auto nowTime = std::chrono::system_clock::to_time_t(now);
-  auto nowMs = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
+public:
+  ~EventLogger();
 
-  std::ostringstream oss;
-  oss << "events_roadmap" << "_" << std::put_time(std::localtime(&nowTime), "%Y%m%d_%H%M%S") << "_" << nowMs.count() << ".csv";
-  csvFilename = oss.str();
-
-  // // Open the new CSV file and write the header
-  std::ofstream outFile(csvFilename, std::ios::out | std::ios::app);
-  if (!outFile)
+  static void createInstance()
   {
-      throw RoadmapExplorerException("Unable to open file: " + csvFilename);
-  }
-  planningCount = 0;
-  outFile << "SerialNumber,Event,Duration(seconds)\n";
-}
-
-EventLogger::~EventLogger()
-{
-  LOG_INFO("EventLogger::~EventLogger()");
-  // Close the CSV file if it was opened
-  std::ofstream outFile(csvFilename, std::ios::out | std::ios::app);
-  outFile.close();
-  startTimes.clear();
-}
-
-// Function to start an event
-void EventLogger::startEvent(const std::string & key)
-{
-  std::lock_guard<std::mutex> lock(mapMutex);
-  auto startTime = std::chrono::high_resolution_clock::now();
-  startTimes[key] = startTime;
-}
-
-// Function to end an event and log the total time taken
-void EventLogger::endEvent(const std::string & key, int eventLevel)
-{
-  auto endTime = std::chrono::high_resolution_clock::now();
-  std::lock_guard<std::mutex> lock(mapMutex);
-  if (startTimes.find(key) != startTimes.end()) {
-    auto startTime = startTimes[key];
-    std::chrono::duration<double> duration = endTime - startTime;
-    if (eventLevel == -1) {
-      LOG_ITERATION_TIME(key, duration.count());
-    } else if (eventLevel == 0) {
-      LOG_MODULE_TIME(key, duration.count());
-    } else if (eventLevel == 1) {
-      LOG_SUBMODULE_TIME(key, duration.count());
-    } else if (eventLevel == 2) {
-      LOG_EVENT_TIME(key, duration.count());
-    } else {
-      LOG_CRITICAL("eventLevel undefined for " << key);
+    LOG_INFO("Creating event logger instance");
+    std::lock_guard<std::mutex> lock(instanceMutex_);
+    if (EventLoggerPtr_ == nullptr) {
+      EventLoggerPtr_.reset(new EventLogger());
     }
-
-    // // Write to CSV file
-    if (eventLevel == 0)
+    else
     {
-      std::ofstream outFile(csvFilename, std::ios::out | std::ios::app);
-      outFile << ++serialNumber << "," << key << "," << duration.count() << "\n";
+      throw RoadmapExplorerException("EventLogger instance already exists!");
     }
-
-    startTimes.erase(key);
-  } else {
-    LOG_CRITICAL("Event " << key << " is not started");
   }
-}
 
-double EventLogger::getTimeSinceStart(const std::string & key)
+  static EventLogger & getInstance()
+  {
+    std::lock_guard<std::mutex> lock(instanceMutex_);
+    if (EventLoggerPtr_ == nullptr) {
+      throw RoadmapExplorerException("Cannot dereference a null EventLogger! :(");
+    }
+    return *EventLoggerPtr_;
+  }
+
+  static void destroyInstance()
+  {
+    LOG_INFO("EventLogger::destroyInstance()");
+    EventLoggerPtr_.reset();
+  }
+
+  void startEvent(const std::string & key);
+
+  /**
+   * eventLevel:
+   * 0 - MODULE LEVEL
+   * 1 - SUBMODULE_LEVEL
+   * 2 - EVENT LEVEL
+   */
+  void endEvent(const std::string & key, int eventLevel);
+
+  /**
+   * Returns in seconds
+   */
+  double getTimeSinceStart(const std::string & key);
+
+private:
+  // Delete copy constructor and assignment operator to prevent copying
+  EventLogger(const EventLogger &) = delete;
+  EventLogger & operator=(const EventLogger &) = delete;
+  EventLogger();
+
+  static std::unique_ptr<EventLogger> EventLoggerPtr_;
+  static std::mutex instanceMutex_;
+  std::unordered_map<std::string, std::chrono::high_resolution_clock::time_point> startTimes;
+  std::string csvFilename;
+  int serialNumber;
+  std::mutex mapMutex;
+};
+
+#define EventLoggerInstance (EventLogger::getInstance())
+
+class Profiler
 {
-  auto endTime = std::chrono::high_resolution_clock::now();
-  std::lock_guard<std::mutex> lock(mapMutex);
-  if (startTimes.find(key) != startTimes.end()) {
-    auto startTime = startTimes[key];
-    std::chrono::duration<double> duration = endTime - startTime;
-    return duration.count();
-
-    // // Write to CSV file
-    // std::ofstream outFile(csvFilename, std::ios::out | std::ios::app);
-    // outFile << ++serialNumber << "," << key << "," << duration.count() << "\n";
-  } else {
-    LOG_CRITICAL("Event " << key << " is not started");
+public:
+  Profiler(const std::string & functionName)
+  : functionName(functionName)
+  {
+    EventLoggerInstance.startEvent(functionName + "_profiler");
   }
-  return 0.0;
-}
+
+  ~Profiler()
+  {
+    EventLoggerInstance.endEvent(functionName + "_profiler", 2);
+  }
+
+private:
+  std::string functionName;
+  std::chrono::time_point<std::chrono::high_resolution_clock> start;
+};
+
+#define PROFILE_FUNCTION Profiler profiler_instance(__func__);
+#endif // COLOR_H
