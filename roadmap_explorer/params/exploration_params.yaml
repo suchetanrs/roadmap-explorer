@@ -1,7 +1,7 @@
 roadmap_explorer_node:
   ros__parameters:
     use_sim_time: False
-    localisation_only_mode: False # false if in slam mode (mapping is active and you want the exploration to run on that)
+    localisation_only_mode: True # false if in slam mode (mapping is active and you want the exploration to run on that)
     
     frontierSearch:
       min_frontier_cluster_size: 1.0
@@ -43,7 +43,7 @@ roadmap_explorer_node:
       bt_sleep_ms: 70
       exploration_boundary: [310.0, 260.0, 310.0, -120.0, -70.0, -120.0, -70.0, 260.0]
       abort_exploration_on_nav2_abort: false
-      localisation_only_mode: False
+      localisation_only_mode: true
       increment_search_distance_by: 35.0
     
     sensorSimulator:
@@ -60,7 +60,7 @@ roadmap_explorer_costmap:
   roadmap_explorer_costmap:
     ros__parameters:
       update_frequency: 5.0
-      publish_frequency: 0.1
+      publish_frequency: 5.0
       global_frame: map
       robot_base_frame: base_footprint
       use_sim_time: False
@@ -70,7 +70,7 @@ roadmap_explorer_costmap:
       plugins: ["static_layer"]
       static_layer:
         plugin: "nav2_costmap_2d::StaticLayer"
-        map_topic: "/traversability_thresholded"
+        map_topic: "/explored_map"
         map_subscribe_transient_local: False
         enabled: True
       always_send_full_costmap: True
