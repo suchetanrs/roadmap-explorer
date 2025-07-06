@@ -3,6 +3,7 @@
         <PipelineSequence>
             <RateController hz="1.0">
                 <Sequence name="root">
+                    <LogIterationBT />
                     <UpdateBoundaryPolygon />
                     <SearchForFrontiers frontier_list="{the_frontier_list}" every_frontier="{the_every_frontier}"/>
                     <ForceSuccess>

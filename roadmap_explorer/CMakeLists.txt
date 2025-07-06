@@ -81,6 +81,10 @@ include_directories(
   ${YAML_CPP_INCLUDE_DIRS}
 )
 
+add_library(roadmap_explorer_bt_plugins SHARED
+src/bt_plugins/core_plugins.cpp)
+ament_target_dependencies(roadmap_explorer_bt_plugins ${dependencies})
+
 #-------------------------------------------------------------------
 add_library(roadmap_exploration_bt SHARED
 src/planners/theta_star.cpp
@@ -101,7 +105,7 @@ src/ExplorationServer.cpp
 src/SensorSimulator.cpp
 )
 ament_target_dependencies(roadmap_exploration_bt ${dependencies})
-target_link_libraries(roadmap_exploration_bt ${PCL_LIBRARIES} ${YAML_CPP_LIBRARIES})
+target_link_libraries(roadmap_exploration_bt ${PCL_LIBRARIES} ${YAML_CPP_LIBRARIES} roadmap_explorer_bt_plugins)
 
 rclcpp_components_register_nodes(roadmap_exploration_bt "roadmap_exploration::ExplorationServer")
 
@@ -110,7 +114,7 @@ add_executable(roadmap_exploration_server
 src/main.cpp
 )
 ament_target_dependencies(roadmap_exploration_server ${dependencies})
-target_link_libraries(roadmap_exploration_server ${PCL_LIBRARIES} ${YAML_CPP_LIBRARIES} roadmap_exploration_bt)
+target_link_libraries(roadmap_exploration_server ${PCL_LIBRARIES} ${YAML_CPP_LIBRARIES} roadmap_exploration_bt roadmap_explorer_bt_plugins)
 
 # ------------------------------------------------------------------
 # add_executable(sensor_simulator src/SensorSimulator.cpp)
@@ -118,7 +122,7 @@ target_link_libraries(roadmap_exploration_server ${PCL_LIBRARIES} ${YAML_CPP_LIB
 
 
 
-install(TARGETS roadmap_exploration_bt
+install(TARGETS roadmap_exploration_bt roadmap_explorer_bt_plugins
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
@@ -137,6 +141,12 @@ DESTINATION share/${PROJECT_NAME}
 )
 
 ament_export_include_directories(include ${EIGEN3_INCLUDE_DIR})
-ament_export_libraries(roadmap_exploration_bt roadmap_exploration_server)
+ament_export_libraries(roadmap_exploration_bt roadmap_explorer_bt_plugins roadmap_exploration_server)
 ament_export_dependencies(rosidl_default_runtime ${dependencies})
+
+install(FILES core_plugins_description.xml
+        DESTINATION share/${PROJECT_NAME})
+
+pluginlib_export_plugin_description_file(roadmap_explorer core_plugins_description.xml)
+
 ament_package()
