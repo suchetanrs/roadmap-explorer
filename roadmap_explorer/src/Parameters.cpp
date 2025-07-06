@@ -75,6 +75,9 @@ void ParameterHandler::makeParametersROS(std::shared_ptr<nav2_util::LifecycleNod
   nav2_util::declare_parameter_if_not_declared(
     node, "costCalculator.planner_allow_unknown", rclcpp::ParameterValue(
       true));
+  nav2_util::declare_parameter_if_not_declared(
+    node, "costCalculator.max_planning_distance_roadmap", rclcpp::ParameterValue(
+      6.0));
 
   parameter_map_["costCalculator.max_camera_depth"] = node->get_parameter(
     "costCalculator.max_camera_depth").as_double();
@@ -88,6 +91,8 @@ void ParameterHandler::makeParametersROS(std::shared_ptr<nav2_util::LifecycleNod
     "costCalculator.closeness_rejection_threshold").as_double();
   parameter_map_["costCalculator.planner_allow_unknown"] = node->get_parameter(
     "costCalculator.planner_allow_unknown").as_bool();
+  parameter_map_["costCalculator.max_planning_distance_roadmap"] = node->get_parameter(
+    "costCalculator.max_planning_distance_roadmap").as_double();
 
   // --- costAssigner ---
   std::vector<std::string> default_cost_calculation_methods =
@@ -192,6 +197,9 @@ void ParameterHandler::makeParametersROS(std::shared_ptr<nav2_util::LifecycleNod
     node,
     "explorationBT.abort_exploration_on_nav2_abort", rclcpp::ParameterValue(
       true));
+  nav2_util::declare_parameter_if_not_declared(
+    node, "explorationBT.increment_search_distance_by", rclcpp::ParameterValue(
+      0.1));
 
   parameter_map_["explorationBT.bt_sleep_ms"] =
     node->get_parameter("explorationBT.bt_sleep_ms").as_int();
@@ -203,6 +211,8 @@ void ParameterHandler::makeParametersROS(std::shared_ptr<nav2_util::LifecycleNod
     node->get_parameter("explorationBT.exploration_boundary").as_double_array();
   parameter_map_["explorationBT.abort_exploration_on_nav2_abort"] =
     node->get_parameter("explorationBT.abort_exploration_on_nav2_abort").as_bool();
+  parameter_map_["explorationBT.increment_search_distance_by"] =
+    node->get_parameter("explorationBT.increment_search_distance_by").as_double();
 
   nav2_util::declare_parameter_if_not_declared(
     node, "sensorSimulator.input_map_topic", rclcpp::ParameterValue(
@@ -287,6 +297,8 @@ void ParameterHandler::makeParametersYAMLcpp()
     loaded_node["costCalculator"]["closeness_rejection_threshold"].as<double>();
   parameter_map_["costCalculator.planner_allow_unknown"] =
     loaded_node["costCalculator"]["planner_allow_unknown"].as<bool>();
+  parameter_map_["costCalculator.max_planning_distance_roadmap"] =
+    loaded_node["costCalculator"]["max_planning_distance_roadmap"].as<double>();
 
   parameter_map_["costAssigner.cost_calculation_methods"] =
     loaded_node["costAssigner"]["cost_calculation_methods"].as<std::vector<std::string>>();
@@ -326,6 +338,8 @@ void ParameterHandler::makeParametersYAMLcpp()
     loaded_node["explorationBT"]["exploration_boundary"].as<std::vector<double>>();
   parameter_map_["explorationBT.abort_exploration_on_nav2_abort"] =
     loaded_node["explorationBT"]["abort_exploration_on_nav2_abort"].as<bool>();
+  parameter_map_["explorationBT.increment_search_distance_by"] =
+    loaded_node["explorationBT"]["increment_search_distance_by"].as<double>();
 
   parameter_map_["sensorSimulator.input_map_topic"] =
     loaded_node["sensorSimulator"]["input_map_topic"].as<std::string>();

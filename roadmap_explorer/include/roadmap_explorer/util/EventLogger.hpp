@@ -65,6 +65,13 @@ public:
    */
   double getTimeSinceStart(const std::string & key);
 
+  void incrementPlanningCount()
+  {
+    planningCount++;
+    std::ofstream outFile(csvFilename, std::ios::out | std::ios::app);
+    outFile << ++serialNumber << "," << "planning_iteration" << "," << planningCount << "\n";
+  }
+
 private:
   // Delete copy constructor and assignment operator to prevent copying
   EventLogger(const EventLogger &) = delete;
@@ -77,6 +84,7 @@ private:
   std::string csvFilename;
   int serialNumber;
   std::mutex mapMutex;
+  int planningCount;
 };
 
 #define EventLoggerInstance (EventLogger::getInstance())

@@ -66,6 +66,7 @@ public:
   FrontierSearchResult searchFrom(geometry_msgs::msg::Point position, std::vector<FrontierPtr> & output_frontier_list);
 
   std::vector<std::vector<double>> getAllFrontiers();
+  double frontier_search_distance_;
 
 protected:
   std::vector<FrontierPtr> buildNewFrontier(
@@ -141,7 +142,6 @@ private:
   std::vector<std::vector<double>> every_frontier_list;
   int min_frontier_cluster_size_;
   int max_frontier_cluster_size_;
-  double frontier_search_distance_;
   double original_search_distance_;
   unsigned char lethal_threshold_;
 };

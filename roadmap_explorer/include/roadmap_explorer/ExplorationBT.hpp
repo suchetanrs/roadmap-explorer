@@ -48,7 +48,8 @@ enum class ExplorationErrorCode
   FULL_PATH_OPTIMIZATION_FAILURE,
   REFINED_PATH_COMPUTATION_FAILURE,
   UNHANDLED_ERROR,
-  NAV2_GOAL_ABORT
+  NAV2_GOAL_ABORT,
+  NO_ERROR
 };
 
 using ExploreActionResult = roadmap_explorer_msgs::action::Explore_Result;
@@ -72,6 +73,10 @@ public:
   uint16_t tickOnceWithSleep();
 
   void halt();
+
+  bool incrementFrontierSearchDistance();
+
+  bool resetFrontierSearchDistance();
 
 private:
   std::shared_ptr<nav2_util::LifecycleNode> bt_node_;

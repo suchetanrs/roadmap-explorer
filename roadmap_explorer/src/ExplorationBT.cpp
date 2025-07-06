@@ -73,9 +73,11 @@ public:
     config().blackboard->set<geometry_msgs::msg::PoseStamped>("latest_robot_pose", robotP);
     LOG_INFO("Using robot pose: " << robotP.pose.position.x << ", " << robotP.pose.position.y);
     std::vector<FrontierPtr> frontier_list;
+    LOG_WARN("Current search radius: " << frontierSearchPtr_->frontier_search_distance_);
     auto searchResult = frontierSearchPtr_->searchFrom(robotP.pose.position, frontier_list);
     if (searchResult != FrontierSearchResult::SUCCESSFUL_SEARCH)
     {
+      LOG_INFO("No frontiers in current search radius.")
       explore_costmap_ros_->getCostmap()->getMutex()->unlock();
       config().blackboard->set<ExplorationErrorCode>(
         "error_code_id",
@@ -84,21 +86,10 @@ public:
     }
     auto every_frontier = frontierSearchPtr_->getAllFrontiers();
     if (frontier_list.size() == 0) {
-      double increment_value = 0.1;
-      getInput("increment_search_distance_by", increment_value);
-      auto result_distance = frontierSearchPtr_->incrementSearchDistance(increment_value);
-      if (!result_distance) {
-        LOG_ERROR("Maximum frontier search distance exceeded. Returning BT Failure.");
-        EventLoggerInstance.endEvent("SearchForFrontiers", 0);
-        explore_costmap_ros_->getCostmap()->getMutex()->unlock();
-        config().blackboard->set<ExplorationErrorCode>(
-          "error_code_id",
-          ExplorationErrorCode::MAX_FRONTIER_SEARCH_RADIUS_EXCEEDED);
-        return BT::NodeStatus::FAILURE;
-      }
-      LOG_WARN("No frontiers found in search. Incrementing search radius and returning BT Failure.");
-      EventLoggerInstance.endEvent("SearchForFrontiers", 0);
+      LOG_INFO("No frontiers found in search. Incrementing search radius and returning BT Failure.");
+      // EventLoggerInstance.endEvent("SearchForFrontiers", 0);
       explore_costmap_ros_->getCostmap()->getMutex()->unlock();
+      LOG_INFO("Search was true but no frontiers found.");
       config().blackboard->set<ExplorationErrorCode>(
         "error_code_id",
         ExplorationErrorCode::NO_FRONTIERS_IN_CURRENT_RADIUS);
@@ -112,7 +103,6 @@ public:
       frontier_list, every_frontier,
       explore_costmap_ros_->getLayeredCostmap()->getGlobalFrameID());
     LOG_DEBUG("Frontiers visualized");
-    frontierSearchPtr_->resetSearchDistance();
     EventLoggerInstance.endEvent("SearchForFrontiers", 0);
     explore_costmap_ros_->getCostmap()->getMutex()->unlock();
     return BT::NodeStatus::SUCCESS;
@@ -161,7 +151,7 @@ public:
     bool correct_loop_closure_;
     getInput("correct_loop_closure", correct_loop_closure_);
     LOG_WARN("Reconstructing roadmap and clearing plan cache!");
-    frontierRoadmapInstance.reConstructGraph(true, correct_loop_closure_);
+    frontierRoadmapInstance.reConstructGraph(false, correct_loop_closure_);
     EventLoggerInstance.endEvent("roadmapReconstructionFull", 1);
     full_path_optimizer_->clearPlanCache();
     // TODO: make sure to add a thing such that the entire roadmap within a certain distance (max frontier search distance) is reconstructed periodically
@@ -196,6 +186,7 @@ public:
 
   BT::NodeStatus tick() override
   {
+    EventLoggerInstance.incrementPlanningCount();
     EventLoggerInstance.startEvent("UpdateRoadmapBT");
     LOG_FLOW("MODULE UpdateRoadmapBT");
     std::vector<FrontierPtr> frontier_list;
@@ -313,6 +304,7 @@ public:
       }
     }
     if (!atleast_one_achievable_frontier) {
+      LOG_INFO("No achievable frontiers left. Exiting.");
       config().blackboard->set<ExplorationErrorCode>(
         "error_code_id", ExplorationErrorCode::NO_ACHIEVABLE_FRONTIERS_LEFT);
       return BT::NodeStatus::FAILURE;
@@ -373,8 +365,7 @@ public:
     if (return_state) {
       setOutput<FrontierPtr>("allocated_frontier", allocatedFrontier);
     } else {
-      double increment_value = 0.1;
-      getInput("increment_search_distance_by", increment_value);
+      LOG_INFO("Full path optimization failed.");
       EventLoggerInstance.endEvent("OptimizeFullPath", 0);
       config().blackboard->set<ExplorationErrorCode>(
         "error_code_id", ExplorationErrorCode::FULL_PATH_OPTIMIZATION_FAILURE);
@@ -436,11 +427,17 @@ public:
       LOG_ERROR(
         "Nav2Interface cannot send new goal, goal is already active. Status:" <<
           nav2_interface_->getGoalStatus());
-      config().blackboard->set<ExplorationErrorCode>(
-        "error_code_id", ExplorationErrorCode::UNHANDLED_ERROR);
-      return BT::NodeStatus::FAILURE;
+      // dont return failure if it's ongoing. It's probably on going from the previous iteration.
+      if (nav2_interface_->getGoalStatus() != NavGoalStatus::ONGOING) {
+        config().blackboard->set<ExplorationErrorCode>(
+          "error_code_id", ExplorationErrorCode::UNHANDLED_ERROR);
+        return BT::NodeStatus::FAILURE;
+      }
     }
-    nav2_interface_->sendGoal(goalPose);
+    else
+    {
+      nav2_interface_->sendGoal(goalPose);
+    }
     return BT::NodeStatus::RUNNING;
   }
 
@@ -483,12 +480,6 @@ public:
   void onHalted()
   {
     LOG_WARN("SendNav2Goal onHalted");
-    nav2_interface_->cancelAllGoals();
-    while (!nav2_interface_->isGoalTerminated() && rclcpp::ok()) {
-      rclcpp::sleep_for(std::chrono::milliseconds(100));
-      LOG_INFO("Waiting for Nav2 goal to be cancelled...");
-    }
-    LOG_WARN("Goal is terminated");
     return;
   }
 
@@ -552,6 +543,7 @@ RoadmapExplorationBT::RoadmapExplorationBT(std::shared_ptr<nav2_util::LifecycleN
   explore_costmap_ros_->activate();
 
   blackboard = BT::Blackboard::create();
+  blackboard->set<ExplorationErrorCode>("error_code_id", ExplorationErrorCode::NO_ERROR);
 
   EventLogger::createInstance();
   ParameterHandler::createInstance();
@@ -575,6 +567,25 @@ RoadmapExplorationBT::RoadmapExplorationBT(std::shared_ptr<nav2_util::LifecycleN
   }
 
   LOG_INFO("RoadmapExplorationBT::RoadmapExplorationBT()");
+}
+
+bool RoadmapExplorationBT::incrementFrontierSearchDistance()
+{
+  double increment_value = parameterInstance.getValue<double>("explorationBT.increment_search_distance_by");
+  LOG_WARN("Incrementing frontier search distance by " << increment_value);
+  auto result_distance = frontierSearchPtr_->incrementSearchDistance(increment_value);
+  if (!result_distance) {
+    LOG_ERROR("Maximum frontier search distance exceeded. Returning false.");
+    return false;
+  }
+  return true;
+}
+
+bool RoadmapExplorationBT::resetFrontierSearchDistance()
+{
+  LOG_DEBUG("Resetting frontier search distance to default value");
+  frontierSearchPtr_->resetSearchDistance();
+  return true;
 }
 
 RoadmapExplorationBT::~RoadmapExplorationBT()
@@ -747,11 +758,11 @@ uint16_t RoadmapExplorationBT::tickOnceWithSleep()
     {
       LOG_ERROR(
         "Behavior Tree tick returned FAILURE due to no frontiers in current search radius.");
+      incrementFrontierSearchDistance();
     } else if (blackboard->get<ExplorationErrorCode>("error_code_id") ==
       ExplorationErrorCode::MAX_FRONTIER_SEARCH_RADIUS_EXCEEDED)
     {
       LOG_ERROR("Behavior Tree tick returned FAILURE due to max frontier search radius exceeded.");
-      return_value = ExploreActionResult::NO_MORE_REACHABLE_FRONTIERS;
     } else if (blackboard->get<ExplorationErrorCode>("error_code_id") ==
       ExplorationErrorCode::COST_COMPUTATION_FAILURE)
     {
@@ -760,7 +771,7 @@ uint16_t RoadmapExplorationBT::tickOnceWithSleep()
       ExplorationErrorCode::NO_ACHIEVABLE_FRONTIERS_LEFT)
     {
       LOG_ERROR("Behavior Tree tick returned FAILURE due to no achievable frontiers left.");
-      return_value = ExploreActionResult::NO_MORE_REACHABLE_FRONTIERS;
+      incrementFrontierSearchDistance();
     } else if (blackboard->get<ExplorationErrorCode>("error_code_id") ==
       ExplorationErrorCode::FULL_PATH_OPTIMIZATION_FAILURE)
     {
@@ -788,6 +799,10 @@ uint16_t RoadmapExplorationBT::tickOnceWithSleep()
       throw RoadmapExplorerException("Behavior Tree tick returned FAILURE with unknown error code.");
     }
   }
+  else
+  {
+    resetFrontierSearchDistance();
+  }
   LOG_DEBUG("TICKED ONCE");
 
   return return_value;
@@ -802,6 +817,12 @@ void RoadmapExplorationBT::halt()
     sensor_simulator_->stopMapping();
   }
   explore_costmap_ros_->pause();
+  nav2_interface_->cancelAllGoals();
+  while (!nav2_interface_->isGoalTerminated() && rclcpp::ok()) {
+    rclcpp::sleep_for(std::chrono::milliseconds(100));
+    LOG_INFO("Waiting for Nav2 goal to be cancelled...");
+  }
+  LOG_WARN("Goal is terminated");
   // if(save_exploration_data)
   // {
   //   if (sensor_simulator_ == nullptr)

@@ -210,6 +210,15 @@ void FrontierCostCalculator::setPlanForFrontier(
     goal_point_w->setPathHeading(std::numeric_limits<double>::max());
     return;
   }
+  
+  setPlanForFrontierEuclidean(start_pose_w, goal_point_w);
+  if(goal_point_w->getPathLengthInM() > parameterInstance.getValue<double>("costCalculator.max_planning_distance_roadmap"))
+  {
+    goal_point_w->setAchievability(true);
+    goal_point_w->setPathLength(goal_point_w->getPathLength() * 5.0);
+    goal_point_w->setPathLengthInM(goal_point_w->getPathLengthInM() * 5.0);
+    return;
+  }
   auto start_point_w = start_pose_w.position;
 
   nav_msgs::msg::Path plan;
@@ -358,6 +367,14 @@ void FrontierCostCalculator::setPlanForFrontierRoadmap(
     goal_point_w->setPathLength(std::numeric_limits<double>::max());
     goal_point_w->setPathLengthInM(std::numeric_limits<double>::max());
     goal_point_w->setPathHeading(std::numeric_limits<double>::max());
+    return;
+  }
+  setPlanForFrontierEuclidean(start_pose_w, goal_point_w);
+  if(goal_point_w->getPathLengthInM() > parameterInstance.getValue<double>("costCalculator.max_planning_distance_roadmap"))
+  {
+    goal_point_w->setAchievability(true);
+    goal_point_w->setPathLength(goal_point_w->getPathLength() * 5.0);
+    goal_point_w->setPathLengthInM(goal_point_w->getPathLengthInM() * 5.0);
     return;
   }
   auto path_length = frontierRoadmapInstance.getPlan(
