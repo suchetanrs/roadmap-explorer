@@ -35,6 +35,7 @@
 #include "roadmap_explorer/SensorSimulator.hpp"
 
 #include "roadmap_explorer_msgs/action/explore.hpp"
+#include "roadmap_explorer/bt_plugins/interface_pluginlib.hpp"
 
 namespace roadmap_explorer
 {

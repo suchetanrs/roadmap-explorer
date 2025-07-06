@@ -606,6 +606,19 @@ bool RoadmapExplorationBT::makeBTNodes()
   EventLoggerInstance.startEvent("clearRoadmap");
   EventLoggerInstance.startEvent("replanTimeout");
 
+  pluginlib::ClassLoader<roadmap_explorer::BTPlugin> loader(
+  "roadmap_explorer",           // your package name
+  "roadmap_explorer::BTPlugin"  // the interface
+  );
+
+  LOG_WARN("Loading BT plugins (size): " << loader.getDeclaredClasses().size());
+
+  for (auto & lookup_name : loader.getDeclaredClasses()) {
+    auto plugin = loader.createSharedInstance(lookup_name);
+    plugin->registerNodes(factory);
+    LOG_WARN("Loaded BT plugin: " << lookup_name.c_str());
+  }
+
   // ------------------- Nodes ----------------------------------------------
 
   BT::NodeBuilder builder_update_boundary_polygon =
