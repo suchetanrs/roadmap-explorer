@@ -4,7 +4,7 @@
             <RateController hz="1.0">
                 <Sequence name="root">
                     <UpdateBoundaryPolygon />
-                    <SearchForFrontiers frontier_list="{the_frontier_list}" every_frontier="{the_every_frontier}" increment_search_distance_by="30.0"/>
+                    <SearchForFrontiers frontier_list="{the_frontier_list}" every_frontier="{the_every_frontier}"/>
                     <ForceSuccess>
                         <CleanupRoadmap frontier_list="{the_frontier_list}" time_between_cleanup="7.0" correct_loop_closure="false"/>
                     </ForceSuccess>

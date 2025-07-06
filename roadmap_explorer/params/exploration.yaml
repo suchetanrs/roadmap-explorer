@@ -38,6 +38,7 @@ explorationBT:
   abort_exploration_on_nav2_abort: false
   exploration_boundary: [310.0, 260.0, 310.0, -120.0, -70.0, -120.0, -70.0, 260.0]
   localisation_only_mode: false
+  increment_search_distance_by: 35.0
 
 sensorSimulator:
   input_map_topic: "/map"

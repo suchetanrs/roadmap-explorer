@@ -197,6 +197,9 @@ void ParameterHandler::makeParametersROS(std::shared_ptr<nav2_util::LifecycleNod
     node,
     "explorationBT.abort_exploration_on_nav2_abort", rclcpp::ParameterValue(
       true));
+  nav2_util::declare_parameter_if_not_declared(
+    node, "explorationBT.increment_search_distance_by", rclcpp::ParameterValue(
+      0.1));
 
   parameter_map_["explorationBT.bt_sleep_ms"] =
     node->get_parameter("explorationBT.bt_sleep_ms").as_int();
@@ -208,6 +211,8 @@ void ParameterHandler::makeParametersROS(std::shared_ptr<nav2_util::LifecycleNod
     node->get_parameter("explorationBT.exploration_boundary").as_double_array();
   parameter_map_["explorationBT.abort_exploration_on_nav2_abort"] =
     node->get_parameter("explorationBT.abort_exploration_on_nav2_abort").as_bool();
+  parameter_map_["explorationBT.increment_search_distance_by"] =
+    node->get_parameter("explorationBT.increment_search_distance_by").as_double();
 
   nav2_util::declare_parameter_if_not_declared(
     node, "sensorSimulator.input_map_topic", rclcpp::ParameterValue(
@@ -333,6 +338,8 @@ void ParameterHandler::makeParametersYAMLcpp()
     loaded_node["explorationBT"]["exploration_boundary"].as<std::vector<double>>();
   parameter_map_["explorationBT.abort_exploration_on_nav2_abort"] =
     loaded_node["explorationBT"]["abort_exploration_on_nav2_abort"].as<bool>();
+  parameter_map_["explorationBT.increment_search_distance_by"] =
+    loaded_node["explorationBT"]["increment_search_distance_by"].as<double>();
 
   parameter_map_["sensorSimulator.input_map_topic"] =
     loaded_node["sensorSimulator"]["input_map_topic"].as<std::string>();

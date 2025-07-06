@@ -44,6 +44,7 @@ roadmap_explorer_node:
       exploration_boundary: [310.0, 260.0, 310.0, -120.0, -70.0, -120.0, -70.0, 260.0]
       abort_exploration_on_nav2_abort: false
       localisation_only_mode: False
+      increment_search_distance_by: 35.0
     
     sensorSimulator:
       input_map_topic: "/map"

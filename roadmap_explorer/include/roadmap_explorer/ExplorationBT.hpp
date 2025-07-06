@@ -74,6 +74,10 @@ public:
 
   void halt();
 
+  bool incrementFrontierSearchDistance();
+
+  bool resetFrontierSearchDistance();
+
 private:
   std::shared_ptr<nav2_util::LifecycleNode> bt_node_;
 
