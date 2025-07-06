@@ -81,11 +81,6 @@ public:
       config().blackboard->set<ExplorationErrorCode>(
         "error_code_id",
         ExplorationErrorCode::NO_FRONTIERS_IN_CURRENT_RADIUS);
-      return BT::NodeStatus::FAILURE;
-    }
-    auto every_frontier = frontierSearchPtr_->getAllFrontiers();
-    if (config().blackboard->get<ExplorationErrorCode>("error_code_id") ==
-      ExplorationErrorCode::NO_ACHIEVABLE_FRONTIERS_LEFT || frontier_list.size() == 0) {
       double increment_value = 0.1;
       getInput("increment_search_distance_by", increment_value);
       auto result_distance = frontierSearchPtr_->incrementSearchDistance(increment_value);
@@ -98,6 +93,10 @@ public:
           ExplorationErrorCode::MAX_FRONTIER_SEARCH_RADIUS_EXCEEDED);
         return BT::NodeStatus::FAILURE;
       }
+      return BT::NodeStatus::FAILURE;
+    }
+    auto every_frontier = frontierSearchPtr_->getAllFrontiers();
+    if (frontier_list.size() == 0) {
       LOG_WARN("No frontiers found in search. Incrementing search radius and returning BT Failure.");
       // EventLoggerInstance.endEvent("SearchForFrontiers", 0);
       explore_costmap_ros_->getCostmap()->getMutex()->unlock();
@@ -316,7 +315,7 @@ public:
         break;
       }
     }
-    if (!atleast_one_achievable_frontier) {
+    if (!atleast_one_achievable_frontier && frontierCostsResultPtr->frontier_list.size() > 0) {
       config().blackboard->set<ExplorationErrorCode>(
         "error_code_id", ExplorationErrorCode::NO_ACHIEVABLE_FRONTIERS_LEFT);
       return BT::NodeStatus::FAILURE;
@@ -765,7 +764,7 @@ uint16_t RoadmapExplorationBT::tickOnceWithSleep()
       ExplorationErrorCode::NO_ACHIEVABLE_FRONTIERS_LEFT)
     {
       LOG_ERROR("Behavior Tree tick returned FAILURE due to no achievable frontiers left.");
-      // return_value = ExploreActionResult::NO_MORE_REACHABLE_FRONTIERS;
+      return_value = ExploreActionResult::NO_MORE_REACHABLE_FRONTIERS;
     } else if (blackboard->get<ExplorationErrorCode>("error_code_id") ==
       ExplorationErrorCode::FULL_PATH_OPTIMIZATION_FAILURE)
     {
