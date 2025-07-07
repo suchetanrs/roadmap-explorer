@@ -492,6 +492,33 @@ public:
   std::shared_ptr<nav2_util::LifecycleNode> ros_node_ptr_;
 };
 
+class CancelAllNav2Goals : public BT::SyncActionNode
+{
+public:
+  CancelAllNav2Goals(
+    const std::string & name, const BT::NodeConfiguration & config, std::shared_ptr<Nav2Interface<nav2_msgs::action::NavigateToPose>> nav2_interface)
+  : BT::SyncActionNode(name, config)
+  {
+    nav2_interface_ = nav2_interface;
+    LOG_INFO("CancelAllNav2Goals Constructor");
+  }
+
+  BT::NodeStatus tick() override
+  {
+    EventLoggerInstance.startEvent("CancelAllNav2Goals");
+    LOG_FLOW("MODULE CancelAllNav2Goals");
+    nav2_interface_->cancelAllGoals();
+    while (!nav2_interface_->isGoalTerminated() && rclcpp::ok()) {
+      rclcpp::sleep_for(std::chrono::milliseconds(100));
+      LOG_INFO("Waiting for Nav2 goal to be cancelled...");
+    }
+    LOG_WARN("Goal is terminated");
+    return BT::NodeStatus::SUCCESS;
+  }
+
+  std::shared_ptr<Nav2Interface<nav2_msgs::action::NavigateToPose>> nav2_interface_;
+};
+
 class BlacklistGoal : public BT::SyncActionNode
 {
 public:
@@ -615,7 +642,7 @@ bool RoadmapExplorationBT::makeBTNodes()
 
   for (auto & lookup_name : loader.getDeclaredClasses()) {
     auto plugin = loader.createSharedInstance(lookup_name);
-    plugin->registerNodes(factory);
+    plugin->registerNodes(factory, bt_node_, explore_costmap_ros_);
     LOG_WARN("Loaded BT plugin: " << lookup_name.c_str());
   }
 
@@ -679,6 +706,13 @@ bool RoadmapExplorationBT::makeBTNodes()
       return std::make_unique<SendNav2Goal>(name, config, nav2_interface_, bt_node_);
     };
   factory.registerBuilder<SendNav2Goal>("SendNav2Goal", builder_send_goal);
+
+  BT::NodeBuilder builder_cancel_all_goals =
+    [&](const std::string & name, const BT::NodeConfiguration & config)
+    {
+      return std::make_unique<CancelAllNav2Goals>(name, config, nav2_interface_);
+    };
+  factory.registerBuilder<CancelAllNav2Goals>("CancelAllNav2Goals", builder_cancel_all_goals);
 
   BT::NodeBuilder builder_blacklist_goal =
     [&](const std::string & name, const BT::NodeConfiguration & config)
@@ -808,6 +842,10 @@ uint16_t RoadmapExplorationBT::tickOnceWithSleep()
       } else {
         LOG_WARN("Continuing exploration despite Nav2 goal abort. The frontier was blacklisted.");
       }
+    } else if (blackboard->get<ExplorationErrorCode>("error_code_id") ==
+      ExplorationErrorCode::NO_ERROR)
+    {
+      LOG_WARN("Failure without error. Continuing.") 
     } else {
       throw RoadmapExplorerException("Behavior Tree tick returned FAILURE with unknown error code.");
     }

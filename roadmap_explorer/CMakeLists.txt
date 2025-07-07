@@ -141,7 +141,7 @@ DESTINATION share/${PROJECT_NAME}
 )
 
 ament_export_include_directories(include ${EIGEN3_INCLUDE_DIR})
-ament_export_libraries(roadmap_exploration_bt roadmap_explorer_bt_plugins roadmap_exploration_server)
+ament_export_libraries(roadmap_exploration_bt roadmap_explorer_bt_plugins)
 ament_export_dependencies(rosidl_default_runtime ${dependencies})
 
 install(FILES core_plugins_description.xml

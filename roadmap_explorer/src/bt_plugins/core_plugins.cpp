@@ -29,8 +29,10 @@ namespace roadmap_explorer
     {
     }
 
-    void LogIteration::registerNodes(BT::BehaviorTreeFactory &factory)
+    void LogIteration::registerNodes(BT::BehaviorTreeFactory &factory, std::shared_ptr<nav2_util::LifecycleNode> node, std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros)
     {
+        (void)explore_costmap_ros;
+        (void)node;
         BT::NodeBuilder builder_log_iteration =
             [&](const std::string &name, const BT::NodeConfiguration &config)
         {

@@ -28,10 +28,19 @@ def generate_launch_description():
     exploration_dir = os.path.join(
         get_package_share_directory('roadmap_explorer'))
 
-    params_file = os.path.join(
-        exploration_dir, 'params', 'exploration_params.yaml')
-    rviz_file = os.path.join(
-        exploration_dir, 'rviz', 'exploration.rviz')
+    rviz_file = LaunchConfiguration('rviz_file')
+    declare_rviz_file_cmd = DeclareLaunchArgument(
+        'rviz_file',
+        default_value=os.path.join(
+        exploration_dir, 'rviz', 'exploration.rviz'),
+        description='Full path to the rviz file to use')
+    
+    params_file = LaunchConfiguration('params_file')
+    declare_params_file_cmd = DeclareLaunchArgument(
+        'params_file',
+        default_value=os.path.join(
+        exploration_dir, 'params', 'exploration_params.yaml'),
+        description='Full path to the ROS2 parameters file to use for all launched nodes')
     
     use_sim_time = LaunchConfiguration('use_sim_time')
     declare_use_sim_time_cmd = DeclareLaunchArgument(
@@ -67,6 +76,8 @@ def generate_launch_description():
 
     return launch.LaunchDescription([
         declare_use_sim_time_cmd,
+        declare_params_file_cmd,
+        declare_rviz_file_cmd,
         roadmap_explorer_node,
         lifecycle_manager,
         rviz_launch

@@ -64,6 +64,13 @@ public:
     parameterHandlerPtr_.reset();
   }
 
+  template<typename T>
+  void setValue(const std::string & parameterKey, const T & value)
+  {
+    std::lock_guard<std::recursive_mutex> lock(instanceMutex_);
+    parameter_map_[parameterKey] = value;
+  }
+
 private:
   void makeParametersROS(std::shared_ptr<nav2_util::LifecycleNode> node);
 
@@ -73,13 +80,6 @@ private:
 
   rcl_interfaces::msg::SetParametersResult  dynamicReconfigureCallback(
     const std::vector<rclcpp::Parameter> & parameters);
-
-  template<typename T>
-  void setValue(const std::string & parameterKey, const T & value)
-  {
-    std::lock_guard<std::recursive_mutex> lock(instanceMutex_);
-    parameter_map_[parameterKey] = value;
-  }
 
   ParameterHandler(const ParameterHandler &) = delete;
   ParameterHandler & operator=(const ParameterHandler &) = delete;

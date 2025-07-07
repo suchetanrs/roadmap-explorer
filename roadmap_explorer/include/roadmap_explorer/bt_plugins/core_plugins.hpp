@@ -14,6 +14,6 @@ namespace roadmap_explorer
 
         ~LogIteration();
 
-        void registerNodes(BT::BehaviorTreeFactory & factory) override;
+        void registerNodes(BT::BehaviorTreeFactory & factory, std::shared_ptr<nav2_util::LifecycleNode> node, std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros) override;
     };
 };
