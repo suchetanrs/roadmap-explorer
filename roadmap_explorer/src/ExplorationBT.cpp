@@ -562,6 +562,9 @@ RoadmapExplorationBT::RoadmapExplorationBT(std::shared_ptr<nav2_util::LifecycleN
    #error Unsupported ROS DISTRO
 #endif
 
+  tf_buffer_ = std::make_shared<tf2_ros::Buffer>(bt_node_->get_clock());
+  tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+
     // Launch a thread to run the costmap node
   explore_costmap_thread_ = std::make_unique<nav2_util::NodeThread>(explore_costmap_ros_);
   LOG_INFO("Created exploration costmap instance");
@@ -642,7 +645,7 @@ bool RoadmapExplorationBT::makeBTNodes()
 
   for (auto & lookup_name : loader.getDeclaredClasses()) {
     auto plugin = loader.createSharedInstance(lookup_name);
-    plugin->registerNodes(factory, bt_node_, explore_costmap_ros_);
+    plugin->registerNodes(factory, bt_node_, explore_costmap_ros_, tf_buffer_);
     LOG_WARN("Loaded BT plugin: " << lookup_name.c_str());
   }
 

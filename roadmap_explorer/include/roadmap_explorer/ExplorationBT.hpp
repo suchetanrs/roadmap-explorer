@@ -68,6 +68,8 @@ public:
 
 private:
   std::shared_ptr<nav2_util::LifecycleNode> bt_node_;
+  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
+  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
 
   std::shared_ptr<Nav2Interface<nav2_msgs::action::NavigateToPose>> nav2_interface_;
 

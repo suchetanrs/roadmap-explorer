@@ -34,7 +34,7 @@ class BTPlugin
   public:
   virtual ~BTPlugin() = default;
 
-  virtual void registerNodes(BT::BehaviorTreeFactory & factory, std::shared_ptr<nav2_util::LifecycleNode> node, std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros) = 0;
+  virtual void registerNodes(BT::BehaviorTreeFactory & factory, std::shared_ptr<nav2_util::LifecycleNode> node, std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros, std::shared_ptr<tf2_ros::Buffer> tf_buffer) = 0;
 };
 
 }  // namespace roadmap_explorer
