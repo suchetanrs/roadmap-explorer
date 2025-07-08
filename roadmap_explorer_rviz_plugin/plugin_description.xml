@@ -1,6 +1,6 @@
 <library path="roadmap_explorer_rviz_plugin">
-  <class name="roadmap_explorer/RoadmapExplorerPanel"
-         type="roadmap_explorer::RoadmapExplorerPanel"
+  <class name="roadmap_explorer/ExplorationPanel"
+         type="roadmap_explorer::ExplorationPanel"
          base_class_type="rviz_common::Panel">
     <description>
       A panel widget allowing exploration control.

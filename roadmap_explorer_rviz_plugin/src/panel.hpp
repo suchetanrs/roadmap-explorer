@@ -37,13 +37,13 @@ enum class ButtonSetting
   IN_PROCESS = 2
 };
 
-class RoadmapExplorerPanel : public rviz_common::Panel
+class ExplorationPanel : public rviz_common::Panel
 {
   Q_OBJECT
 
 public:
-  explicit RoadmapExplorerPanel(QWidget * parent = nullptr);
-  ~RoadmapExplorerPanel() override = default;
+  explicit ExplorationPanel(QWidget * parent = nullptr);
+  ~ExplorationPanel() override = default;
 
 private Q_SLOTS:
   void onStartClicked();

@@ -6,7 +6,7 @@ using namespace std::chrono_literals;
 namespace roadmap_explorer
 {
 
-RoadmapExplorerPanel::RoadmapExplorerPanel(QWidget * parent)
+ExplorationPanel::ExplorationPanel(QWidget * parent)
 : rviz_common::Panel(parent),
   rb_new_session_(new QRadioButton("New exploration session", this)),
   rb_continue_terminated_(new QRadioButton("Continue from previous session", this)),
@@ -73,9 +73,9 @@ RoadmapExplorerPanel::RoadmapExplorerPanel(QWidget * parent)
   }
 
   layout->addWidget(start_button_);
-  connect(start_button_, &QPushButton::clicked, this, &RoadmapExplorerPanel::onStartClicked);
+  connect(start_button_, &QPushButton::clicked, this, &ExplorationPanel::onStartClicked);
   layout->addWidget(stop_button_);
-  connect(stop_button_, &QPushButton::clicked, this, &RoadmapExplorerPanel::onStopClicked);
+  connect(stop_button_, &QPushButton::clicked, this, &ExplorationPanel::onStopClicked);
 
   auto * separator = new QFrame(this);
   separator->setFrameShape(QFrame::HLine);
@@ -103,7 +103,7 @@ RoadmapExplorerPanel::RoadmapExplorerPanel(QWidget * parent)
 
     connect(
       save_button_, &QPushButton::clicked,
-      this, &RoadmapExplorerPanel::onSaveClicked);
+      this, &ExplorationPanel::onSaveClicked);
   }
 
   {
@@ -123,11 +123,11 @@ RoadmapExplorerPanel::RoadmapExplorerPanel(QWidget * parent)
   panel_active_ = false;
   ros_timer_ = new QTimer(this);
   ros_timer_->setInterval(100); // 100 ms
-  connect(ros_timer_, &QTimer::timeout, this, &RoadmapExplorerPanel::spinnerOnGUI);
+  connect(ros_timer_, &QTimer::timeout, this, &ExplorationPanel::spinnerOnGUI);
   ros_timer_->start();
 }
 
-void RoadmapExplorerPanel::spinnerOnGUI()
+void ExplorationPanel::spinnerOnGUI()
 {
   rclcpp::spin_some(node_);
   if (!action_client_->wait_for_action_server(0ms)) {
@@ -154,7 +154,7 @@ void RoadmapExplorerPanel::spinnerOnGUI()
 }
 
 // ───── Qt slots ──────────────────────────────────────────────────────────────
-void RoadmapExplorerPanel::onStartClicked()
+void ExplorationPanel::onStartClicked()
 {
   if (!action_client_->wait_for_action_server(0ms)) {
     setLog("Action server unavailable: cannot send goal", true);
@@ -163,12 +163,12 @@ void RoadmapExplorerPanel::onStartClicked()
   sendGoal();
 }
 
-void RoadmapExplorerPanel::onStopClicked()
+void ExplorationPanel::onStopClicked()
 {
   cancelGoal();
 }
 
-void RoadmapExplorerPanel::onSaveClicked()
+void ExplorationPanel::onSaveClicked()
 {
   auto req = std::make_shared<roadmap_explorer_msgs::srv::SaveMapAndRoadmap::Request>();
   req->base_path = save_base_path_edit_->text().toStdString();
@@ -177,7 +177,7 @@ void RoadmapExplorerPanel::onSaveClicked()
 }
 
 // ───── Internal ──────────────────────────────────────────────────────────────
-void RoadmapExplorerPanel::sendGoal()
+void ExplorationPanel::sendGoal()
 {
   Explore::Goal goal_msg;
   goal_msg.exploration_bringup_mode = this->currentMode();
@@ -190,31 +190,31 @@ void RoadmapExplorerPanel::sendGoal()
 
   auto goal_options = rclcpp_action::Client<Explore>::SendGoalOptions();
   goal_options.goal_response_callback =
-    std::bind(&RoadmapExplorerPanel::actionGoalResponseCallback, this, std::placeholders::_1);
+    std::bind(&ExplorationPanel::actionGoalResponseCallback, this, std::placeholders::_1);
   goal_options.feedback_callback =
     std::bind(
-    &RoadmapExplorerPanel::actionFeedbackCallback, this,
+    &ExplorationPanel::actionFeedbackCallback, this,
     std::placeholders::_1, std::placeholders::_2);
   goal_options.result_callback =
-    std::bind(&RoadmapExplorerPanel::actionResultCallback, this, std::placeholders::_1);
+    std::bind(&ExplorationPanel::actionResultCallback, this, std::placeholders::_1);
 
   updateButtons(ButtonSetting::IN_PROCESS);
   action_client_->async_send_goal(goal_msg, goal_options);
 }
 
-void RoadmapExplorerPanel::cancelGoal()
+void ExplorationPanel::cancelGoal()
 {
   if (goal_handle_) {
     updateButtons(ButtonSetting::IN_PROCESS);
     action_client_->async_cancel_goal(
       goal_handle_,
-      std::bind(&RoadmapExplorerPanel::actionCancelCallback, this, std::placeholders::_1));
+      std::bind(&ExplorationPanel::actionCancelCallback, this, std::placeholders::_1));
   } else {
     updateButtons(ButtonSetting::GOAL_INACTIVE);
   }
 }
 
-void RoadmapExplorerPanel::updateButtons(ButtonSetting setting)
+void ExplorationPanel::updateButtons(ButtonSetting setting)
 {
   if (setting == ButtonSetting::IN_PROCESS) {
     rb_new_session_->setEnabled(false);
@@ -247,7 +247,7 @@ void RoadmapExplorerPanel::updateButtons(ButtonSetting setting)
   }
 }
 
-uint16_t RoadmapExplorerPanel::currentMode() const
+uint16_t ExplorationPanel::currentMode() const
 {
   // use with the same IDs as the constants in the action:
   //   0 = NEW_EXPLORATION_SESSION
@@ -264,7 +264,7 @@ uint16_t RoadmapExplorerPanel::currentMode() const
   return static_cast<uint16_t>(id);
 }
 
-void RoadmapExplorerPanel::setLog(const QString & text, bool error)
+void ExplorationPanel::setLog(const QString & text, bool error)
 {
   if (error) {
     QString html = QString("<span style=\"color:red;\">Status: %1</span>").arg(text);
@@ -276,7 +276,7 @@ void RoadmapExplorerPanel::setLog(const QString & text, bool error)
 }
 
 // ───── Action callbacks ──────────────────────────────────────────────────────
-void RoadmapExplorerPanel::actionGoalResponseCallback(
+void ExplorationPanel::actionGoalResponseCallback(
   const GoalHandle::SharedPtr & goal_handle)
 {
   goal_handle_ = goal_handle;
@@ -288,7 +288,7 @@ void RoadmapExplorerPanel::actionGoalResponseCallback(
   updateButtons(ButtonSetting::GOAL_ACTIVE);
 }
 
-void RoadmapExplorerPanel::actionFeedbackCallback(
+void ExplorationPanel::actionFeedbackCallback(
   GoalHandle::SharedPtr,
   const std::shared_ptr<const Explore::Feedback> feedback)
 {
@@ -299,7 +299,7 @@ void RoadmapExplorerPanel::actionFeedbackCallback(
     feedback->current_frontier.size());
 }
 
-void RoadmapExplorerPanel::actionResultCallback(const GoalHandle::WrappedResult & result)
+void ExplorationPanel::actionResultCallback(const GoalHandle::WrappedResult & result)
 {
   switch (result.code) {
     case rclcpp_action::ResultCode::SUCCEEDED:
@@ -327,7 +327,7 @@ void RoadmapExplorerPanel::actionResultCallback(const GoalHandle::WrappedResult 
   updateButtons(ButtonSetting::GOAL_INACTIVE);
 }
 
-void RoadmapExplorerPanel::actionCancelCallback(
+void ExplorationPanel::actionCancelCallback(
   std::shared_ptr<action_msgs::srv::CancelGoal_Response> response)
 {
   using CancelResp = action_msgs::srv::CancelGoal_Response;
@@ -375,4 +375,4 @@ void RoadmapExplorerPanel::actionCancelCallback(
 }  // namespace roadmap_explorer
 
 // ─── Pluginlib export ─────────────────────────────────────────────────────────
-PLUGINLIB_EXPORT_CLASS(roadmap_explorer::RoadmapExplorerPanel, rviz_common::Panel)
+PLUGINLIB_EXPORT_CLASS(roadmap_explorer::ExplorationPanel, rviz_common::Panel)
