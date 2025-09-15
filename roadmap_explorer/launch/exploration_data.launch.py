@@ -42,7 +42,7 @@ def generate_launch_description():
             description='Full path to the ROS2 parameters file to use for all launched nodes')
 
         param_substitutions = {
-            'robot_base_frame': context.launch_configurations['robot_namespace'] + '/base_footprint',
+            'robot_base_frame': context.launch_configurations['robot_namespace'] + '/base_link',
             'use_sim_time': context.launch_configurations['use_sim_time']
             }
 

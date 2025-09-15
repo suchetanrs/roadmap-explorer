@@ -49,7 +49,7 @@ def generate_launch_description():
             base_frame = context.launch_configurations['robot_namespace'] + "/"
 
         param_substitutions = {
-            'robot_base_frame': base_frame + 'base_footprint',
+            'robot_base_frame': base_frame + 'base_link',
             'use_sim_time': context.launch_configurations['use_sim_time'],
             'bt_xml_path': xml_file
             }
