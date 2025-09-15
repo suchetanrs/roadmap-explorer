@@ -325,6 +325,7 @@ void ExplorationPanel::actionResultCallback(const GoalHandle::WrappedResult & re
 
   goal_handle_.reset();
   updateButtons(ButtonSetting::GOAL_INACTIVE);
+  rb_continue_terminated_->setChecked(true);
 }
 
 void ExplorationPanel::actionCancelCallback(
