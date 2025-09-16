@@ -1,11 +1,11 @@
 <?xml version="1.0"?>
 <package format="3">
   <name>roadmap_explorer_msgs</name>
-  <version>0.1.0</version>
-  <description>A package that includes geom_try and geometry_tools.h</description>
+  <version>1.0.0</version>
+  <description>A package that has the ROS 2 interfaces for running roadmap-explorer</description>
 
   <maintainer email="rssuchetan@gmail.com">Suchetan Saravanan</maintainer>
-  <license>MIT</license>
+  <license>Apache License 2.0</license>
 
   <depend>rosidl_default_generators</depend>
 

@@ -5,7 +5,7 @@
   <description>The roadmap explorer package</description>
 
   <maintainer email="rssuchetan@gmail.com">Suchetan Saravanan</maintainer>
-  <license>MIT</license>
+  <license>Apache License 2.0</license>
 
   <depend>rosidl_default_generators</depend>
 
