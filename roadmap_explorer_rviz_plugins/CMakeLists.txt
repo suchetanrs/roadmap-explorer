@@ -1,9 +1,9 @@
 ## BEGIN_TUTORIAL
-## This CMakeLists.txt file for roadmap_explorer_rviz_plugin builds the
+## This CMakeLists.txt file for roadmap_explorer_rviz_plugins builds the
 ## TeleopPanel, ImuDisplay, and PlantFlagTool tutorials.
 
 cmake_minimum_required(VERSION 3.8)
-project(roadmap_explorer_rviz_plugin)
+project(roadmap_explorer_rviz_plugins)
 
 # Default to C++17
 if(NOT CMAKE_CXX_STANDARD)
@@ -46,7 +46,7 @@ set(SRC_FILES
 
 ## An rviz plugin is just a shared library, so here we declare the
 ## library to be called ``${PROJECT_NAME}`` (which is
-## "roadmap_explorer_rviz_plugin", or whatever your version of this project
+## "roadmap_explorer_rviz_plugins", or whatever your version of this project
 ## is called) and specify the list of source files we collected above
 ## in ``${SRC_FILES}``. We also add the needed dependencies.
 add_library(${PROJECT_NAME} SHARED ${SRC_FILES})
@@ -56,7 +56,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 
 ## Here we export the plugins and meshes so they can be found by RViz at runtime.
 pluginlib_export_plugin_description_file(rviz_common plugin_description.xml)
-# register_rviz_ogre_media_exports(DIRECTORIES "roadmap_explorer_rviz_plugin/media")
+# register_rviz_ogre_media_exports(DIRECTORIES "roadmap_explorer_rviz_plugins/media")
 
 ## END_TUTORIAL
 
@@ -74,7 +74,7 @@ install(TARGETS
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 
-# install(DIRECTORY roadmap_explorer_rviz_plugin/media/
+# install(DIRECTORY roadmap_explorer_rviz_plugins/media/
 #   DESTINATION share/${PROJECT_NAME}/media)
 
 

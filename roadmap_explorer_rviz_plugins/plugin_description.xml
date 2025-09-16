@@ -1,4 +1,4 @@
-<library path="roadmap_explorer_rviz_plugin">
+<library path="roadmap_explorer_rviz_plugins">
   <class name="roadmap_explorer/ExplorationPanel"
          type="roadmap_explorer::ExplorationPanel"
          base_class_type="rviz_common::Panel">

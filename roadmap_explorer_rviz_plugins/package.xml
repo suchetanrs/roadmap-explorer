@@ -1,12 +1,10 @@
 <?xml version="1.0"?>
 <package format="3">
-  <name>roadmap_explorer_rviz_plugin</name>
+  <name>roadmap_explorer_rviz_plugins</name>
   <version>1.0.0</version>
-  <description>A package that contains an RViz plugin for roadmap_explorer</description>
+  <description>A package that contains an RViz plugins for roadmap_explorer</description>
   <maintainer email="rssuchetan@gmail.com">Suchetan Saravanan</maintainer>
   <license>Apache License 2.0</license>
-
-  <url>http://ros.org/wiki/roadmap_explorer_rviz_plugin</url>
   <author></author>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
