@@ -1,0 +1,40 @@
+name: Kilted
+on:
+  push:
+    branches:
+    - 'main'
+  pull_request:
+    branches:
+    - '*'
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - {rosdistro: 'kilted', container: 'ros:kilted'}
+    container: ${{ matrix.config.container }}
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        path: src/roadmap-explorer
+    - name: Install Dependencies with Rosdep
+      run: |
+        apt update
+        rosdep update
+        source /opt/ros/${{matrix.config.rosdistro}}/setup.bash
+        rosdep install --from-paths src --ignore-src -y
+      shell: bash
+    - name: Colcon Build (Release)
+      run: |
+        source /opt/ros/${{matrix.config.rosdistro}}/setup.bash
+        colcon build --cmake-args -DCMAKE_BUILD_TYPE=Release
+      shell: bash
+    # - name: Test
+    #   run: |
+    #     source /opt/ros/${{matrix.config.rosdistro}}/setup.bash
+    #     source install/setup.bash
+    #     colcon test --paths src/grid_map/* --event-handlers=console_cohesion+
+    #     colcon test-result --all --verbose
+    #   shell: bash
