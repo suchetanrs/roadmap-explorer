@@ -31,6 +31,8 @@
   <depend>nav2_theta_star_planner</depend>
   <depend>nav2_map_server</depend>
   
+  <build_depend>ros_environment</build_depend>
+  
   <export>
     <build_type>ament_cmake</build_type>
     <nav2_core plugin="${prefix}/global_planner_plugin.xml"/>
