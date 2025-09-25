@@ -29,7 +29,7 @@ def generate_launch_description():
         description='Use simulation (Gazebo) clock if true')
 
     robot_namespace =  LaunchConfiguration('robot_namespace')
-    robot_namespace_arg = DeclareLaunchArgument('robot_namespace', default_value=TextSubstitution(text="robot_ns_exploration"),
+    robot_namespace_arg = DeclareLaunchArgument('robot_namespace', default_value=TextSubstitution(text=""),
         description='The namespace of the robot')
     
 #---------------------------------------------
@@ -51,21 +51,12 @@ def generate_launch_description():
             root_key=context.launch_configurations['robot_namespace'],
             param_rewrites=param_substitutions,
             convert_types=True)
-        
-        explore_server = Node(
-            package='roadmap_explorer',
-            executable='explore_server',
-            output='screen',
-            # prefix=['gdbserver localhost:3000'],
-            # emulate_tty=True,
-            namespace=context.launch_configurations['robot_namespace'],
-            parameters=[configured_params])
 
 # Comparision scripts
 
         exploration_path_followed = Node(
             package='roadmap_explorer',
-            executable='exploration_path_followed',
+            executable='exploration_path_followed_tf',
             output='screen',
             # prefix=['gdbserver localhost:3000'],
             # emulate_tty=True,

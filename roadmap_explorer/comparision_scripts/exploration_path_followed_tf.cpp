@@ -16,13 +16,19 @@ public:
     tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 
     marker_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray>(
-      "/exploration_path_followed", 10);
+      "exploration_path_followed", 10);
 
     timer_ = this->create_wall_timer(
       std::chrono::milliseconds(500), std::bind(&PathVisualizer::timer_callback, this));
 
     start_time_ = std::chrono::high_resolution_clock::now();
     total_distance_ = 0;
+
+    this->declare_parameter<std::string>("global_frame_id", "map");
+    this->get_parameter("global_frame_id", global_frame_id_);
+
+    this->declare_parameter<std::string>("base_frame_id", "base_link");
+    this->get_parameter("base_frame_id", base_frame_id_);
   }
 
 private:
@@ -32,12 +38,12 @@ private:
     try {
       // Look for the transformation between "map" and "base_link"
       if (static_cast<std::string>(this->get_namespace()) == "/") {
-        transform_stamped = tf_buffer_->lookupTransform("map", "base_link", tf2::TimePointZero);
+        transform_stamped = tf_buffer_->lookupTransform(global_frame_id_, base_frame_id_, tf2::TimePointZero);
       } else {
         transform_stamped =
           tf_buffer_->lookupTransform(
-          "map",
-          static_cast<std::string>(this->get_namespace()) + "/base_link", tf2::TimePointZero);
+          global_frame_id_,
+          static_cast<std::string>(this->get_namespace()) + "/" + base_frame_id_, tf2::TimePointZero);
       }
     } catch (tf2::TransformException & ex) {
       RCLCPP_WARN(this->get_logger(), "Could not transform map to base_link: %s", ex.what());
@@ -54,14 +60,23 @@ private:
     point_count_++;
 
     visualization_msgs::msg::MarkerArray marker_array;
+    
+    // First, delete all existing markers in the namespace
+    visualization_msgs::msg::Marker delete_marker;
+    delete_marker.header.frame_id = global_frame_id_;
+    delete_marker.header.stamp = transform_stamped.header.stamp;
+    delete_marker.ns = "path";
+    delete_marker.action = visualization_msgs::msg::Marker::DELETEALL;
+    marker_array.markers.push_back(delete_marker);
+    
+    // Then add the new line strip
     visualization_msgs::msg::Marker line_strip;
-
-    line_strip.header.frame_id = "map";
+    line_strip.header.frame_id = global_frame_id_;
     line_strip.header.stamp = transform_stamped.header.stamp;
     line_strip.ns = "path";
     line_strip.action = visualization_msgs::msg::Marker::ADD;
     line_strip.pose.orientation.w = 1.0;
-    line_strip.id = marker_id_++;
+    line_strip.id = 0;  // Use fixed ID since we're clearing all markers first
     line_strip.type = visualization_msgs::msg::Marker::LINE_STRIP;
     line_strip.scale.x = 0.25;     // Line width
 
@@ -150,6 +165,9 @@ private:
   double total_distance_;
   size_t marker_id_;
   size_t point_count_;
+
+  std::string global_frame_id_;
+  std::string base_frame_id_;
 };
 
 int main(int argc, char ** argv)

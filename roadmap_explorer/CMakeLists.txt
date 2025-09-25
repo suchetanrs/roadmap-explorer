@@ -125,6 +125,10 @@ src/main.cpp
 )
 ament_target_dependencies(roadmap_exploration_server ${dependencies})
 target_link_libraries(roadmap_exploration_server ${PCL_LIBRARIES} ${YAML_CPP_LIBRARIES} roadmap_exploration_bt roadmap_explorer_bt_plugins roadmap_explorer_frontier_search_plugins)
+
+########################### COMPARISON SCRIPTS ###########################
+add_subdirectory(comparision_scripts)
+
 ########################### INSTALLATION ###########################
 
 install(TARGETS
