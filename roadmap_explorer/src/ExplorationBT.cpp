@@ -1,4 +1,5 @@
 #include <roadmap_explorer/ExplorationBT.hpp>
+#include <roadmap_explorer/FrontierSearch.hpp>
 namespace roadmap_explorer
 {
 
@@ -50,7 +51,7 @@ class SearchForFrontiersBT : public BT::SyncActionNode
 public:
   SearchForFrontiersBT(
     const std::string & name, const BT::NodeConfiguration & config,
-    std::shared_ptr<FrontierSearch> frontierSearchPtr,
+    std::shared_ptr<FrontierSearchBase> frontierSearchPtr,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros,
     std::shared_ptr<nav2_util::LifecycleNode> ros_node_ptr)
   : BT::SyncActionNode(name, config)
@@ -73,7 +74,7 @@ public:
     config().blackboard->set<geometry_msgs::msg::PoseStamped>("latest_robot_pose", robotP);
     LOG_INFO("Using robot pose: " << robotP.pose.position.x << ", " << robotP.pose.position.y);
     std::vector<FrontierPtr> frontier_list;
-    LOG_WARN("Current search radius: " << frontierSearchPtr_->frontier_search_distance_);
+    LOG_WARN("Current search radius: " << frontierSearchPtr_->getFrontierSearchDistance());
     auto searchResult = frontierSearchPtr_->searchFrom(robotP.pose.position, frontier_list);
     if (searchResult != FrontierSearchResult::SUCCESSFUL_SEARCH)
     {
@@ -117,7 +118,7 @@ public:
     };
   }
 
-  std::shared_ptr<FrontierSearch> frontierSearchPtr_;
+  std::shared_ptr<FrontierSearchBase> frontierSearchPtr_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros_;
   std::shared_ptr<nav2_util::LifecycleNode> ros_node_ptr_;
 };
@@ -324,7 +325,7 @@ public:
       BT::OutputPort<std::vector<FrontierPtr>>("frontier_costs_result")};
   }
 
-  std::shared_ptr<FrontierSearch> frontierSearchPtr_;
+  std::shared_ptr<FrontierSearchBase> frontierSearchPtr_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros_;
   std::shared_ptr<CostAssigner> cost_assigner_ptr_;
   std::shared_ptr<nav2_util::LifecycleNode> ros_node_ptr_;
@@ -591,8 +592,26 @@ RoadmapExplorationBT::RoadmapExplorationBT(std::shared_ptr<nav2_util::LifecycleN
     "goal_update");
 
   cost_assigner_ptr_ = std::make_shared<CostAssigner>(explore_costmap_ros_);
-  frontierSearchPtr_ =
-    std::make_shared<FrontierSearch>(*(explore_costmap_ros_->getLayeredCostmap()->getCostmap()));
+  
+  // Try to load frontier search plugin, fallback to direct instantiation
+  try {
+    pluginlib::ClassLoader<FrontierSearchBase> plugin_loader(
+      "roadmap_explorer", "roadmap_explorer::FrontierSearchBase");
+    
+    std::string plugin_name = "roadmap_explorer::FrontierSearch";
+    // TODO: Make plugin name configurable via parameter
+    
+    frontierSearchPtr_ = plugin_loader.createSharedInstance(plugin_name);
+    frontierSearchPtr_->configure(explore_costmap_ros_->getLayeredCostmap()->getCostmap());
+    LOG_INFO("Loaded frontier search plugin: " << plugin_name);
+  } catch (const std::exception& e) {
+    LOG_WARN("Failed to load frontier search plugin, using direct instantiation: " << e.what());
+    throw std::runtime_error("Failed to load frontier search plugin");
+    // Fallback to direct instantiation
+    frontierSearchPtr_ = std::make_shared<FrontierSearch>(
+      *(explore_costmap_ros_->getLayeredCostmap()->getCostmap()));
+  }
+  
   full_path_optimizer_ = std::make_shared<FullPathOptimizer>(bt_node_, explore_costmap_ros_);
 
   if (localisation_only_mode) {

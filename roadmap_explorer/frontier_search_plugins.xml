@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<library path="roadmap_explorer_frontier_search_plugins">
+  <class name="roadmap_explorer::FrontierSearch" 
+         type="roadmap_explorer::FrontierSearch" 
+         base_class_type="roadmap_explorer::FrontierSearchBase">
+    <description>
+      Default frontier search algorithm implementation
+    </description>
+  </class>
+</library>
