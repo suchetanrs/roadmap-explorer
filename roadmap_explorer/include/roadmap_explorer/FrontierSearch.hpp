@@ -19,31 +19,26 @@
 #include "roadmap_explorer/Helpers.hpp"
 #include "roadmap_explorer/util/GeometryUtils.hpp"
 #include "roadmap_explorer/Parameters.hpp"
+#include "roadmap_explorer/frontier_search/interface_pluginlib.hpp"
 
 namespace roadmap_explorer
 {
 
-enum class FrontierSearchResult
-{
-  ROBOT_OUT_OF_BOUNDS = 0,
-  CANNOT_FIND_CELL_TO_SEARCH = 1,
-  SUCCESSFUL_SEARCH = 2
-};
-
-class FrontierSearch
+class FrontierSearch : public FrontierSearchBase
 {
 
 public:
+  FrontierSearch() = default;
   FrontierSearch(nav2_costmap_2d::Costmap2D & costmap);
 
-  ~FrontierSearch();
+  ~FrontierSearch() override;
 
-  void reset()
+  void reset() override
   {
     every_frontier_list.clear();
   }
 
-  bool incrementSearchDistance(double value)
+  bool incrementSearchDistance(double value) override
   {
     frontier_search_distance_ += value;
     LOG_INFO("Incrementing search distance to: " << frontier_search_distance_);
@@ -56,17 +51,16 @@ public:
     return true;
   }
 
-  void resetSearchDistance()
+  void resetSearchDistance() override
   {
     original_search_distance_ = parameterInstance.getValue<double>(
       "frontierSearch.frontier_search_distance");
     frontier_search_distance_ = original_search_distance_;
   }
 
-  FrontierSearchResult searchFrom(geometry_msgs::msg::Point position, std::vector<FrontierPtr> & output_frontier_list);
+  FrontierSearchResult searchFrom(geometry_msgs::msg::Point position, std::vector<FrontierPtr> & output_frontier_list) override;
 
-  std::vector<std::vector<double>> getAllFrontiers();
-  double frontier_search_distance_;
+  std::vector<std::vector<double>> getAllFrontiers() override;
 
 protected:
   std::vector<FrontierPtr> buildNewFrontier(
@@ -97,7 +91,7 @@ protected:
       if (sqrt(
           pow(
             point.first - centerX,
-            2) + pow(point.second - centerY, 2)) < costmap_.getResolution() * 3)
+            2) + pow(point.second - centerY, 2)) < costmap_->getResolution() * 3)
       {
         offset_centroid = true;
       }
@@ -136,13 +130,11 @@ private:
     return (int)value < lethal_threshold_;
   }
 
-  nav2_costmap_2d::Costmap2D & costmap_;
   unsigned char * map_;
   unsigned int size_x_, size_y_;
   std::vector<std::vector<double>> every_frontier_list;
   int min_frontier_cluster_size_;
   int max_frontier_cluster_size_;
-  double original_search_distance_;
   unsigned char lethal_threshold_;
 };
 

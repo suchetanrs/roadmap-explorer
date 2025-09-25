@@ -1,4 +1,6 @@
 #include <roadmap_explorer/FrontierSearch.hpp>
+#include <pluginlib/class_list_macros.hpp>
+
 namespace roadmap_explorer
 {
 
@@ -7,8 +9,8 @@ using nav2_costmap_2d::LETHAL_OBSTACLE;
 using nav2_costmap_2d::NO_INFORMATION;
 
 FrontierSearch::FrontierSearch(nav2_costmap_2d::Costmap2D & costmap)
-: costmap_(costmap)
 {
+  configure(&costmap);
   LOG_INFO("FrontierSearch::FrontierSearch");
 }
 
@@ -32,14 +34,14 @@ FrontierSearchResult FrontierSearch::searchFrom(geometry_msgs::msg::Point positi
 
   // Sanity check that robot is inside costmap bounds before searching
   unsigned int mx, my;
-  if (!costmap_.worldToMap(position.x, position.y, mx, my)) {
+  if (!costmap_->worldToMap(position.x, position.y, mx, my)) {
     LOG_CRITICAL("Robot out of costmap bounds, cannot search for frontiers");
     return FrontierSearchResult::ROBOT_OUT_OF_BOUNDS;
   }
 
-  map_ = costmap_.getCharMap();
-  size_x_ = costmap_.getSizeInCellsX();
-  size_y_ = costmap_.getSizeInCellsY();
+  map_ = costmap_->getCharMap();
+  size_x_ = costmap_->getSizeInCellsX();
+  size_y_ = costmap_->getSizeInCellsY();
 
   // initialize flag arrays to keep track of visited and frontier cells
   std::vector<bool> frontier_flag(size_x_ * size_y_, false);
@@ -49,8 +51,8 @@ FrontierSearchResult FrontierSearch::searchFrom(geometry_msgs::msg::Point positi
   std::queue<unsigned int> bfs;
 
   // find closest clear cell to start search
-  unsigned int clear, pos = costmap_.getIndex(mx, my);
-  if (nearestFreeCell(clear, pos, lethal_threshold_, costmap_)) {
+  unsigned int clear, pos = costmap_->getIndex(mx, my);
+  if (nearestFreeCell(clear, pos, lethal_threshold_, *costmap_)) {
     bfs.push(clear);
   } else {
     bfs.push(pos);
@@ -61,7 +63,7 @@ FrontierSearchResult FrontierSearch::searchFrom(geometry_msgs::msg::Point positi
   visited_flag[bfs.front()] = true;
 
   auto distance_to_check_ = frontier_search_distance_ +
-    (max_frontier_cluster_size_ * costmap_.getResolution() * 1.414);
+    (max_frontier_cluster_size_ * costmap_->getResolution() * 1.414);
   distance_to_check_ = std::pow(distance_to_check_, 2);
 
   while (rclcpp::ok() && !bfs.empty()) {
@@ -69,14 +71,14 @@ FrontierSearchResult FrontierSearch::searchFrom(geometry_msgs::msg::Point positi
     bfs.pop();
 
     // iterate over 4-connected neighbourhood
-    for (unsigned & nbr : nhood4(idx, costmap_)) {
+    for (unsigned & nbr : nhood4(idx, *costmap_)) {
       // add to queue all free, unvisited cells, use descending search in case initialized on non-free cell
       if (map_[nbr] < nav2_costmap_2d::LETHAL_OBSTACLE && !visited_flag[nbr]) {
         visited_flag[nbr] = true;
         unsigned int nbr_mx, nbr_my;
         double nbr_wx, nbr_wy;
-        costmap_.indexToCells(nbr, nbr_mx, nbr_my);
-        costmap_.mapToWorld(nbr_mx, nbr_my, nbr_wx, nbr_wy);
+        costmap_->indexToCells(nbr, nbr_mx, nbr_my);
+        costmap_->mapToWorld(nbr_mx, nbr_my, nbr_wx, nbr_wy);
         if (distanceBetweenPointsSq(
             position, nbr_wx,
             nbr_wy) < distance_to_check_)
@@ -114,9 +116,9 @@ std::vector<FrontierPtr> FrontierSearch::buildNewFrontier(
   std::vector<std::pair<double, double>> frontier_cell_indices;       // used to find the median value in case that is needed to be assigned to frontier.
   // record initial contact point for frontier
   unsigned int ix, iy;
-  costmap_.indexToCells(initial_cell, ix, iy);
+  costmap_->indexToCells(initial_cell, ix, iy);
   double wix, wiy;
-  costmap_.mapToWorld(ix, iy, wix, wiy);
+  costmap_->mapToWorld(ix, iy, wix, wiy);
   every_frontier_list.push_back({wix, wiy});
   frontier_cell_indices.push_back(std::make_pair(wix, wiy));
 
@@ -127,23 +129,23 @@ std::vector<FrontierPtr> FrontierSearch::buildNewFrontier(
   // cache reference position in world coords
   unsigned int rx, ry;
   double reference_x, reference_y;
-  costmap_.indexToCells(reference, rx, ry);
-  costmap_.mapToWorld(rx, ry, reference_x, reference_y);
+  costmap_->indexToCells(reference, rx, ry);
+  costmap_->mapToWorld(rx, ry, reference_x, reference_y);
 
   while (rclcpp::ok() && !bfs.empty()) {
     unsigned int idx = bfs.front();
     bfs.pop();
 
     // try adding cells in 8-connected neighborhood to frontier
-    for (unsigned int & nbr : nhood8(idx, costmap_)) {
+    for (unsigned int & nbr : nhood8(idx, *costmap_)) {
       // check if neighbour is a potential frontier cell
       if (isNewFrontierCell(nbr, frontier_flag)) {
         // mark cell as frontier
         frontier_flag[nbr] = true;
         unsigned int mx, my;
         double wx, wy;
-        costmap_.indexToCells(nbr, mx, my);
-        costmap_.mapToWorld(mx, my, wx, wy);
+        costmap_->indexToCells(nbr, mx, my);
+        costmap_->mapToWorld(mx, my, wx, wy);
 
         // add to every frontier list
         std::vector<double> coord_val;
@@ -164,7 +166,7 @@ std::vector<FrontierPtr> FrontierSearch::buildNewFrontier(
           LOG_DEBUG("*************");
           LOG_DEBUG("Getting centroid")
           auto cluster_centroid =
-            getCentroidOfCells(frontier_cell_indices, (costmap_.getResolution() * 1.414 * 2));
+            getCentroidOfCells(frontier_cell_indices, (costmap_->getResolution() * 1.414 * 2));
           SortByMedianFunctor sortFunctor(cluster_centroid);
           std::sort(frontier_cell_indices.begin(), frontier_cell_indices.end(), sortFunctor);
           auto goal_point =
@@ -197,7 +199,7 @@ std::vector<FrontierPtr> FrontierSearch::buildNewFrontier(
   if (currentFrontierSize > min_frontier_cluster_size_) {
     FrontierPtr output = std::make_shared<Frontier>();
     auto cluster_centroid =
-      getCentroidOfCells(frontier_cell_indices, (costmap_.getResolution() * 1.414 * 2));
+      getCentroidOfCells(frontier_cell_indices, (costmap_->getResolution() * 1.414 * 2));
     SortByMedianFunctor sortFunctor(cluster_centroid);
     std::sort(frontier_cell_indices.begin(), frontier_cell_indices.end(), sortFunctor);
     auto goal_point = frontier_cell_indices[static_cast<int>(frontier_cell_indices.size() / 2)];
@@ -236,7 +238,7 @@ bool FrontierSearch::isNewFrontierCell(unsigned int idx, const std::vector<bool>
   bool has_one_lethal_neighbour = false;
 
   // frontier cells should have at least one cell in 4-connected neighbourhood that is free
-  for (unsigned int nbr : nhood4(idx, costmap_)) {
+  for (unsigned int nbr : nhood4(idx, *costmap_)) {
     if (isFree(map_[nbr])) {
       has_one_free_neighbour = true;
     }
@@ -261,3 +263,6 @@ std::vector<std::vector<double>> FrontierSearch::getAllFrontiers()
 }
 
 }
+
+// Register the plugin
+PLUGINLIB_EXPORT_CLASS(roadmap_explorer::FrontierSearch, roadmap_explorer::FrontierSearchBase)

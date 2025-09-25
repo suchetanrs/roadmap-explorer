@@ -16,6 +16,8 @@
 #include <geometry_msgs/msg/twist.hpp>
 #include <std_msgs/msg/int32.hpp>
 
+#include <pluginlib/class_loader.hpp>
+
 #ifdef ROS_DISTRO_HUMBLE
   #include <behaviortree_cpp_v3/bt_factory.h>
 #elif ROS_DISTRO_JAZZY || ROS_DISTRO_KILTED
@@ -28,7 +30,7 @@
 #include "roadmap_explorer/util/Logger.hpp"
 #include "roadmap_explorer/util/EventLogger.hpp"
 #include "roadmap_explorer/CostAssigner.hpp"
-#include "roadmap_explorer/FrontierSearch.hpp"
+#include "roadmap_explorer/frontier_search/interface_pluginlib.hpp"
 #include "roadmap_explorer/Nav2Interface.hpp"
 #include "roadmap_explorer/Helpers.hpp"
 #include "roadmap_explorer/FullPathOptimizer.hpp"
@@ -77,7 +79,7 @@ private:
   BT::Blackboard::Ptr blackboard;
   BT::Tree behaviour_tree;
 
-  std::shared_ptr<FrontierSearch> frontierSearchPtr_;
+  std::shared_ptr<FrontierSearchBase> frontierSearchPtr_;
   std::shared_ptr<CostAssigner> cost_assigner_ptr_;
   std::shared_ptr<FullPathOptimizer> full_path_optimizer_;
   std::shared_ptr<SensorSimulator> sensor_simulator_;
