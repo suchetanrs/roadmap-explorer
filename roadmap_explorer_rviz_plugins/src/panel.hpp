@@ -79,7 +79,7 @@ private:
 
   // load ui
   QLineEdit * load_base_path_edit_;
-  QLineEdit  * session_name_edit_;
+  QLineEdit * session_name_edit_;
 
   // action buttons
   QPushButton * start_button_;

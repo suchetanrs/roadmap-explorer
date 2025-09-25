@@ -14,7 +14,9 @@ include_directories(
 rosidl_generate_interfaces(${PROJECT_NAME}
 "msg/MapData.msg"
 "msg/MapGraph.msg"
+
 "srv/SaveMapAndRoadmap.srv"
+
 "action/Explore.action"
 DEPENDENCIES builtin_interfaces geometry_msgs
 )
