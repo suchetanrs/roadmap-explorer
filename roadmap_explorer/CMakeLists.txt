@@ -129,6 +129,12 @@ target_link_libraries(roadmap_exploration_server ${PCL_LIBRARIES} ${YAML_CPP_LIB
 ########################### COMPARISON SCRIPTS ###########################
 add_subdirectory(comparision_scripts)
 
+########################### TESTS ###########################
+find_package(ament_cmake_gtest QUIET)
+if(ament_cmake_gtest_FOUND)
+    add_subdirectory(tests)
+endif()
+
 ########################### INSTALLATION ###########################
 
 install(TARGETS

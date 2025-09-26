@@ -4,32 +4,40 @@ std::unique_ptr<EventLogger> EventLogger::EventLoggerPtr_ = nullptr;
 std::mutex EventLogger::instanceMutex_;
 
 EventLogger::EventLogger()
-: serialNumber(0)
+: logToCSV(false), serialNumber(0), baseFilename("event_log")
 {
-  // Generate a unique filename by appending a timestamp and a random number
-  // auto now = std::chrono::system_clock::now();
-  // auto nowTime = std::chrono::system_clock::to_time_t(now);
-  // auto nowMs = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
 
-  // std::ostringstream oss;
-  // oss << baseFilename << "_" << std::put_time(std::localtime(&nowTime), "%Y%m%d_%H%M%S") << "_" << nowMs.count() << ".csv";
-  // csvFilename = oss.str();
-
-  // // Open the new CSV file and write the header
-  // std::ofstream outFile(csvFilename, std::ios::out | std::ios::app);
-  // if (!outFile)
-  // {
-  //     throw RoadmapExplorerException("Unable to open file: " + csvFilename);
-  // }
-  // outFile << "SerialNumber,Event,Duration(seconds)\n";
+  if (logToCSV)
+  {
+    // Generate a unique filename by appending a timestamp and a random number
+    auto now = std::chrono::system_clock::now();
+    auto nowTime = std::chrono::system_clock::to_time_t(now);
+    auto nowMs = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
+    
+    std::ostringstream oss;
+    oss << baseFilename << "_" << std::put_time(std::localtime(&nowTime), "%Y%m%d_%H%M%S") << "_" << nowMs.count() << ".csv";
+    csvFilename = oss.str();
+    
+    // Open the new CSV file and write the header
+    std::ofstream outFile(csvFilename, std::ios::out | std::ios::app);
+    if (!outFile)
+    {
+      throw RoadmapExplorerException("Unable to open file: " + csvFilename);
+    }
+    outFile << "SerialNumber,Event,Duration(seconds)\n";
+  }
 }
 
 EventLogger::~EventLogger()
 {
   LOG_INFO("EventLogger::~EventLogger()");
-  // Close the CSV file if it was opened
-  // std::ofstream outFile(csvFilename, std::ios::out | std::ios::app);
-  // outFile.close();
+  if (logToCSV)
+  {
+    LOG_INFO("EventLogger: Closing CSV file " << csvFilename);
+    // Close the CSV file if it was opened
+    std::ofstream outFile(csvFilename, std::ios::out | std::ios::app);
+    outFile.close();
+  }
   startTimes.clear();
 }
 
@@ -61,9 +69,12 @@ void EventLogger::endEvent(const std::string & key, int eventLevel)
       LOG_CRITICAL("eventLevel undefined for " << key);
     }
 
-    // // Write to CSV file
-    // std::ofstream outFile(csvFilename, std::ios::out | std::ios::app);
-    // outFile << ++serialNumber << "," << key << "," << duration.count() << "\n";
+    // Write to CSV file
+    if (logToCSV)
+    {
+      std::ofstream outFile(csvFilename, std::ios::out | std::ios::app);
+      outFile << ++serialNumber << "," << key << "," << duration.count() << "\n";
+    }
 
     startTimes.erase(key);
   } else {
@@ -79,10 +90,6 @@ double EventLogger::getTimeSinceStart(const std::string & key)
     auto startTime = startTimes[key];
     std::chrono::duration<double> duration = endTime - startTime;
     return duration.count();
-
-    // // Write to CSV file
-    // std::ofstream outFile(csvFilename, std::ios::out | std::ios::app);
-    // outFile << ++serialNumber << "," << key << "," << duration.count() << "\n";
   } else {
     LOG_CRITICAL("Event " << key << " is not started");
   }

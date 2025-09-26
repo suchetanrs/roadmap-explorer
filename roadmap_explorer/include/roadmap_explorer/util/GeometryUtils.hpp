@@ -1,23 +1,21 @@
-#ifndef GEOMETRYUTILS_HPP
-#define GEOMETRYUTILS_HPP
-
-#pragma once
+#ifndef GEOMETRYUTILS_HPP_
+#define GEOMETRYUTILS_HPP_
 
 #include <vector>
 #include <cmath>
+
 #include <Eigen/Core>
 #include <Eigen/Geometry>
+
 #include <geometry_msgs/msg/pose.hpp>
+#include <tf2/LinearMath/Quaternion.h>
+#include <tf2/LinearMath/Matrix3x3.h>
+#include <nav2_util/geometry_utils.hpp>
+
 #include "roadmap_explorer/Frontier.hpp"
 
 namespace roadmap_explorer
 {
-
-struct Point2D
-{
-  double x;
-  double y;
-};
 
 inline std::vector<double> quatToEuler(geometry_msgs::msg::Quaternion & quat)
 {
@@ -28,21 +26,6 @@ inline std::vector<double> quatToEuler(geometry_msgs::msg::Quaternion & quat)
   tf2::Matrix3x3 matrix(tf2_quaternion);
   std::vector<double> rpy = {0, 0, 0};
   matrix.getRPY(rpy[0], rpy[1], rpy[2]);
-  return rpy;
-}
-
-inline std::vector<double> quatToEuler0To2MPI(geometry_msgs::msg::Quaternion & quat)
-{
-  tf2::Quaternion tf2_quaternion(
-    quat.x, quat.y, quat.z, quat.w);
-
-  // Convert tf2 quaternion to Euler angles
-  tf2::Matrix3x3 matrix(tf2_quaternion);
-  std::vector<double> rpy = {0, 0, 0};
-  matrix.getRPY(rpy[0], rpy[1], rpy[2]);
-  if (rpy[0] < 0) {rpy[0] = rpy[0] + 2 * M_PI;}
-  if (rpy[1] < 0) {rpy[1] = rpy[1] + 2 * M_PI;}
-  if (rpy[2] < 0) {rpy[2] = rpy[2] + 2 * M_PI;}
   return rpy;
 }
 
@@ -129,10 +112,6 @@ inline void getRelativePoseGivenTwoPoints(
   const geometry_msgs::msg::Point & point_to,
   geometry_msgs::msg::Pose & oriented_pose)
 {
-  // size_t plan_size = plan.poses.size();
-  // if (plan_size == 1) {
-  //   plan.poses.back().pose.orientation = start.orientation;
-  // } else if (plan_size > 1) {
   double dx, dy, theta;
   dx = point_to.x - point_from.x;
   dy = point_to.y - point_from.y;
@@ -142,4 +121,4 @@ inline void getRelativePoseGivenTwoPoints(
 }
 
 }
-#endif
+#endif // GEOMETRYUTILS_HPP_
