@@ -8,13 +8,13 @@ namespace roadmap_explorer
 ExplorationServer::ExplorationServer(const rclcpp::NodeOptions & options)
 : nav2_util::LifecycleNode("roadmap_explorer_node", "", options)
 {
-  RCLCPP_INFO(get_logger(), "Created %s", get_name());
+  LOG_INFO("Created " << get_name());
   server_active_ = false;
 }
 
 nav2_util::CallbackReturn ExplorationServer::on_configure(const rclcpp_lifecycle::State &)
 {
-  RCLCPP_INFO(get_logger(), "Configured %s", get_name());
+  LOG_INFO("Configured " << get_name());
   node_ = shared_from_this();
   node_->declare_parameter("localisation_only_mode", false);
   node_->get_parameter("localisation_only_mode", localisation_only_mode_);
@@ -24,7 +24,7 @@ nav2_util::CallbackReturn ExplorationServer::on_configure(const rclcpp_lifecycle
 
 nav2_util::CallbackReturn ExplorationServer::on_activate(const rclcpp_lifecycle::State &)
 {
-  RCLCPP_INFO(get_logger(), "Activating %s", get_name());
+  LOG_INFO("Activating " << get_name());
   server_active_ = true;
   action_server_cb_group_ = create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
 
@@ -48,10 +48,12 @@ nav2_util::CallbackReturn ExplorationServer::on_activate(const rclcpp_lifecycle:
 
 nav2_util::CallbackReturn ExplorationServer::on_deactivate(const rclcpp_lifecycle::State &)
 {
-  RCLCPP_INFO(get_logger(), "Deactivating %s", get_name());
+  LOG_INFO("Deactivating " << get_name());
   server_active_ = false;
   action_server_.reset();
-  exploration_bt_->halt();
+  if (exploration_bt_) {
+    exploration_bt_->halt();
+  }
   exploration_bt_.reset();
   destroyBond();
   return nav2_util::CallbackReturn::SUCCESS;
@@ -59,13 +61,13 @@ nav2_util::CallbackReturn ExplorationServer::on_deactivate(const rclcpp_lifecycl
 
 nav2_util::CallbackReturn ExplorationServer::on_cleanup(const rclcpp_lifecycle::State &)
 {
-  RCLCPP_INFO(get_logger(), "Cleaning up %s", get_name());
+  LOG_INFO("Cleaning up " << get_name());
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
 nav2_util::CallbackReturn ExplorationServer::on_shutdown(const rclcpp_lifecycle::State &)
 {
-  RCLCPP_INFO(get_logger(), "Shutting down %s", get_name());
+  LOG_INFO("Shutting down " << get_name());
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -74,10 +76,10 @@ rclcpp_action::GoalResponse ExplorationServer::handle_goal(
   std::shared_ptr<const ExploreAction::Goal>/*goal*/)
 {
   if (!server_active_) {
-    RCLCPP_WARN(get_logger(), "Received goal while inactive -> rejecting");
+    LOG_WARN("Received goal while inactive -> rejecting");
     return rclcpp_action::GoalResponse::REJECT;
   }
-  RCLCPP_INFO(get_logger(), "Accepted new ExploreArea goal");
+  LOG_INFO("Accepted new ExploreArea goal");
   return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
 }
 
@@ -85,10 +87,10 @@ rclcpp_action::CancelResponse ExplorationServer::handle_cancel(
   const std::shared_ptr<GoalHandleExplore> goal_handle)
 {
   (void)goal_handle;
-  RCLCPP_WARN(get_logger(), "Cancel requested");
+  LOG_INFO("Cancel requested");
   if (!exploration_bt_)
   {
-    RCLCPP_WARN(get_logger(), "Rejecting cancel request because an instance of exploration is yet to be created.");
+    LOG_WARN("Rejecting cancel request because an instance of exploration is yet to be created.");
     return rclcpp_action::CancelResponse::REJECT;    
   }
   return rclcpp_action::CancelResponse::ACCEPT;
@@ -98,7 +100,7 @@ void ExplorationServer::handle_accepted(
   const std::shared_ptr<GoalHandleExplore> goal_handle)
 {
   (void)goal_handle;
-  RCLCPP_WARN(get_logger(), "Goal accepted, starting execution");
+  LOG_INFO("Goal accepted, starting execution");
   // Spin the work off to a new thread so we don’t block the executor
   std::thread{std::bind(&ExplorationServer::execute, this, goal_handle)}.detach();
 }
@@ -120,7 +122,7 @@ bool ExplorationServer::make_exploration_bt(bool localisation_only_mode)
 
 void ExplorationServer::execute(const std::shared_ptr<GoalHandleExplore> goal_handle)
 {
-  RCLCPP_INFO(get_logger(), "Running exploration BT for goal");
+  LOG_INFO("Running exploration BT for goal");
   auto result = std::make_shared<ExploreAction::Result>();
   result->success = false;
   try {
@@ -136,23 +138,23 @@ void ExplorationServer::execute(const std::shared_ptr<GoalHandleExplore> goal_ha
         }
         break;
       case ExploreAction::Goal::CONTINUE_FROM_TERMINATED_SESSION:
-        RCLCPP_INFO(get_logger(), "Continue from terminated session. Nothing to reset.");
+        LOG_INFO("Continue from terminated session. Nothing to reset.");
         if(exploration_bt_ == nullptr)
         {
-          RCLCPP_ERROR(get_logger(), "Exploration BT not initialized yet to continue from a session. Please start a new session first");
+          LOG_ERROR("Exploration BT not initialized yet to continue from a session. Please start a new session first");
           throw RoadmapExplorerException("Exploration BT not initialized yet to continue from a session. Please start a new session first");
         }
         break;
       case ExploreAction::Goal::CONTINUE_FROM_SAVED_SESSION:
         if(!localisation_only_mode_)
         {
-          RCLCPP_ERROR(get_logger(), "You cannot continue from saved session when in mapping mode.");
+          LOG_ERROR("You cannot continue from saved session when in mapping mode.");
           throw RoadmapExplorerException("You cannot continue from saved session when in mapping mode.");
         }
         else
         {
           // To be implemented
-          RCLCPP_ERROR(get_logger(), "Continue from saved session is not implemented yet.");
+          LOG_ERROR("Continue from saved session is not implemented yet.");
           throw RoadmapExplorerException("Continue from saved session is not implemented yet.");
           return;
         }
@@ -165,7 +167,7 @@ void ExplorationServer::execute(const std::shared_ptr<GoalHandleExplore> goal_ha
 
       // Check for cancellation
       if (goal_handle->is_canceling()) {
-        RCLCPP_WARN(get_logger(), "Cancelling goal");
+        LOG_WARN("Cancelling goal");
         terminateGoal(ActionTerminalState::CANCEL, goal_handle, result);
         return;
       }
@@ -173,19 +175,19 @@ void ExplorationServer::execute(const std::shared_ptr<GoalHandleExplore> goal_ha
       if (error_code == ExploreActionResult::NO_ERROR) {
         continue;
       } else if (error_code == ExploreActionResult::NO_MORE_REACHABLE_FRONTIERS) {
-        RCLCPP_INFO(get_logger(), "No more reachable frontiers found, exploration complete");
+        LOG_INFO("No more reachable frontiers found, exploration complete");
         result->success = true;
         result->error_code = ExploreActionResult::NO_MORE_REACHABLE_FRONTIERS;
         terminateGoal(ActionTerminalState::SUCCEED, goal_handle, result);
         return;
       } else if (error_code == ExploreActionResult::NAV2_INTERNAL_FAULT) {
-        RCLCPP_ERROR(get_logger(), "Internal fault during exploration, aborting");
+        LOG_ERROR("Internal fault during exploration, aborting");
         result->success = false;
         result->error_code = ExploreActionResult::NAV2_INTERNAL_FAULT;
         terminateGoal(ActionTerminalState::ABORT, goal_handle, result);
         return;
       } else {
-        RCLCPP_ERROR(get_logger(), "Unknown error occurred during exploration");
+        LOG_ERROR("Unknown error occurred during exploration");
         result->success = false;
         result->error_code = ExploreActionResult::UNKNOWN;
         terminateGoal(ActionTerminalState::ABORT, goal_handle, result);
@@ -194,6 +196,7 @@ void ExplorationServer::execute(const std::shared_ptr<GoalHandleExplore> goal_ha
     }
 
   } catch (const RoadmapExplorerException & ex) {
+    LOG_ERROR("Exploration failed with exception: " << ex.what());
     result->success = false;
     result->error_code = ExploreActionResult::UNKNOWN;
     terminateGoal(ActionTerminalState::ABORT, goal_handle, result);

@@ -31,6 +31,13 @@
   <depend>nav2_theta_star_planner</depend>
   <depend>nav2_map_server</depend>
   
+  <!-- Test dependencies -->
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+  <test_depend>ament_cmake_gtest</test_depend>
+  <test_depend>launch_testing</test_depend>
+  <test_depend>launch_testing_ament_cmake</test_depend>
+  
   <export>
     <build_type>ament_cmake</build_type>
     <nav2_core plugin="${prefix}/global_planner_plugin.xml"/>
