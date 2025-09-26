@@ -13,7 +13,7 @@
 #include <nav2_msgs/action/navigate_to_pose.hpp>
 
 #include "roadmap_explorer/util/Logger.hpp"
-#include "roadmap_explorer/util/magic_enum.hpp"
+#include "roadmap_explorer/util/MagicEnum.hpp"
 #include "roadmap_explorer/Parameters.hpp"
 
 namespace roadmap_explorer

@@ -10,7 +10,6 @@
 #include <mutex>
 #include <random>
 #include <ctime>
-
 #include <iomanip>
 #include <sstream>
 #include <ctime>
@@ -82,7 +81,9 @@ private:
   static std::mutex instanceMutex_;
   std::unordered_map<std::string, std::chrono::high_resolution_clock::time_point> startTimes;
   std::string csvFilename;
+  bool logToCSV;
   int serialNumber;
+  std::string baseFilename;
   std::mutex mapMutex;
   int planningCount;
 };
@@ -109,4 +110,4 @@ private:
 };
 
 #define PROFILE_FUNCTION Profiler profiler_instance(__func__);
-#endif // COLOR_H
+#endif // EVENT_LOGGER_HPP_
