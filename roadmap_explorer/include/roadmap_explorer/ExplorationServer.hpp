@@ -5,9 +5,9 @@
 #include <string>
 #include <thread>
 
-#include "rclcpp/rclcpp.hpp"
-#include "rclcpp_action/rclcpp_action.hpp"
-#include "nav2_util/lifecycle_node.hpp"
+#include <rclcpp/rclcpp.hpp>
+#include <rclcpp_action/rclcpp_action.hpp>
+#include <nav2_util/lifecycle_node.hpp>
 
 #include "roadmap_explorer/ExplorationBT.hpp"
 #include "roadmap_explorer_msgs/action/explore.hpp"
@@ -38,6 +38,7 @@ protected:
   rclcpp_action::GoalResponse handle_goal(
     const rclcpp_action::GoalUUID & uuid,
     std::shared_ptr<const ExploreAction::Goal> goal);
+
   rclcpp_action::CancelResponse handle_cancel(
     const std::shared_ptr<GoalHandleExplore> goal_handle);
   void handle_accepted(const std::shared_ptr<GoalHandleExplore> goal_handle);
@@ -50,7 +51,6 @@ protected:
     const std::shared_ptr<GoalHandleExplore> goal_handle,
     std::shared_ptr<ExploreAction::Result> result);
 
-  // Utility to publish feedback
   void publish_feedback(
     const std::shared_ptr<GoalHandleExplore> & goal_handle,
     const std::string & message);
