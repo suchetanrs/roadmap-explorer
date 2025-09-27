@@ -3,8 +3,6 @@
 
 #include <vector>
 #include <string>
-#include <fstream>
-#include <iomanip>
 #include <unordered_map>
 #include <memory>
 
@@ -25,6 +23,7 @@
 #include <nav2_costmap_2d/costmap_2d.hpp>
 #include <nav2_costmap_2d/footprint.hpp>
 #include <nav2_costmap_2d/layer.hpp>
+#include <nav2_util/lifecycle_node.hpp>
 
 #include "roadmap_explorer/util/Logger.hpp"
 #include "roadmap_explorer/Frontier.hpp"
