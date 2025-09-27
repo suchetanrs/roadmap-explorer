@@ -36,6 +36,27 @@ ament_target_dependencies(test_event_logger
   nav2_util
 )
 
+# Test executable for RosVisualizer
+ament_add_gtest(test_ros_visualizer test_ros_visualizer.cpp 
+  ${CMAKE_SOURCE_DIR}/src/util/RosVisualizer.cpp
+  ${CMAKE_SOURCE_DIR}/src/Frontier.cpp
+)
+ament_target_dependencies(test_ros_visualizer 
+  rclcpp
+  nav2_util
+  nav2_costmap_2d
+  geometry_msgs
+  sensor_msgs
+  visualization_msgs
+  nav_msgs
+  pcl_ros
+  PCL
+  tf2_ros
+  tf2
+  Eigen3
+)
+target_link_libraries(test_ros_visualizer ${PCL_LIBRARIES})
+
 # Set C++ standard for all tests
 set_target_properties(test_geometry_utils PROPERTIES
   CXX_STANDARD 20
@@ -48,6 +69,11 @@ set_target_properties(test_general_utils PROPERTIES
 )
 
 set_target_properties(test_event_logger PROPERTIES
+  CXX_STANDARD 20
+  CXX_STANDARD_REQUIRED ON
+)
+
+set_target_properties(test_ros_visualizer PROPERTIES
   CXX_STANDARD 20
   CXX_STANDARD_REQUIRED ON
 )
