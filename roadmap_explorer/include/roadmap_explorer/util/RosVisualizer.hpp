@@ -5,8 +5,14 @@
 #include <string>
 #include <fstream>
 #include <iomanip>
+#include <unordered_map>
+#include <memory>
 
 #include <Eigen/Dense>
+
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
+#include <pcl_conversions/pcl_conversions.h>
 
 #include <rclcpp/rclcpp.hpp>
 #include <visualization_msgs/msg/marker.hpp>
@@ -14,9 +20,6 @@
 #include <geometry_msgs/msg/pose.hpp>
 #include <geometry_msgs/msg/pose_array.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
-#include <pcl/point_cloud.h>
-#include <pcl/point_types.h>
-#include <pcl_conversions/pcl_conversions.h>
 #include <nav_msgs/msg/path.hpp>
 
 #include <nav2_costmap_2d/costmap_2d.hpp>
@@ -29,6 +32,12 @@
 
 class RosVisualizer
 {
+  // Type aliases for different publisher types
+  using PointCloud2Publisher = rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::PointCloud2>::SharedPtr;
+  using MarkerPublisher = rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::Marker>::SharedPtr;
+  using MarkerArrayPublisher = rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::MarkerArray>::SharedPtr;
+  using PathPublisher = rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr;
+  using PoseArrayPublisher = rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PoseArray>::SharedPtr;
 
 public:
   ~RosVisualizer();
@@ -63,50 +72,50 @@ public:
     RosVisualizerPtr.reset();
   }
 
-  void observableCellsViz(std::vector<geometry_msgs::msg::Point> & points);
-  rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::Marker>::SharedPtr
-    observable_cells_publisher_;
-
-  void observableCellsViz(std::vector<nav2_costmap_2d::MapLocation> & points);
-  rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::Marker>::SharedPtr
-    connecting_cells_publisher_;
-
-  void visualizeSpatialHashMap(
+  // New interface: topic-based visualization methods
+  void visualizePointCloud(
+    const std::string & topic_name,
     const std::vector<FrontierPtr> & frontier_list,
-    std::string globalFrameID);
-  rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::PointCloud2>::SharedPtr
-    spatial_hashmap_pub_;
+    const std::string & frame_id = "map",
+    float intensity = 50.0f);
 
-  void visualizeFrontier(
+  void visualizePointCloud(
+    const std::string & topic_name,
+    const std::vector<std::vector<double>> & points,
+    const std::string & frame_id = "map",
+    float intensity = 500.0f);
+
+  void visualizeMarkers(
+    const std::string & topic_name,
+    const std::vector<geometry_msgs::msg::Point> & points,
+    const std::string & frame_id = "map");
+
+  void visualizeMarkers(
+    const std::string & topic_name,
+    const std::vector<nav2_costmap_2d::MapLocation> & points,
+    const std::string & frame_id = "map");
+
+  void visualizeFrontierMarkers(
+    const std::string & topic_name,
     const std::vector<FrontierPtr> & frontier_list,
-    const std::vector<std::vector<double>> & every_frontier,
-    std::string globalFrameID);
-  rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::PointCloud2>::SharedPtr frontier_cloud_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::PointCloud2>::SharedPtr
-    all_frontier_cloud_pub_;
+    const std::string & frame_id = "map");
 
-  void visualizeFrontierMarker(
-    const std::vector<FrontierPtr> & frontier_list);
-  rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::MarkerArray>::SharedPtr
-    frontier_marker_array_publisher_;
+  void visualizePath(
+    const std::string & topic_name,
+    nav_msgs::msg::Path & path);
 
-  void frontierPlanViz(nav_msgs::msg::Path & path);
-  rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr frontier_plan_pub_;
+  void visualizePoseArray(
+    const std::string & topic_name,
+    const std::deque<geometry_msgs::msg::Pose> & poses,
+    const std::string & frame_id = "map");
 
-  void fullPathPlanViz(nav_msgs::msg::Path & path);
-  void globalRepositionPlanViz(nav_msgs::msg::Path & path);
-  size_t getNumSubscribersFullPathPlan();
-  rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr full_path_plan_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr global_repos_path_plan_pub_;
+  void visualizeBlacklistedFrontierMarkers(
+    const std::string & topic_name,
+    const std::vector<FrontierPtr> & blacklisted_frontiers,
+    const std::string & frame_id = "map");
 
-  void visualizeTrailingPoses(std::deque<geometry_msgs::msg::Pose> robot_queue);
-  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PoseArray>::SharedPtr
-    trailing_robot_poses_publisher_;
-
-  void visualizeBlacklistedFrontiers(
-    const std::vector<FrontierPtr> & blacklisted_frontiers);
-  rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::MarkerArray>::SharedPtr
-    blacklisted_frontiers_publisher_;
+  // Utility methods
+  size_t getNumSubscribers(const std::string & topic_name);
 
 private:
   // Delete copy constructor and assignment operator to prevent copying
@@ -116,11 +125,37 @@ private:
     std::shared_ptr<nav2_util::LifecycleNode> node,
     nav2_costmap_2d::Costmap2D * costmap);
 
+  // Template methods for publisher management
+  template<typename MessageType>
+  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<MessageType>> getOrCreatePublisher(
+    const std::string & topic_name);
+
+  // Helper methods for point cloud creation
+  pcl::PointCloud<pcl::PointXYZI> createPointCloudFromFrontiers(
+    const std::vector<FrontierPtr> & frontier_list, float intensity = 50.0f);
+  
+  pcl::PointCloud<pcl::PointXYZI> createPointCloudFromPoints(
+    const std::vector<std::vector<double>> & points, float intensity = 500.0f);
+
+  sensor_msgs::msg::PointCloud2 convertToRosPointCloud(
+    const pcl::PointCloud<pcl::PointXYZI> & pcl_cloud,
+    const std::string & frame_id);
+
   static std::unique_ptr<RosVisualizer> RosVisualizerPtr;
   static std::mutex instanceMutex_;
 
   std::shared_ptr<nav2_util::LifecycleNode> node_;
   nav2_costmap_2d::Costmap2D * costmap_;
+
+  // Publisher maps for different message types
+  std::unordered_map<std::string, PointCloud2Publisher> pointcloud_publishers_;
+  std::unordered_map<std::string, MarkerPublisher> marker_publishers_;
+  std::unordered_map<std::string, MarkerArrayPublisher> marker_array_publishers_;
+  std::unordered_map<std::string, PathPublisher> path_publishers_;
+  std::unordered_map<std::string, PoseArrayPublisher> pose_array_publishers_;
+
+  // Mutex for thread-safe publisher access
+  std::mutex publisher_mutex_;
 };
 
 #define rosVisualizerInstance (RosVisualizer::getInstance())
