@@ -120,7 +120,7 @@ void FrontierCostCalculator::setArrivalInformationForFrontier(
         0)));
 
   // visualize raytraced points
-  // rosVisualizerInstanceobservableCellsViz(vizpoints);
+  // rosVisualizerInstance.visualizeMarkers("observable_cells", vizPoints);
   frontier->setArrivalInformation(maxValue);
   LOG_DEBUG("Arrival information is: " << frontier->getArrivalInformation());
   if (frontier->getArrivalInformation() < min_arrival_info_gt_) {
@@ -349,7 +349,7 @@ void FrontierCostCalculator::setPlanForFrontier(
     return;
   }
 
-  rosVisualizerInstance.frontierPlanViz(plan);
+  rosVisualizerInstance.visualizePath("grid_based_frontier_plan", plan);
   goal_point_w->setAchievability(true);
   goal_point_w->setPathLength(plan.poses.size());
   goal_point_w->setPathLengthInM(path_length_m);

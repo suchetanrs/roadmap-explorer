@@ -100,9 +100,8 @@ public:
     setOutput("frontier_list", frontier_list);
     setOutput("every_frontier", every_frontier);
     LOG_DEBUG("Set frontier outputs");
-    rosVisualizerInstance.visualizeFrontier(
-      frontier_list, every_frontier,
-      explore_costmap_ros_->getLayeredCostmap()->getGlobalFrameID());
+    rosVisualizerInstance.visualizePointCloud("frontiers", frontier_list, explore_costmap_ros_->getLayeredCostmap()->getGlobalFrameID(), 50.0f);
+    rosVisualizerInstance.visualizePointCloud("all_frontiers", every_frontier, explore_costmap_ros_->getLayeredCostmap()->getGlobalFrameID(), 500.0f);
     LOG_DEBUG("Frontiers visualized");
     EventLoggerInstance.endEvent("SearchForFrontiers", 0);
     explore_costmap_ros_->getCostmap()->getMutex()->unlock();
@@ -312,8 +311,7 @@ public:
     }
     setOutput("frontier_costs_result", frontierCostsResultPtr->frontier_list);
     EventLoggerInstance.endEvent("ProcessFrontierCosts", 0);
-    rosVisualizerInstance.visualizeFrontierMarker(
-      frontierCostsResultPtr->frontier_list);
+    rosVisualizerInstance.visualizeFrontierMarkers("frontier_cell_markers", frontierCostsResultPtr->frontier_list);
     return BT::NodeStatus::SUCCESS;
   }
 

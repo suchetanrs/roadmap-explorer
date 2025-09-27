@@ -29,8 +29,7 @@ bool CostAssigner::getFrontierCosts(
   std::shared_ptr<GetFrontierCostsResponse> resultData)
 {
   setFrontierBlacklist(requestData->prohibited_frontiers);
-  rosVisualizerInstance.visualizeBlacklistedFrontiers(
-    requestData->prohibited_frontiers);
+  rosVisualizerInstance.visualizeBlacklistedFrontierMarkers("blacklisted_frontiers", requestData->prohibited_frontiers);
   bool costsResult =
     processChosenApproach(requestData->frontier_list, requestData->start_pose.pose, requestData->force_grid_base_planning);
   if (costsResult == false) {

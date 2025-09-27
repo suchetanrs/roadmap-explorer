@@ -371,14 +371,14 @@ bool FullPathOptimizer::getNextGoal(
       nav_msgs::msg::Path globalReposPath;
       globalReposPath.header.frame_id = "map";
       globalReposPath.header.stamp = node_->now();
-      rosVisualizerInstance.fullPathPlanViz(globalReposPath);
+      rosVisualizerInstance.visualizePath("full_path", globalReposPath);
 
       computePathBetweenPointsThetaStar(
         globalReposPath,
         nextFrontier->getGoalPoint(),
         robotP.pose.position, true, explore_costmap_ros_->getCostmap());
 
-      rosVisualizerInstance.globalRepositionPlanViz(globalReposPath);
+      rosVisualizerInstance.visualizePath("global_repositioning_path", globalReposPath);
 
       return true;
     } else {
@@ -398,11 +398,11 @@ bool FullPathOptimizer::getNextGoal(
   std::vector<std::shared_ptr<Node>> bestPathViz;
   // LOG_INFO("Best full path to follow: ");
   EventLoggerInstance.startEvent("publishPlan");
-  if (rosVisualizerInstance.getNumSubscribersFullPathPlan() > 0) {
+  if (rosVisualizerInstance.getNumSubscribers("full_path") > 0) {
     nav_msgs::msg::Path bestPathROS;
     bestPathROS.header.frame_id = "map";
     bestPathROS.header.stamp = node_->now();
-    rosVisualizerInstance.globalRepositionPlanViz(bestPathROS);
+    rosVisualizerInstance.visualizePath("global_repositioning_path", bestPathROS);
     for (int o = 0; o < (int)bestFrontierWaypoint.size() - 1; o++) {
       // for (auto &fullPoint : frontier_pair_distances_[FrontierPair(bestFrontierWaypoint[o], bestFrontierWaypoint[o + 1])].path)
       // {
@@ -416,7 +416,7 @@ bool FullPathOptimizer::getNextGoal(
       // bestPathViz.insert(bestPathViz.end(), frontier_pair_distances_[FrontierPair(bestFrontierWaypoint[o], bestFrontierWaypoint[o + 1])].path.begin(), frontier_pair_distances_[FrontierPair(bestFrontierWaypoint[o], bestFrontierWaypoint[o + 1])].path.end());
     }
     // frontierRoadmapInstance.publishPlan(bestPathViz, 1.0, 0.0, 0.0);
-    rosVisualizerInstance.fullPathPlanViz(bestPathROS);
+    rosVisualizerInstance.visualizePath("full_path", bestPathROS);
   }
   EventLoggerInstance.endEvent("publishPlan", 2);
   // 0 is robot pose. Return the first frontier in the path.
