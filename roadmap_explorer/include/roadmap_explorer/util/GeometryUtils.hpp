@@ -72,6 +72,19 @@ inline geometry_msgs::msg::Quaternion yawToQuat(double yaw)
   return quat_msg;
 }
 
+inline Eigen::Affine3f getTransformFromPose(geometry_msgs::msg::Pose & pose)
+{
+  // Extract translation and rotation from the pose message
+  Eigen::Vector3f translation(pose.position.x, pose.position.y, pose.position.z);
+  Eigen::Quaternionf rotation(pose.orientation.w, pose.orientation.x, pose.orientation.y,
+    pose.orientation.z);
+
+  // Construct the transformation matrix
+  Eigen::Affine3f transform = Eigen::Translation3f(translation) * Eigen::Quaternionf(rotation);
+
+  return transform;
+}
+
 inline double distanceBetweenFrontiers(const FrontierPtr & f1, const FrontierPtr & f2)
 {
   return sqrt(

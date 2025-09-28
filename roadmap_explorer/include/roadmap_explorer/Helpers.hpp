@@ -128,8 +128,6 @@ bool nearestFreeCell(
   unsigned int & result, unsigned int start, unsigned char val,
   const nav2_costmap_2d::Costmap2D & costmap);
 
-Eigen::Affine3f getTransformFromPose(geometry_msgs::msg::Pose & pose);
-
 bool computePathBetweenPoints(
   nav_msgs::msg::Path & path,
   const geometry_msgs::msg::Point & start_point,
@@ -137,12 +135,6 @@ bool computePathBetweenPoints(
   bool planner_allow_unknown,
   nav2_costmap_2d::Costmap2D * exploration_costmap_);
 
-bool computePathBetweenPointsThetaStar(
-  nav_msgs::msg::Path & path,
-  const geometry_msgs::msg::Point & start_point,
-  const geometry_msgs::msg::Point & goal_point,
-  bool planner_allow_unknown,
-  nav2_costmap_2d::Costmap2D * exploration_costmap_);
 }
 
 #endif // HELPERS_HPP

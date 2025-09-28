@@ -24,6 +24,8 @@
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "nav_msgs/msg/path.hpp"
 
+#include "roadmap_explorer/util/Logger.hpp"
+
 const double INF_COST = DBL_MAX;
 const int UNKNOWN_COST = 255;
 const int OBS_COST = 254;
@@ -316,6 +318,15 @@ protected:
     queue_ = std::priority_queue<tree_node *, std::vector<tree_node *>, comp>();
   }
 };
+
+
+bool computePathBetweenPointsThetaStar(
+  nav_msgs::msg::Path & path,
+  const geometry_msgs::msg::Point & start_point,
+  const geometry_msgs::msg::Point & goal_point,
+  bool planner_allow_unknown,
+  nav2_costmap_2d::Costmap2D * exploration_costmap_);
+
 } //  namespace roadmap_explorer
 
 #endif //  NAV2_THETA_STAR_PLANNER__THETA_STAR_HPP_
