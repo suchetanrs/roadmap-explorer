@@ -61,7 +61,7 @@ FrontierRoadMap::~FrontierRoadMap()
   marker_pub_plan_.reset();
 }
 
-void FrontierRoadMap::mapDataCallback(roadmap_explorer_msgs::msg::MapData mapData)
+void FrontierRoadMap::mapDataCallback(const roadmap_explorer_msgs::msg::MapData & mapData)
 {
   // LOG_TRACE("Locking mapDataCallback");
   std::lock_guard<std::mutex> lock(spatial_hash_map_mutex_);
@@ -302,10 +302,7 @@ void FrontierRoadMap::addRobotPoseAsNode(
 void FrontierRoadMap::constructNewEdges(const std::vector<FrontierPtr> & frontiers)
 {
   LOG_INFO("Reconstructing new frontier edges");
-  // Add each point as a child of the parent if no obstacle is present
-  // LOG_TRACE("Locking constructNewEdges");
-  // std::lock_guard<std::mutex> lock(spatial_hash_map_mutex_);
-  // LOG_TRACE("UnLocking constructNewEdges");
+  // Add each point as a child of the parent if no obstacle is present;
   std::vector<FrontierPtr> closestNodes;
   for (const auto & point : frontiers) {
     closestNodes.clear();
@@ -522,6 +519,7 @@ void FrontierRoadMap::getClosestNodeInHashmap(
     int searchRadius = GRID_CELL_SIZE * searchRadiusMultiplier;
     if (searchRadius > 10) {
       LOG_CRITICAL("Cannot find closest node within 10m in hashmap. This is not ok.")
+      break;
     }
     for (int dx = -searchRadius; dx <= searchRadius; ++dx) {
       for (int dy = -searchRadius; dy <= searchRadius; ++dy) {
@@ -558,6 +556,7 @@ void FrontierRoadMap::getClosestNodeInRoadMap(
     int searchRadius = GRID_CELL_SIZE * searchRadiusMultiplier;
     if (searchRadius > 10) {
       LOG_CRITICAL("Cannot find closest node within 10m in roadmap. This is not ok.")
+      break;
     }
     for (int dx = -searchRadius; dx <= searchRadius; ++dx) {
       for (int dy = -searchRadius; dy <= searchRadius; ++dy) {
@@ -625,7 +624,7 @@ RoadmapPlanResult FrontierRoadMap::getPlan(
         addNodes(frontier_vec, false);
         goal_closest = goal;
       } else {
-        LOG_INFO("End node: " << xs << ", " << ys << " already in the roadmap");
+        LOG_INFO("End node: " << xe << ", " << ye << " already in the roadmap");
       }
     } else {
       getClosestNodeInRoadMap(goal, goal_closest);
@@ -672,7 +671,11 @@ bool FrontierRoadMap::isConnectable(const FrontierPtr & f1, const FrontierPtr & 
 {
   std::vector<nav2_costmap_2d::MapLocation> traced_cells;
   RayTracedCells cell_gatherer(costmap_, traced_cells, 253, 254, 0, 255);
-  unsigned int max_length = max_connection_length_ / costmap_->getResolution();
+  double resolution = costmap_->getResolution();
+  if (resolution <= 0.0) {
+    throw RoadmapExplorerException("Costmap resolution is 0 or negative.");
+  }
+  unsigned int max_length = static_cast<unsigned int>(max_connection_length_ / resolution);
   if (!getTracedCells(
       f1->getGoalPoint().x, f1->getGoalPoint().y, f2->getGoalPoint().x,
       f2->getGoalPoint().y, cell_gatherer, max_length, costmap_))
@@ -682,7 +685,7 @@ bool FrontierRoadMap::isConnectable(const FrontierPtr & f1, const FrontierPtr & 
   if (cell_gatherer.hasHitObstacle()) {
     return false;
   }
-  if (cell_gatherer.getNumUnknown() > RADIUS_TO_DECIDE_EDGES / costmap_->getResolution() * 0.3) {
+  if (resolution > 0.0 && cell_gatherer.getNumUnknown() > RADIUS_TO_DECIDE_EDGES / resolution * 0.3) {
     return false;
   }
   rosVisualizerInstance.visualizeMarkers("connecting_cells", cell_gatherer.getCells());

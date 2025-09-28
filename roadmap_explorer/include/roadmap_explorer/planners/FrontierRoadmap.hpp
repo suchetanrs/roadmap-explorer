@@ -9,6 +9,8 @@
 #include <iostream>
 #include <sstream>
 #include <iomanip>
+#include <mutex>
+#include <queue>
 
 #include <rclcpp/rclcpp.hpp>
 
@@ -17,15 +19,17 @@
 
 #include <visualization_msgs/msg/marker_array.hpp>
 
+#include "roadmap_explorer_msgs/msg/map_data.hpp"
+
+#include "roadmap_explorer/Parameters.hpp"
 #include "roadmap_explorer/Frontier.hpp"
 #include "roadmap_explorer/Helpers.hpp"
-#include "roadmap_explorer/planners/astar.hpp"
-#include "roadmap_explorer/planners/FrontierRoadmap.hpp"
+
+#include "roadmap_explorer/planners/Astar.hpp"
+
 #include "roadmap_explorer/util/EventLogger.hpp"
 #include "roadmap_explorer/util/Logger.hpp"
 #include "roadmap_explorer/util/RosVisualizer.hpp"
-#include "roadmap_explorer/Parameters.hpp"
-#include "roadmap_explorer_msgs/msg/map_data.hpp"
 
 namespace roadmap_explorer
 {
@@ -99,7 +103,7 @@ public:
     float b) const;
 
 private:
-  void mapDataCallback(roadmap_explorer_msgs::msg::MapData mapData);
+  void mapDataCallback(const roadmap_explorer_msgs::msg::MapData & mapData);
 
   void optimizeSHM();
 
