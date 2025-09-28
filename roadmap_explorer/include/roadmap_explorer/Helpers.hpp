@@ -6,11 +6,9 @@
 
 #include <nav2_costmap_2d/costmap_2d.hpp>
 #include <nav_msgs/msg/path.hpp>
-#include <nav2_navfn_planner/navfn.hpp>
 
 #include "roadmap_explorer/Frontier.hpp"
 #include "roadmap_explorer/util/GeometryUtils.hpp"
-#include "roadmap_explorer/planners/theta_star.hpp"
 
 namespace roadmap_explorer
 {
@@ -127,13 +125,6 @@ std::vector<unsigned int> nhood20(unsigned int idx, const nav2_costmap_2d::Costm
 bool nearestFreeCell(
   unsigned int & result, unsigned int start, unsigned char val,
   const nav2_costmap_2d::Costmap2D & costmap);
-
-bool computePathBetweenPoints(
-  nav_msgs::msg::Path & path,
-  const geometry_msgs::msg::Point & start_point,
-  const geometry_msgs::msg::Point & goal_point,
-  bool planner_allow_unknown,
-  nav2_costmap_2d::Costmap2D * exploration_costmap_);
 
 }
 

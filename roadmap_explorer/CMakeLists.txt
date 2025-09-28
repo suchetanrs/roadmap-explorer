@@ -97,7 +97,8 @@ ament_target_dependencies(roadmap_explorer_frontier_search_plugins ${dependencie
 
 ########################### CORE LIBRARY ###########################
 add_library(roadmap_exploration_bt SHARED
-src/planners/theta_star.cpp
+src/planners/ThetaStar.cpp
+src/planners/NavFn.cpp
 src/planners/FrontierRoadmap.cpp
 src/planners/astar.cpp
 src/util/EventLogger.cpp
