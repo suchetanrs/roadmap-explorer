@@ -112,3 +112,22 @@ set_target_properties(test_astar PROPERTIES
   CXX_STANDARD 20
   CXX_STANDARD_REQUIRED ON
 )
+
+# Test executable for Helpers
+ament_add_gtest(test_helpers test_helpers.cpp 
+  ${CMAKE_SOURCE_DIR}/src/Helpers.cpp
+)
+ament_target_dependencies(test_helpers 
+  rclcpp
+  nav2_util
+  nav2_costmap_2d
+  geometry_msgs
+  tf2
+  tf2_ros
+  Eigen3
+)
+
+set_target_properties(test_helpers PROPERTIES
+  CXX_STANDARD 20
+  CXX_STANDARD_REQUIRED ON
+)
