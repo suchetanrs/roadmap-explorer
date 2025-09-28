@@ -282,4 +282,46 @@ void ThetaStar::initializePosn(int size_inc)
     node_position_.push_back(nullptr);
   }
 }
+
+bool computePathBetweenPointsThetaStar(
+  nav_msgs::msg::Path & path, const geometry_msgs::msg::Point & start_point,
+  const geometry_msgs::msg::Point & goal_point,
+  bool planner_allow_unknown, nav2_costmap_2d::Costmap2D * exploration_costmap_)
+{
+  unsigned int mx, my;
+
+  // Convert start point from world to map coordinates.
+  if (!exploration_costmap_->worldToMap(start_point.x, start_point.y, mx, my)) {
+    LOG_ERROR("Start point is off the global costmap.");
+    return false;
+  }
+
+  // Convert goal point from world to map coordinates.
+  if (!exploration_costmap_->worldToMap(goal_point.x, goal_point.y, mx, my)) {
+    LOG_ERROR("Goal point is off the global costmap.");
+    return false;
+  }
+
+  // Create and configure the planner.
+  auto planner = std::make_unique<roadmap_explorer::ThetaStar>();
+  planner->costmap_ = exploration_costmap_;
+  planner->how_many_corners_ = 8;
+  planner->allow_unknown_ = planner_allow_unknown;
+  planner->w_euc_cost_ = 1.0;
+  planner->w_traversal_cost_ = 2.0;
+  planner->w_heuristic_cost_ = planner->w_euc_cost_ < 1.0 ? planner->w_euc_cost_ : 1.0;
+  planner->setStartAndGoal(start_point, goal_point);
+  std::vector<coordsW> thetapath;
+  if (planner->isUnsafeToPlan()) {
+    LOG_ERROR("Either of the start or goal pose are an obstacle! ");
+    return false;
+  } else if (planner->generatePath(thetapath)) {
+    planner->linearInterpolation(thetapath, exploration_costmap_->getResolution(), path);
+    // global_path = linearInterpolation(thetapath, planner->costmap_->getResolution());
+  } else {
+    LOG_ERROR("Could not generate path between the given poses");
+    return false;
+  }
+  return true;
+}
 } //  namespace theta_star

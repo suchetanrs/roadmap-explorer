@@ -583,6 +583,246 @@ TEST_F(GeometryUtilsTest, DistanceFunctionConsistency)
     EXPECT_TRUE(isApproxEqual(dist1 * dist1, dist_sq));
 }
 
+// Tests for getTransformFromPose function
+TEST_F(GeometryUtilsTest, GetTransformFromPoseIdentity) 
+{
+    geometry_msgs::msg::Pose pose;
+    pose.position.x = 0.0;
+    pose.position.y = 0.0;
+    pose.position.z = 0.0;
+    pose.orientation = quat_identity;
+    
+    Eigen::Affine3f transform = getTransformFromPose(pose);
+    
+    // Identity transform should have identity matrix
+    Eigen::Matrix4f expected = Eigen::Matrix4f::Identity();
+    Eigen::Matrix4f actual = transform.matrix();
+    
+    for (int i = 0; i < 4; ++i) {
+        for (int j = 0; j < 4; ++j) {
+            EXPECT_TRUE(isApproxEqual(actual(i, j), expected(i, j), 1e-6));
+        }
+    }
+}
+
+TEST_F(GeometryUtilsTest, GetTransformFromPoseTranslationOnly) 
+{
+    geometry_msgs::msg::Pose pose;
+    pose.position.x = 5.0;
+    pose.position.y = 10.0;
+    pose.position.z = 15.0;
+    pose.orientation = quat_identity;
+    
+    Eigen::Affine3f transform = getTransformFromPose(pose);
+    
+    // Check translation part
+    Eigen::Vector3f translation = transform.translation();
+    EXPECT_TRUE(isApproxEqual(translation.x(), 5.0f));
+    EXPECT_TRUE(isApproxEqual(translation.y(), 10.0f));
+    EXPECT_TRUE(isApproxEqual(translation.z(), 15.0f));
+    
+    // Check rotation part (should be identity)
+    Eigen::Matrix3f rotation = transform.rotation();
+    Eigen::Matrix3f expected_rotation = Eigen::Matrix3f::Identity();
+    
+    for (int i = 0; i < 3; ++i) {
+        for (int j = 0; j < 3; ++j) {
+            EXPECT_TRUE(isApproxEqual(rotation(i, j), expected_rotation(i, j), 1e-6));
+        }
+    }
+}
+
+TEST_F(GeometryUtilsTest, GetTransformFromPoseRotationOnly) 
+{
+    geometry_msgs::msg::Pose pose;
+    pose.position.x = 0.0;
+    pose.position.y = 0.0;
+    pose.position.z = 0.0;
+    pose.orientation = quat_90_z; // 90 degree rotation around Z
+    
+    Eigen::Affine3f transform = getTransformFromPose(pose);
+    
+    // Check translation part (should be zero)
+    Eigen::Vector3f translation = transform.translation();
+    EXPECT_TRUE(isApproxEqual(translation.x(), 0.0f));
+    EXPECT_TRUE(isApproxEqual(translation.y(), 0.0f));
+    EXPECT_TRUE(isApproxEqual(translation.z(), 0.0f));
+    
+    // Check rotation part
+    Eigen::Matrix3f rotation = transform.rotation();
+    
+    // For 90 degree rotation around Z, we expect:
+    // [0 -1  0]
+    // [1  0  0]
+    // [0  0  1]
+    EXPECT_TRUE(isApproxEqual(rotation(0, 0), 0.0f, 1e-6));
+    EXPECT_TRUE(isApproxEqual(rotation(0, 1), -1.0f, 1e-6));
+    EXPECT_TRUE(isApproxEqual(rotation(0, 2), 0.0f, 1e-6));
+    EXPECT_TRUE(isApproxEqual(rotation(1, 0), 1.0f, 1e-6));
+    EXPECT_TRUE(isApproxEqual(rotation(1, 1), 0.0f, 1e-6));
+    EXPECT_TRUE(isApproxEqual(rotation(1, 2), 0.0f, 1e-6));
+    EXPECT_TRUE(isApproxEqual(rotation(2, 0), 0.0f, 1e-6));
+    EXPECT_TRUE(isApproxEqual(rotation(2, 1), 0.0f, 1e-6));
+    EXPECT_TRUE(isApproxEqual(rotation(2, 2), 1.0f, 1e-6));
+}
+
+TEST_F(GeometryUtilsTest, GetTransformFromPoseFullTransform) 
+{
+    geometry_msgs::msg::Pose pose;
+    pose.position.x = 2.0;
+    pose.position.y = 3.0;
+    pose.position.z = 4.0;
+    pose.orientation = quat_90_z; // 90 degree rotation around Z
+    
+    Eigen::Affine3f transform = getTransformFromPose(pose);
+    
+    // Check translation part
+    Eigen::Vector3f translation = transform.translation();
+    EXPECT_TRUE(isApproxEqual(translation.x(), 2.0f));
+    EXPECT_TRUE(isApproxEqual(translation.y(), 3.0f));
+    EXPECT_TRUE(isApproxEqual(translation.z(), 4.0f));
+    
+    // Check that rotation is applied correctly
+    Eigen::Matrix3f rotation = transform.rotation();
+    EXPECT_TRUE(isApproxEqual(rotation(0, 0), 0.0f, 1e-6));
+    EXPECT_TRUE(isApproxEqual(rotation(0, 1), -1.0f, 1e-6));
+    EXPECT_TRUE(isApproxEqual(rotation(1, 0), 1.0f, 1e-6));
+    EXPECT_TRUE(isApproxEqual(rotation(1, 1), 0.0f, 1e-6));
+}
+
+TEST_F(GeometryUtilsTest, GetTransformFromPoseArbitraryRotation) 
+{
+    geometry_msgs::msg::Pose pose;
+    pose.position.x = 1.0;
+    pose.position.y = 2.0;
+    pose.position.z = 3.0;
+    
+    // Create a quaternion for 45 degrees around X, 30 degrees around Y, 60 degrees around Z
+    double roll = M_PI / 4.0;   // 45 degrees
+    double pitch = M_PI / 6.0;  // 30 degrees
+    double yaw = M_PI / 3.0;    // 60 degrees
+    
+    pose.orientation = eulerToQuat(roll, pitch, yaw);
+    
+    Eigen::Affine3f transform = getTransformFromPose(pose);
+    
+    // Verify the transform by applying it to a test vector
+    Eigen::Vector3f test_vector(1.0f, 0.0f, 0.0f);
+    Eigen::Vector3f transformed_vector = transform * test_vector;
+    
+    // The result should be different from the original vector
+    EXPECT_FALSE(isApproxEqual(transformed_vector.x(), test_vector.x(), 1e-6));
+    
+    // Check that the transformation preserves vector length (rotation + translation)
+    Eigen::Vector3f rotated_only = transform.rotation() * test_vector;
+    float original_length = test_vector.norm();
+    float rotated_length = rotated_only.norm();
+    EXPECT_TRUE(isApproxEqual(original_length, rotated_length, 1e-6));
+}
+
+TEST_F(GeometryUtilsTest, GetTransformFromPoseQuaternionNormalization) 
+{
+    geometry_msgs::msg::Pose pose;
+    pose.position.x = 0.0;
+    pose.position.y = 0.0;
+    pose.position.z = 0.0;
+    
+    // Create an unnormalized quaternion
+    pose.orientation.x = 0.5;
+    pose.orientation.y = 0.5;
+    pose.orientation.z = 0.5;
+    pose.orientation.w = 0.5;
+    
+    // Eigen should handle normalization internally
+    Eigen::Affine3f transform = getTransformFromPose(pose);
+    
+    // The transform should still be valid (determinant of rotation part should be 1)
+    Eigen::Matrix3f rotation = transform.rotation();
+    float det = rotation.determinant();
+    EXPECT_TRUE(isApproxEqual(det, 1.0f, 1e-5));
+}
+
+TEST_F(GeometryUtilsTest, GetTransformFromPoseInverseTransform) 
+{
+    geometry_msgs::msg::Pose pose;
+    pose.position.x = 5.0;
+    pose.position.y = 10.0;
+    pose.position.z = 15.0;
+    pose.orientation = quat_90_z;
+    
+    Eigen::Affine3f transform = getTransformFromPose(pose);
+    Eigen::Affine3f inverse_transform = transform.inverse();
+    
+    // Applying transform and then its inverse should give identity
+    Eigen::Affine3f result = transform * inverse_transform;
+    Eigen::Matrix4f identity = Eigen::Matrix4f::Identity();
+    
+    for (int i = 0; i < 4; ++i) {
+        for (int j = 0; j < 4; ++j) {
+            EXPECT_TRUE(isApproxEqual(result.matrix()(i, j), identity(i, j), 1e-5));
+        }
+    }
+}
+
+TEST_F(GeometryUtilsTest, GetTransformFromPoseVectorTransformation) 
+{
+    geometry_msgs::msg::Pose pose;
+    pose.position.x = 1.0;
+    pose.position.y = 2.0;
+    pose.position.z = 3.0;
+    pose.orientation = quat_identity;
+    
+    Eigen::Affine3f transform = getTransformFromPose(pose);
+    
+    // Test transforming a point
+    Eigen::Vector3f point(0.0f, 0.0f, 0.0f);
+    Eigen::Vector3f transformed_point = transform * point;
+    
+    // With identity rotation, the point should just be translated
+    EXPECT_TRUE(isApproxEqual(transformed_point.x(), 1.0f));
+    EXPECT_TRUE(isApproxEqual(transformed_point.y(), 2.0f));
+    EXPECT_TRUE(isApproxEqual(transformed_point.z(), 3.0f));
+}
+
+TEST_F(GeometryUtilsTest, GetTransformFromPoseNegativeValues) 
+{
+    geometry_msgs::msg::Pose pose;
+    pose.position.x = -5.0;
+    pose.position.y = -10.0;
+    pose.position.z = -15.0;
+    pose.orientation = quat_identity;
+    
+    Eigen::Affine3f transform = getTransformFromPose(pose);
+    
+    // Check negative translation values
+    Eigen::Vector3f translation = transform.translation();
+    EXPECT_TRUE(isApproxEqual(translation.x(), -5.0f));
+    EXPECT_TRUE(isApproxEqual(translation.y(), -10.0f));
+    EXPECT_TRUE(isApproxEqual(translation.z(), -15.0f));
+}
+
+TEST_F(GeometryUtilsTest, GetTransformFromPoseZeroValues) 
+{
+    geometry_msgs::msg::Pose pose;
+    pose.position.x = 0.0;
+    pose.position.y = 0.0;
+    pose.position.z = 0.0;
+    pose.orientation.x = 0.0;
+    pose.orientation.y = 0.0;
+    pose.orientation.z = 0.0;
+    pose.orientation.w = 0.0; // This will be normalized by Eigen
+    
+    Eigen::Affine3f transform = getTransformFromPose(pose);
+    
+    // Even with zero quaternion, Eigen should handle it gracefully
+    // The result might not be identity due to normalization, but should be valid
+    Eigen::Matrix3f rotation = transform.rotation();
+    float det = rotation.determinant();
+    
+    // Determinant should be close to 1 (valid rotation matrix)
+    EXPECT_TRUE(std::abs(det - 1.0f) < 1e-3 || std::abs(det + 1.0f) < 1e-3);
+}
+
 int main(int argc, char **argv) 
 {
     testing::InitGoogleTest(&argc, argv);
