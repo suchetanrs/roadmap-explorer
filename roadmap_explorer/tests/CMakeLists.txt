@@ -67,6 +67,21 @@ ament_target_dependencies(test_frontier
   geometry_msgs
 )
 
+# Test executable for AStar
+ament_add_gtest(test_astar test_astar.cpp 
+  ${CMAKE_SOURCE_DIR}/src/planners/Astar.cpp
+  ${CMAKE_SOURCE_DIR}/src/Frontier.cpp
+)
+ament_target_dependencies(test_astar 
+  rclcpp
+  nav2_util
+  nav2_costmap_2d
+  geometry_msgs
+  tf2
+  tf2_ros
+  Eigen3
+)
+
 # Set C++ standard for all tests
 set_target_properties(test_geometry_utils PROPERTIES
   CXX_STANDARD 20
@@ -89,6 +104,11 @@ set_target_properties(test_ros_visualizer PROPERTIES
 )
 
 set_target_properties(test_frontier PROPERTIES
+  CXX_STANDARD 20
+  CXX_STANDARD_REQUIRED ON
+)
+
+set_target_properties(test_astar PROPERTIES
   CXX_STANDARD 20
   CXX_STANDARD_REQUIRED ON
 )
