@@ -239,7 +239,7 @@ sensor_msgs::msg::PointCloud2 RosVisualizer::convertToRosPointCloud(
   return ros_cloud;
 }
 
-// ########################################New interface implementation ########################################
+// ######################################## New interface implementation ########################################
 void RosVisualizer::visualizePointCloud(
   const std::string & topic_name,
   const std::vector<FrontierPtr> & frontier_list,
