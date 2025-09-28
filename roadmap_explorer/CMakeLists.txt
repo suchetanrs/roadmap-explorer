@@ -100,7 +100,7 @@ add_library(roadmap_exploration_bt SHARED
 src/planners/ThetaStar.cpp
 src/planners/NavFn.cpp
 src/planners/FrontierRoadmap.cpp
-src/planners/astar.cpp
+src/planners/Astar.cpp
 src/util/EventLogger.cpp
 src/util/RosVisualizer.cpp
 src/Parameters.cpp
