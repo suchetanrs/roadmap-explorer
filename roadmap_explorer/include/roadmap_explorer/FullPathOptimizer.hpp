@@ -12,6 +12,10 @@
 
 #include "roadmap_explorer/util/GeometryUtils.hpp"
 #include "roadmap_explorer/planners/FrontierRoadmap.hpp"
+#include "roadmap_explorer/planners/NavFn.hpp"
+#include "roadmap_explorer/planners/ThetaStar.hpp"
+
+
 #include "roadmap_explorer/Parameters.hpp"
 #include "roadmap_explorer/Frontier.hpp"
 namespace roadmap_explorer

@@ -13,7 +13,8 @@
 //  limitations under the License.
 
 #include <vector>
-#include "roadmap_explorer/planners/theta_star.hpp"
+
+#include "roadmap_explorer/planners/ThetaStar.hpp"
 
 namespace roadmap_explorer
 {
