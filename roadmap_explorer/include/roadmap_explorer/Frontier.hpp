@@ -1,7 +1,6 @@
 #ifndef FRONTIER_HPP_
 #define FRONTIER_HPP_
 
-// Include necessary headers
 #include <vector>
 #include <memory>
 #include <map>
@@ -96,9 +95,9 @@ public:
 
   int getSize() const;
 
-  geometry_msgs::msg::Point & getGoalPoint() const;
+  const geometry_msgs::msg::Point & getGoalPoint() const;
 
-  geometry_msgs::msg::Quaternion & getGoalOrientation() const;
+  const geometry_msgs::msg::Quaternion & getGoalOrientation() const;
 
   double getArrivalInformation() const;
 
@@ -127,7 +126,7 @@ public:
   {
     // Customize the output format here
     os << "Frontier(x: " << obj.getGoalPoint().x << ", y: " << obj.getGoalPoint().y << ")";
-    // os << "Frontier Path Length(PL: " << obj->getPathLength() << ", PLm: " << obj->getPathLength() << ")";
+    // os << "Frontier Path Length(PL: " << obj.getPathLength() << ", PLm: " << obj.getPathLengthInM() << ")";
     return os;
   }
 };
@@ -160,15 +159,8 @@ struct FrontierHash
   {
     // Calculate hash based on some combination of member variables
     size_t hash = 0;
-    // hash =     std::hash<uint32_t>()(key.size) ^
-    //         std::hash<double>()(key.min_distance) ^
-    //         std::hash<double>()(key.unique_id);
-
     hash = std::hash<double>()(key->getGoalPoint().x) ^
       (std::hash<double>()(key->getGoalPoint().y) << 1);
-    // std::hash<uint32_t>()(key.size) ^
-    // std::hash<double>()(key.min_distance) ^
-    // std::hash<double>()(key.unique_id);
     return hash;
   }
 };

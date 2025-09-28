@@ -149,7 +149,7 @@ int Frontier::getSize() const
   return *size;
 }
 
-geometry_msgs::msg::Point & Frontier::getGoalPoint() const
+const geometry_msgs::msg::Point & Frontier::getGoalPoint() const
 {
   if (goal_point == nullptr) {
     throw RoadmapExplorerException("Goal point frontier property is null");
@@ -157,7 +157,7 @@ geometry_msgs::msg::Point & Frontier::getGoalPoint() const
   return *goal_point;
 }
 
-geometry_msgs::msg::Quaternion & Frontier::getGoalOrientation() const
+const geometry_msgs::msg::Quaternion & Frontier::getGoalOrientation() const
 {
   if (best_orientation == nullptr || theta_s_star == nullptr) {
     throw RoadmapExplorerException("Goal orientation frontier property is null");

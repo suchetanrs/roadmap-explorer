@@ -57,6 +57,16 @@ ament_target_dependencies(test_ros_visualizer
 )
 target_link_libraries(test_ros_visualizer ${PCL_LIBRARIES})
 
+# Test executable for Frontier
+ament_add_gtest(test_frontier test_frontier.cpp 
+  ${CMAKE_SOURCE_DIR}/src/Frontier.cpp
+)
+ament_target_dependencies(test_frontier 
+  rclcpp
+  nav2_util
+  geometry_msgs
+)
+
 # Set C++ standard for all tests
 set_target_properties(test_geometry_utils PROPERTIES
   CXX_STANDARD 20
@@ -74,6 +84,11 @@ set_target_properties(test_event_logger PROPERTIES
 )
 
 set_target_properties(test_ros_visualizer PROPERTIES
+  CXX_STANDARD 20
+  CXX_STANDARD_REQUIRED ON
+)
+
+set_target_properties(test_frontier PROPERTIES
   CXX_STANDARD 20
   CXX_STANDARD_REQUIRED ON
 )
