@@ -90,39 +90,6 @@ bool getTracedCells(
   return true;
 }
 
-bool surroundingCellsMapped(
-  geometry_msgs::msg::Point & checkPoint,
-  nav2_costmap_2d::Costmap2D & exploration_costmap_)
-{
-  unsigned int mx, my;
-  if (!exploration_costmap_.worldToMap(checkPoint.x, checkPoint.y, mx, my)) {
-    return false;
-  }
-  // return if the frontier is on a lethal cell.
-  if (exploration_costmap_.getCost(mx, my) == 254) {
-    return true;
-  }
-  auto out = nhood20(exploration_costmap_.getIndex(mx, my), exploration_costmap_);
-  auto out8 = nhood8(exploration_costmap_.getIndex(mx, my), exploration_costmap_);
-  int surrounding_lethal = 0;
-  for (auto cell : out8) {
-    auto cost = exploration_costmap_.getCost(cell);
-    if (static_cast<int>(cost) == 254) {
-      ++surrounding_lethal;
-    }
-  }
-  if (surrounding_lethal >= 3) {
-    return true;
-  }
-  for (auto cell : out) {
-    auto cost = exploration_costmap_.getCost(cell);
-    if (static_cast<int>(cost) == 255) {
-      return false;
-    }
-  }
-  return true;
-}
-
 bool isCircleFootprintInLethal(
   const nav2_costmap_2d::Costmap2D * costmap, unsigned int center_x,
   unsigned int center_y, double radius_in_cells)
