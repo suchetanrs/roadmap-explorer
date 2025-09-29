@@ -1,5 +1,4 @@
-#include <roadmap_explorer/FrontierSearch.hpp>
-#include <pluginlib/class_list_macros.hpp>
+#include <roadmap_explorer/frontier_search/PluginBFSearch.hpp>
 
 namespace roadmap_explorer
 {
@@ -264,5 +263,6 @@ std::vector<std::vector<double>> FrontierSearch::getAllFrontiers()
 
 }
 
+#include <pluginlib/class_list_macros.hpp>
 // Register the plugin
 PLUGINLIB_EXPORT_CLASS(roadmap_explorer::FrontierSearch, roadmap_explorer::FrontierSearchBase)

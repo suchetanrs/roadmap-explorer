@@ -19,7 +19,8 @@
 #include "roadmap_explorer/Helpers.hpp"
 #include "roadmap_explorer/util/GeometryUtils.hpp"
 #include "roadmap_explorer/Parameters.hpp"
-#include "roadmap_explorer/frontier_search/interface_pluginlib.hpp"
+
+#include "roadmap_explorer/frontier_search/BaseFrontierSearch.hpp"
 
 namespace roadmap_explorer
 {

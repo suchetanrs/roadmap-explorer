@@ -32,7 +32,7 @@
 #include "roadmap_explorer/util/RosVisualizer.hpp"
 #include "roadmap_explorer/util/EventLogger.hpp"
 #include "roadmap_explorer/Frontier.hpp"
-#include "roadmap_explorer/FrontierSearch.hpp"
+#include "roadmap_explorer/frontier_search/PluginBFSearch.hpp"
 #include "roadmap_explorer/util/GeneralUtils.hpp"
 #include "roadmap_explorer/CostCalculator.hpp"
 
