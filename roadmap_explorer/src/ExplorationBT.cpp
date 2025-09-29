@@ -595,7 +595,7 @@ RoadmapExplorationBT::RoadmapExplorationBT(std::shared_ptr<nav2_util::LifecycleN
     pluginlib::ClassLoader<FrontierSearchBase> plugin_loader(
       "roadmap_explorer", "roadmap_explorer::FrontierSearchBase");
     
-    std::string plugin_name = "roadmap_explorer::FrontierSearch";
+    std::string plugin_name = "roadmap_explorer::FrontierBFSearch";
     // TODO: Make plugin name configurable via parameter
     
     frontierSearchPtr_ = plugin_loader.createSharedInstance(plugin_name);
@@ -605,7 +605,7 @@ RoadmapExplorationBT::RoadmapExplorationBT(std::shared_ptr<nav2_util::LifecycleN
     LOG_WARN("Failed to load frontier search plugin, using direct instantiation: " << e.what());
     throw std::runtime_error("Failed to load frontier search plugin");
     // Fallback to direct instantiation
-    frontierSearchPtr_ = std::make_shared<FrontierSearch>(
+    frontierSearchPtr_ = std::make_shared<FrontierBFSearch>(
       *(explore_costmap_ros_->getLayeredCostmap()->getCostmap()));
   }
   
