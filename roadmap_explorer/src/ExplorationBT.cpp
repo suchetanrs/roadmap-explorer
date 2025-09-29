@@ -1,5 +1,4 @@
 #include <roadmap_explorer/ExplorationBT.hpp>
-#include <roadmap_explorer/FrontierSearch.hpp>
 namespace roadmap_explorer
 {
 

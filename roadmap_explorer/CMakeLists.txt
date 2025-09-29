@@ -90,7 +90,7 @@ src/bt_plugins/core_plugins.cpp
 ament_target_dependencies(roadmap_explorer_bt_plugins ${dependencies})
 
 add_library(roadmap_explorer_frontier_search_plugins SHARED 
-src/FrontierSearch.cpp
+src/frontier_search/PluginBFSearch.cpp
 )
 ament_target_dependencies(roadmap_explorer_frontier_search_plugins ${dependencies})
 
@@ -107,7 +107,6 @@ src/Parameters.cpp
 src/Frontier.cpp 
 src/Nav2Interface.cpp 
 src/Helpers.cpp
-src/FrontierSearch.cpp
 src/CostCalculator.cpp
 src/ExplorationBT.cpp
 src/CostAssigner.cpp
