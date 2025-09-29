@@ -8,7 +8,7 @@ roadmap_explorer_node:
       max_frontier_cluster_size: 20.0
       frontier_search_distance: 25.0 # This should be equal to the parameter frontier_search_distance in frontier_roadmap_node
       lethal_threshold: 160 # >= is lethal, < is free space.
-      max_frontier_search_distance: 100.0
+      max_permissable_frontier_search_distance: 100.0
 
     costCalculator:
       max_camera_depth: 2.0

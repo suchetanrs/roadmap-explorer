@@ -61,12 +61,7 @@ public:
    * @param value The amount to increment the search distance
    * @return true if increment was successful, false if maximum distance exceeded
    */
-  virtual bool incrementSearchDistance(double value) = 0;
-
-  /**
-   * @brief Reset the search distance to its default value
-   */
-  virtual void resetSearchDistance() = 0;
+  virtual bool setFrontierSearchDistance(double value) = 0;
 
   /**
    * @brief Get the current frontier search distance
@@ -95,7 +90,6 @@ public:
 
 protected:
   double frontier_search_distance_;
-  double original_search_distance_;
   nav2_costmap_2d::Costmap2D * costmap_ = nullptr;
 };
 
