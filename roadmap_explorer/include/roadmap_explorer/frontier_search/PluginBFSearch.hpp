@@ -39,24 +39,17 @@ public:
     every_frontier_list.clear();
   }
 
-  bool incrementSearchDistance(double value) override
+  bool setFrontierSearchDistance(double value) override
   {
-    frontier_search_distance_ += value;
-    LOG_INFO("Incrementing search distance to: " << frontier_search_distance_);
+    frontier_search_distance_ = value;
+    LOG_INFO("Setting search distance to: " << frontier_search_distance_);
     if (frontier_search_distance_ > parameterInstance.getValue<double>(
-        "frontierSearch.max_frontier_search_distance"))
+        "frontierSearch.max_permissable_frontier_search_distance"))
     {
       LOG_ERROR("Frontier search distance exceeded maximum limit");
       return false;
     }
     return true;
-  }
-
-  void resetSearchDistance() override
-  {
-    original_search_distance_ = parameterInstance.getValue<double>(
-      "frontierSearch.frontier_search_distance");
-    frontier_search_distance_ = original_search_distance_;
   }
 
   FrontierSearchResult searchFrom(geometry_msgs::msg::Point position, std::vector<FrontierPtr> & output_frontier_list) override;

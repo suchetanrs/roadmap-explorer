@@ -622,8 +622,10 @@ bool RoadmapExplorationBT::incrementFrontierSearchDistance()
 {
   double increment_value = parameterInstance.getValue<double>("explorationBT.increment_search_distance_by");
   LOG_WARN("Incrementing frontier search distance by " << increment_value);
-  auto result_distance = frontierSearchPtr_->incrementSearchDistance(increment_value);
-  if (!result_distance) {
+  auto current_distance = frontierSearchPtr_->getFrontierSearchDistance();
+  auto distance_to_set = current_distance + increment_value;
+  auto success = frontierSearchPtr_->setFrontierSearchDistance(distance_to_set);
+  if (!success) {
     LOG_ERROR("Maximum frontier search distance exceeded. Returning false.");
     return false;
   }
@@ -633,7 +635,9 @@ bool RoadmapExplorationBT::incrementFrontierSearchDistance()
 bool RoadmapExplorationBT::resetFrontierSearchDistance()
 {
   LOG_DEBUG("Resetting frontier search distance to default value");
-  frontierSearchPtr_->resetSearchDistance();
+  auto original_search_distance = parameterInstance.getValue<double>(
+    "frontierSearch.frontier_search_distance");
+  frontierSearchPtr_->setFrontierSearchDistance(original_search_distance);
   return true;
 }
 
