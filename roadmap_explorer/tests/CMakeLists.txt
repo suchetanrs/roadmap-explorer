@@ -131,3 +131,42 @@ set_target_properties(test_helpers PROPERTIES
   CXX_STANDARD 20
   CXX_STANDARD_REQUIRED ON
 )
+
+# Test executable for BaseFrontierSearch
+ament_add_gtest(test_base_frontier_search test_base_frontier_search.cpp 
+  ${CMAKE_SOURCE_DIR}/src/Frontier.cpp
+)
+ament_target_dependencies(test_base_frontier_search 
+  rclcpp
+  nav2_util
+  nav2_costmap_2d
+  geometry_msgs
+  tf2
+  tf2_ros
+  Eigen3
+)
+
+set_target_properties(test_base_frontier_search PROPERTIES
+  CXX_STANDARD 20
+  CXX_STANDARD_REQUIRED ON
+)
+
+# Test executable for FrontierBFSearch
+ament_add_gtest(test_frontier_bf_search test_frontier_bf_search.cpp 
+  ${CMAKE_SOURCE_DIR}/src/Frontier.cpp
+  ${CMAKE_SOURCE_DIR}/src/Helpers.cpp
+)
+ament_target_dependencies(test_frontier_bf_search 
+  rclcpp
+  nav2_util
+  nav2_costmap_2d
+  geometry_msgs
+  tf2
+  tf2_ros
+  Eigen3
+)
+
+set_target_properties(test_frontier_bf_search PROPERTIES
+  CXX_STANDARD 20
+  CXX_STANDARD_REQUIRED ON
+)
