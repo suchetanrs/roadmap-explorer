@@ -7,19 +7,19 @@ using nav2_costmap_2d::FREE_SPACE;
 using nav2_costmap_2d::LETHAL_OBSTACLE;
 using nav2_costmap_2d::NO_INFORMATION;
 
-FrontierSearch::FrontierSearch(nav2_costmap_2d::Costmap2D & costmap)
+FrontierBFSearch::FrontierBFSearch(nav2_costmap_2d::Costmap2D & costmap)
 {
   configure(&costmap);
-  LOG_INFO("FrontierSearch::FrontierSearch");
+  LOG_INFO("FrontierBFSearch::FrontierBFSearch");
 }
 
-FrontierSearch::~FrontierSearch()
+FrontierBFSearch::~FrontierBFSearch()
 {
-  LOG_INFO("FrontierSearch::~FrontierSearch()");
+  LOG_INFO("FrontierBFSearch::~FrontierBFSearch()");
   every_frontier_list.clear();
 }
 
-FrontierSearchResult FrontierSearch::searchFrom(geometry_msgs::msg::Point position, std::vector<FrontierPtr> & output_frontier_list)
+FrontierSearchResult FrontierBFSearch::searchFrom(geometry_msgs::msg::Point position, std::vector<FrontierPtr> & output_frontier_list)
 {
   min_frontier_cluster_size_ = parameterInstance.getValue<double>(
     "frontierSearch.min_frontier_cluster_size");
@@ -105,7 +105,7 @@ FrontierSearchResult FrontierSearch::searchFrom(geometry_msgs::msg::Point positi
   return FrontierSearchResult::SUCCESSFUL_SEARCH;
 }
 
-std::vector<FrontierPtr> FrontierSearch::buildNewFrontier(
+std::vector<FrontierPtr> FrontierBFSearch::buildNewFrontier(
   unsigned int initial_cell,
   unsigned int reference,
   std::vector<bool> & frontier_flag)
@@ -226,7 +226,7 @@ std::vector<FrontierPtr> FrontierSearch::buildNewFrontier(
   return calculated_frontiers;
 }
 
-bool FrontierSearch::isNewFrontierCell(unsigned int idx, const std::vector<bool> & frontier_flag)
+bool FrontierBFSearch::isNewFrontierCell(unsigned int idx, const std::vector<bool> & frontier_flag)
 {
   // check that cell is unknown and not already marked as frontier
   if (!isUnknown(map_[idx]) || frontier_flag[idx]) {
@@ -256,7 +256,7 @@ bool FrontierSearch::isNewFrontierCell(unsigned int idx, const std::vector<bool>
   return false;
 }
 
-std::vector<std::vector<double>> FrontierSearch::getAllFrontiers()
+std::vector<std::vector<double>> FrontierBFSearch::getAllFrontiers()
 {
   return every_frontier_list;
 }
@@ -265,4 +265,4 @@ std::vector<std::vector<double>> FrontierSearch::getAllFrontiers()
 
 #include <pluginlib/class_list_macros.hpp>
 // Register the plugin
-PLUGINLIB_EXPORT_CLASS(roadmap_explorer::FrontierSearch, roadmap_explorer::FrontierSearchBase)
+PLUGINLIB_EXPORT_CLASS(roadmap_explorer::FrontierBFSearch, roadmap_explorer::FrontierSearchBase)

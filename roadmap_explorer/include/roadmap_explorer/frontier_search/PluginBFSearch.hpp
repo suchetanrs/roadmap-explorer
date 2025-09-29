@@ -25,14 +25,14 @@
 namespace roadmap_explorer
 {
 
-class FrontierSearch : public FrontierSearchBase
+class FrontierBFSearch : public FrontierSearchBase
 {
 
 public:
-  FrontierSearch() = default;
-  FrontierSearch(nav2_costmap_2d::Costmap2D & costmap);
+  FrontierBFSearch() = default;
+  FrontierBFSearch(nav2_costmap_2d::Costmap2D & costmap);
 
-  ~FrontierSearch() override;
+  ~FrontierBFSearch() override;
 
   void reset() override
   {
