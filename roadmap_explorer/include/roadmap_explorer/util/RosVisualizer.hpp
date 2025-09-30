@@ -32,11 +32,15 @@
 class RosVisualizer
 {
   // Type aliases for different publisher types
-  using PointCloud2Publisher = rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::PointCloud2>::SharedPtr;
-  using MarkerPublisher = rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::Marker>::SharedPtr;
-  using MarkerArrayPublisher = rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::MarkerArray>::SharedPtr;
+  using PointCloud2Publisher =
+    rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::PointCloud2>::SharedPtr;
+  using MarkerPublisher =
+    rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::Marker>::SharedPtr;
+  using MarkerArrayPublisher =
+    rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::MarkerArray>::SharedPtr;
   using PathPublisher = rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr;
-  using PoseArrayPublisher = rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PoseArray>::SharedPtr;
+  using PoseArrayPublisher =
+    rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PoseArray>::SharedPtr;
 
 public:
   ~RosVisualizer();
@@ -49,9 +53,7 @@ public:
     std::lock_guard<std::mutex> lock(instanceMutex_);
     if (RosVisualizerPtr == nullptr) {
       RosVisualizerPtr.reset(new RosVisualizer(node, costmap));
-    }
-    else
-    {
+    } else {
       throw RoadmapExplorerException("RosVisualizer instance already exists!");
     }
   }
@@ -132,7 +134,7 @@ private:
   // Helper methods for point cloud creation
   pcl::PointCloud<pcl::PointXYZI> createPointCloudFromFrontiers(
     const std::vector<FrontierPtr> & frontier_list, float intensity = 50.0f);
-  
+
   pcl::PointCloud<pcl::PointXYZI> createPointCloudFromPoints(
     const std::vector<std::vector<double>> & points, float intensity = 500.0f);
 

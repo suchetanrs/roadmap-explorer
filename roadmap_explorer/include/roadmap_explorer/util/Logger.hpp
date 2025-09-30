@@ -225,7 +225,8 @@ class RoadmapExplorerException : public std::runtime_error
 {
 public:
   explicit RoadmapExplorerException(const std::string & description)
-  : std::runtime_error(description) {
+  : std::runtime_error(description)
+  {
     LOG_FATAL("RoadmapExplorerException: " << description);
   }
 };

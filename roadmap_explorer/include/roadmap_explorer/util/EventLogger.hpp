@@ -26,9 +26,7 @@ public:
     std::lock_guard<std::mutex> lock(instanceMutex_);
     if (EventLoggerPtr_ == nullptr) {
       EventLoggerPtr_.reset(new EventLogger());
-    }
-    else
-    {
+    } else {
       throw RoadmapExplorerException("EventLogger instance already exists!");
     }
   }
