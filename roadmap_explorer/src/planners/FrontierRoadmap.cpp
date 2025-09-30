@@ -210,7 +210,6 @@ void FrontierRoadMap::populateNodes(
   // LOG_TRACE("Locking populateNodes");
   std::lock_guard<std::mutex> lock(spatial_hash_map_mutex_);
   // LOG_TRACE("UnLocking populateNodes");
-  // PROFILE_FUNCTION;
   for (auto & new_frontier : frontiers) {
     bool isNew = true;
     auto new_point = new_frontier->getGoalPoint();
@@ -456,7 +455,6 @@ void FrontierRoadMap::getNodesWithinRadius(
   std::vector<FrontierPtr> & closestNodeVector,
   const double radius)
 {
-  // PROFILE_FUNCTION;
   // Get the central grid cell of the interest node
   auto interest_point = interestNode->getGoalPoint();
   auto center_cell = getGridCell(interest_point.x, interest_point.y);
@@ -483,7 +481,6 @@ void FrontierRoadMap::getNodesWithinRadius(
   std::vector<FrontierPtr> & closestNodeVector,
   const double radius)
 {
-  // PROFILE_FUNCTION;
   // Get the central grid cell of the interest node
   auto center_cell = getGridCell(interestPoint.x, interestPoint.y);
 

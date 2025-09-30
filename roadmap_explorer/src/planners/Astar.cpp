@@ -40,7 +40,6 @@ std::vector<std::shared_ptr<Node>> FrontierRoadmapAStar::getSuccessors(
   const std::shared_ptr<Node> & current, const std::shared_ptr<Node> & goal,
   const std::unordered_map<FrontierPtr, std::vector<FrontierPtr>, FrontierHash> & roadmap)
 {
-  // PROFILE_FUNCTION;
   // LOG_TRACE("Successor size: " << roadmap_[current->frontier].size());
   std::vector<std::shared_ptr<Node>> successors;
   if (roadmap.count(current->frontier) == 0) {
@@ -62,7 +61,6 @@ std::pair<std::vector<std::shared_ptr<Node>>, double> FrontierRoadmapAStar::getP
   const FrontierPtr & start, const FrontierPtr & goal, const std::unordered_map<FrontierPtr,
   std::vector<FrontierPtr>, FrontierHash> & roadmap)
 {
-  // PROFILE_FUNCTION;
   auto start_ = std::make_shared<Node>(start, 0.0, heuristic(start, goal));
   auto goal_ = std::make_shared<Node>(goal, 0.0, 0.0);
   std::priority_queue<std::shared_ptr<Node>, std::vector<std::shared_ptr<Node>>,

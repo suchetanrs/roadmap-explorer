@@ -17,8 +17,8 @@ void PluginFrontierRoadmap::setPlanForFrontier(
   const geometry_msgs::msg::Pose start_pose_w,
   FrontierPtr & goal_point_w)
 {
-  PROFILE_FUNCTION;
   setPlanningParameters();
+  
   // if already not achievable, return
   if (goal_point_w->isAchievable() == false) {
     goal_point_w->setAchievability(false);
