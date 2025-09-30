@@ -28,7 +28,6 @@
 #include "roadmap_explorer/util/Logger.hpp"
 
 
-
 namespace roadmap_explorer
 {
 

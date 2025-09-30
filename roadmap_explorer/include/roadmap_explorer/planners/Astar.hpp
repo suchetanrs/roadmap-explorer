@@ -23,9 +23,12 @@ struct Node
   double f;   // Total cost (f = g + h)
   std::shared_ptr<Node> parent;   // Pointer to the parent node
 
-  Node() : frontier(nullptr), g(0.0), h(0.0), f(0.0), parent(nullptr) {}
+  Node()
+  : frontier(nullptr), g(0.0), h(0.0), f(0.0), parent(nullptr) {}
 
-  Node(FrontierPtr frontier_in, double g_cost, double h_cost, std::shared_ptr<Node> parent_node = nullptr)
+  Node(
+    FrontierPtr frontier_in, double g_cost, double h_cost,
+    std::shared_ptr<Node> parent_node = nullptr)
   : frontier(frontier_in), g(g_cost), h(h_cost), f(g_cost + h_cost), parent(parent_node) {}
 
   // Comparator for priority queue to order by f value

@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<library path="roadmap_explorer_planner_plugins">
+  <class name="roadmap_explorer::PluginNavFn" 
+         type="roadmap_explorer::PluginNavFn" 
+         base_class_type="roadmap_explorer::BasePlanner">
+    <description>
+      A roadmap_explorer planner plugin that uses NavFn to compute the path to the frontier
+    </description>
+  </class>
+
+  <class name="roadmap_explorer::EuclideanDistancePlugin" 
+         type="roadmap_explorer::EuclideanDistancePlugin" 
+         base_class_type="roadmap_explorer::BasePlanner">
+    <description>
+      A roadmap_explorer planner plugin that uses Euclidean distance to compute the path to the frontier
+    </description>
+  </class>
+
+  <class name="roadmap_explorer::PluginFrontierRoadmap" 
+         type="roadmap_explorer::PluginFrontierRoadmap" 
+         base_class_type="roadmap_explorer::BasePlanner">
+    <description>
+      A roadmap_explorer planner plugin that uses a frontier roadmap to compute the path to the frontier
+    </description>
+  </class>
+</library>
+
