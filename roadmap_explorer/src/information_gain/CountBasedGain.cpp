@@ -11,6 +11,7 @@ void CountBasedGain::configure(
   explore_costmap_ros_ = explore_costmap_ros;
   arrival_info_limits_set_ = false;
   updateParameters();
+  setArrivalInformationLimits();
 }
 
 void CountBasedGain::reset()
@@ -22,7 +23,6 @@ void CountBasedGain::setInformationGainForFrontier(
   FrontierPtr & frontier,
   std::vector<double> & polygon_xy_min_max)
 {
-    setArrivalInformationLimits();
     double sx, sy;       // sensor x, sensor y, sensor orientation
     double wx, wy;
     unsigned int max_length = MAX_CAMERA_DEPTH / (exploration_costmap_->getResolution());

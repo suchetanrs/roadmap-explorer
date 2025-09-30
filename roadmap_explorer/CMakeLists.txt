@@ -114,6 +114,8 @@ ament_target_dependencies(roadmap_explorer_frontier_search_plugins ${dependencie
 ##############
 
 add_library(roadmap_explorer_planner_plugins SHARED
+src/planners/ThetaStar.cpp
+src/planners/Astar.cpp
 src/planners/NavFn.cpp
 src/planners/NavFnPlugin.cpp
 src/planners/FrontierRoadmap.cpp
@@ -134,11 +136,8 @@ ament_target_dependencies(roadmap_explorer_information_gain_plugins ${dependenci
 ########################### CORE LIBRARY ###########################
 
 add_library(roadmap_exploration_bt SHARED
-src/planners/ThetaStar.cpp
-src/planners/Astar.cpp
 src/Parameters.cpp
 src/Nav2Interface.cpp 
-src/Helpers.cpp
 src/ExplorationBT.cpp
 src/CostAssigner.cpp
 src/FullPathOptimizer.cpp 
@@ -205,6 +204,7 @@ if(ament_cmake_gtest_FOUND)
     add_subdirectory(tests/utils)
     add_subdirectory(tests/bt_plugins)
     add_subdirectory(tests/frontier_search)
+    add_subdirectory(tests/information_gain)
 endif()
 
 ament_package()
