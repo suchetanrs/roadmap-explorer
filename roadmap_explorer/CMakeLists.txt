@@ -204,6 +204,7 @@ find_package(ament_cmake_gtest QUIET)
 if(ament_cmake_gtest_FOUND)
     add_subdirectory(tests/utils)
     add_subdirectory(tests/bt_plugins)
+    add_subdirectory(tests/frontier_search)
 endif()
 
 ament_package()
