@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <sstream>
+#include <algorithm>
 #include <rclcpp/rclcpp.hpp>
 
 template<typename T>
