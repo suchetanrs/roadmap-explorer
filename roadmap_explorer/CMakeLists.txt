@@ -100,6 +100,7 @@ src/planners/NavFnPlugin.cpp
 src/planners/FrontierRoadmap.cpp
 src/planners/FrontierRoadmapPlugin.cpp
 src/planners/EuclideanPlugin.cpp
+src/planners/RandomDistancePlugin.cpp
 )
 ament_target_dependencies(roadmap_explorer_planner_plugins ${dependencies})
 
