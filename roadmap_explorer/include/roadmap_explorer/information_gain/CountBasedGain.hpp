@@ -65,6 +65,7 @@ public:
 
 private:
     bool arrival_info_limits_set_ = false;
+    std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros_;
     double min_arrival_info_gt_ = std::numeric_limits<double>::max();
     double max_arrival_info_gt_ = -1.0 * std::numeric_limits<double>::max();
 };

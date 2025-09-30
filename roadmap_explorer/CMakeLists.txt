@@ -124,7 +124,6 @@ src/Parameters.cpp
 src/Frontier.cpp 
 src/Nav2Interface.cpp 
 src/Helpers.cpp
-src/CostCalculator.cpp
 src/ExplorationBT.cpp
 src/CostAssigner.cpp
 src/FullPathOptimizer.cpp 
