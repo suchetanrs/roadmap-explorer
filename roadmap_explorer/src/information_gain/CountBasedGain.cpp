@@ -8,6 +8,7 @@ void CountBasedGain::configure(
 {
   LOG_INFO("CountBasedGain::configure");
   exploration_costmap_ = explore_costmap_ros->getCostmap();
+  explore_costmap_ros_ = explore_costmap_ros;
   arrival_info_limits_set_ = false;
   updateParameters();
 }
@@ -90,7 +91,7 @@ void CountBasedGain::setInformationGainForFrontier(
     }
     bool footprintInLethalPenalty = isCircleFootprintInLethal(
       exploration_costmap_, sxm, sym, std::ceil(
-        explore_costmap_ros->getRobotRadius() / exploration_costmap_->getResolution()));
+        explore_costmap_ros_->getRobotRadius() / exploration_costmap_->getResolution()));
     // TODO(suchetan): Parametrize this value that compares against getSize()
     if (footprintInLethalPenalty && frontier->getSize() < 10.0) {
       LOG_DEBUG("Frontier " << frontier << " is not achievable. Very close to lethal obstacle.");

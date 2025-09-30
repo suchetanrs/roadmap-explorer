@@ -11,12 +11,10 @@ CostAssigner::CostAssigner(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explor
 {
   layered_costmap_ = explore_costmap_ros->getLayeredCostmap();
   costmap_ = explore_costmap_ros->getCostmap();
+  explore_costmap_ros_ = explore_costmap_ros;
   LOG_DEBUG("Got costmap pointer");
 
   LOG_INFO("CostAssigner::CostAssigner");
-
-  costCalculator_ = std::make_shared<FrontierCostCalculator>(explore_costmap_ros);
-  LOG_DEBUG("Making cost calculator instance");
 }
 
 CostAssigner::~CostAssigner()
@@ -163,12 +161,29 @@ std::vector<FrontierPtr> findDuplicates(const std::vector<FrontierPtr> & vec)
   return duplicates;
 }
 
+void CostAssigner::recomputeNormalizationFactors(FrontierPtr & frontier)
+{
+  if (!frontier->isAchievable()) {
+    return;
+  }
+  min_traversable_distance = std::min(min_traversable_distance, frontier->getPathLength());
+  max_traversable_distance = std::max(max_traversable_distance, frontier->getPathLength());
+  min_arrival_info_per_frontier = std::min(
+    min_arrival_info_per_frontier,
+    frontier->getArrivalInformation());
+  max_arrival_info_per_frontier = std::max(
+    max_arrival_info_per_frontier,
+    frontier->getArrivalInformation());
+}
+
 bool CostAssigner::assignCosts(
   std::vector<FrontierPtr> & frontier_list, std::vector<double> polygon_xy_min_max,
   geometry_msgs::msg::Pose start_pose_w, std::vector<std::vector<std::string>> & costTypes)
 {
-  costCalculator_->prepareForCostCalculation();
-  costCalculator_->setArrivalInformationLimits();
+  min_traversable_distance = std::numeric_limits<double>::max();
+  max_traversable_distance = -1.0 * std::numeric_limits<double>::max();
+  min_arrival_info_per_frontier = std::numeric_limits<double>::max();
+  max_arrival_info_per_frontier = -1.0 * std::numeric_limits<double>::max();
   LOG_DEBUG("CostAssigner::assignCosts");
   // sanity checks
   if (frontier_list.size() == 0) {
@@ -220,22 +235,91 @@ bool CostAssigner::assignCosts(
          * If the frontier is not achievable, the plan is not computed.
          */
     if (vectorContains(costTypes[frontier_idx], std::string("ArrivalInformation"))) {
-      costCalculator_->setArrivalInformationForFrontier(frontier, polygon_xy_min_max);
+      try {
+        pluginlib::ClassLoader<BaseInformationGain> plugin_loader(
+          "roadmap_explorer", "roadmap_explorer::BaseInformationGain");
+        
+        std::string plugin_name = "roadmap_explorer::CountBasedGain";
+        // TODO: Make plugin name configurable via parameter
+        
+        auto plannerPtr_ = plugin_loader.createSharedInstance(plugin_name);
+        plannerPtr_->configure(explore_costmap_ros_);
+        plannerPtr_->setInformationGainForFrontier(frontier, polygon_xy_min_max);
+        LOG_INFO("Loaded planner plugin: " << plugin_name);
+      } catch (const std::exception& e) {
+        LOG_WARN("Failed to load planner plugin, using direct instantiation: " << e.what());
+        throw std::runtime_error("Failed to load planner plugin");
+      }
     }
     if (vectorContains(costTypes[frontier_idx], std::string("A*PlannerDistance"))) {
-      costCalculator_->setPlanForFrontier(start_pose_w, frontier);
+      try {
+        pluginlib::ClassLoader<BasePlanner> plugin_loader(
+          "roadmap_explorer", "roadmap_explorer::BasePlanner");
+        
+        std::string plugin_name = "roadmap_explorer::PluginNavFn";
+        // TODO: Make plugin name configurable via parameter
+        
+        auto plannerPtr_ = plugin_loader.createSharedInstance(plugin_name);
+        plannerPtr_->configure(explore_costmap_ros_);
+        plannerPtr_->setPlanForFrontier(start_pose_w, frontier);
+        LOG_INFO("Loaded planner plugin: " << plugin_name);
+      } catch (const std::exception& e) {
+        LOG_WARN("Failed to load planner plugin, using direct instantiation: " << e.what());
+        throw std::runtime_error("Failed to load planner plugin");
+      }
     } else if (vectorContains(costTypes[frontier_idx], std::string("RoadmapPlannerDistance"))) {
-      costCalculator_->setPlanForFrontierRoadmap(start_pose_w, frontier);
-    } else if (vectorContains(costTypes[frontier_idx], std::string("EuclideanDistance"))) {
-      costCalculator_->setPlanForFrontierEuclidean(start_pose_w, frontier);
+      try {
+        pluginlib::ClassLoader<BasePlanner> plugin_loader(
+          "roadmap_explorer", "roadmap_explorer::BasePlanner");
+        
+        std::string plugin_name = "roadmap_explorer::PluginFrontierRoadmap";
+        // TODO: Make plugin name configurable via parameter
+        
+        auto plannerPtr_ = plugin_loader.createSharedInstance(plugin_name);
+        plannerPtr_->configure(explore_costmap_ros_);
+        plannerPtr_->setPlanForFrontier(start_pose_w, frontier);
+        LOG_INFO("Loaded planner plugin: " << plugin_name);
+      } catch (const std::exception& e) {
+        LOG_WARN("Failed to load planner plugin, using direct instantiation: " << e.what());
+        throw std::runtime_error("Failed to load planner plugin");
+      }
+
+    }
+    else if (vectorContains(costTypes[frontier_idx], std::string("EuclideanDistance"))) {
+      try {
+        pluginlib::ClassLoader<BasePlanner> plugin_loader(
+          "roadmap_explorer", "roadmap_explorer::BasePlanner");
+        
+        std::string plugin_name = "roadmap_explorer::EuclideanDistancePlugin";
+        // TODO: Make plugin name configurable via parameter
+        
+        auto plannerPtr_ = plugin_loader.createSharedInstance(plugin_name);
+        plannerPtr_->configure(explore_costmap_ros_);
+        plannerPtr_->setPlanForFrontier(start_pose_w, frontier);
+        LOG_INFO("Loaded planner plugin: " << plugin_name);
+      } catch (const std::exception& e) {
+        LOG_WARN("Failed to load planner plugin, using direct instantiation: " << e.what());
+        throw std::runtime_error("Failed to load planner plugin");
+      }
     }
     if (vectorContains(costTypes[frontier_idx], std::string("RandomCosts"))) {
-      costCalculator_->setRandomMetaData(frontier);
+      try {
+        pluginlib::ClassLoader<BasePlanner> plugin_loader(
+          "roadmap_explorer", "roadmap_explorer::BasePlanner");
+        
+        std::string plugin_name = "roadmap_explorer::RandomDistancePlugin";
+        // TODO: Make plugin name configurable via parameter
+        
+        auto plannerPtr_ = plugin_loader.createSharedInstance(plugin_name);
+        plannerPtr_->configure(explore_costmap_ros_);
+        plannerPtr_->setPlanForFrontier(start_pose_w, frontier);
+        LOG_INFO("Loaded planner plugin: " << plugin_name);
+      } catch (const std::exception& e) {
+        LOG_WARN("Failed to load planner plugin, using direct instantiation: " << e.what());
+        throw std::runtime_error("Failed to load planner plugin");
+      }
     }
-    if (vectorContains(costTypes[frontier_idx], std::string("ClosestFrontier"))) {
-      costCalculator_->setClosestFrontierMetaData(start_pose_w, frontier);
-    }
-    costCalculator_->recomputeNormalizationFactors(frontier);
+    recomputeNormalizationFactors(frontier);
   }       // frontier end
   LOG_DEBUG("Returning for input list size: " << frontier_list.size());
   return true;

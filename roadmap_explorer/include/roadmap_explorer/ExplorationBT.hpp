@@ -31,6 +31,7 @@
 #include "roadmap_explorer/util/EventLogger.hpp"
 #include "roadmap_explorer/CostAssigner.hpp"
 #include "roadmap_explorer/frontier_search/BaseFrontierSearch.hpp"
+#include "roadmap_explorer/frontier_search/PluginBFSearch.hpp"
 #include "roadmap_explorer/Nav2Interface.hpp"
 #include "roadmap_explorer/Helpers.hpp"
 #include "roadmap_explorer/FullPathOptimizer.hpp"

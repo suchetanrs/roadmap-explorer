@@ -32,9 +32,10 @@
 #include "roadmap_explorer/util/RosVisualizer.hpp"
 #include "roadmap_explorer/util/EventLogger.hpp"
 #include "roadmap_explorer/Frontier.hpp"
-#include "roadmap_explorer/frontier_search/PluginBFSearch.hpp"
 #include "roadmap_explorer/util/GeneralUtils.hpp"
-#include "roadmap_explorer/CostCalculator.hpp"
+#include "roadmap_explorer/information_gain/BaseInformationGain.hpp"
+#include "roadmap_explorer/frontier_search/BaseFrontierSearch.hpp"
+#include "roadmap_explorer/planners/BasePlanner.hpp"
 
 namespace roadmap_explorer
 {
@@ -74,20 +75,13 @@ private:
     std::vector<FrontierPtr> & frontier_list,
     geometry_msgs::msg::Pose & start_pose_w, bool force_grid_base_planning);
 
-  /**
-       * @param costTypes can take the values
-       * "ArrivalInformation",
-       * "A*PlannerDistance" OR "EuclideanDistance" OR "RoadmapPlannerDistance",
-       *
-       * "RandomCosts",
-       *
-       * "ClosestFrontier"
-       */
   bool assignCosts(
     std::vector<FrontierPtr> & frontier_list, std::vector<double> polygon_xy_min_max,
     geometry_msgs::msg::Pose start_pose_w, std::vector<std::vector<std::string>> & costTypes);
 
   void setFrontierBlacklist(std::vector<FrontierPtr> & blacklist);
+
+  void recomputeNormalizationFactors(FrontierPtr & frontier);
 
   geometry_msgs::msg::Polygon polygon_;
   // min_x, min_y, max_x, max_y
@@ -95,13 +89,17 @@ private:
 
   nav2_costmap_2d::LayeredCostmap * layered_costmap_;
   nav2_costmap_2d::Costmap2D * costmap_;
+  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros_;
 
-  std::shared_ptr<FrontierCostCalculator> costCalculator_;
-
-  // std::shared_ptr<RosVisualizer> RosVisualizer_;
   std::unordered_map<FrontierPtr, bool, FrontierHash,
     FrontierGoalPointEquality> frontier_blacklist_;
   std::mutex blacklist_mutex_;
+
+  double min_traversable_distance = std::numeric_limits<double>::max();
+  double max_traversable_distance = -1.0 * std::numeric_limits<double>::max();
+
+  double min_arrival_info_per_frontier = std::numeric_limits<double>::max();
+  double max_arrival_info_per_frontier = -1.0 * std::numeric_limits<double>::max();
 };
 }
 #endif
