@@ -1,0 +1,9 @@
+<library path="roadmap_explorer_information_gain_plugins">
+  <class name="roadmap_explorer::CountBasedGain"
+         type="roadmap_explorer::CountBasedGain"
+         base_class_type="roadmap_explorer::BaseInformationGain">
+    <description>
+      A roadmap_explorer information gain plugin that uses count based gain to compute the information gain for the frontier.
+    </description>
+  </class>
+</library>

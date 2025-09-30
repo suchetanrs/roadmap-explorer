@@ -94,6 +94,8 @@ src/frontier_search/PluginBFSearch.cpp
 )
 ament_target_dependencies(roadmap_explorer_frontier_search_plugins ${dependencies})
 
+##############
+
 add_library(roadmap_explorer_planner_plugins SHARED
 src/planners/NavFn.cpp
 src/planners/NavFnPlugin.cpp
@@ -103,6 +105,13 @@ src/planners/EuclideanPlugin.cpp
 src/planners/RandomDistancePlugin.cpp
 )
 ament_target_dependencies(roadmap_explorer_planner_plugins ${dependencies})
+
+##############
+
+add_library(roadmap_explorer_information_gain_plugins SHARED
+src/information_gain/CountBasedGain.cpp
+)
+ament_target_dependencies(roadmap_explorer_information_gain_plugins ${dependencies})
 
 
 ########################### CORE LIBRARY ###########################
@@ -123,7 +132,7 @@ src/ExplorationServer.cpp
 src/SensorSimulator.cpp
 )
 ament_target_dependencies(roadmap_exploration_bt ${dependencies})
-target_link_libraries(roadmap_exploration_bt ${PCL_LIBRARIES} ${YAML_CPP_LIBRARIES} roadmap_explorer_bt_plugins roadmap_explorer_frontier_search_plugins roadmap_explorer_planner_plugins)
+target_link_libraries(roadmap_exploration_bt ${PCL_LIBRARIES} ${YAML_CPP_LIBRARIES} roadmap_explorer_bt_plugins roadmap_explorer_frontier_search_plugins roadmap_explorer_planner_plugins roadmap_explorer_information_gain_plugins)
 
 rclcpp_components_register_nodes(roadmap_exploration_bt "roadmap_exploration::ExplorationServer")
 
@@ -132,7 +141,7 @@ add_executable(roadmap_exploration_server
 src/main.cpp
 )
 ament_target_dependencies(roadmap_exploration_server ${dependencies})
-target_link_libraries(roadmap_exploration_server ${PCL_LIBRARIES} ${YAML_CPP_LIBRARIES} roadmap_exploration_bt roadmap_explorer_bt_plugins roadmap_explorer_frontier_search_plugins roadmap_explorer_planner_plugins)
+target_link_libraries(roadmap_exploration_server ${PCL_LIBRARIES} ${YAML_CPP_LIBRARIES} roadmap_exploration_bt roadmap_explorer_bt_plugins roadmap_explorer_frontier_search_plugins roadmap_explorer_planner_plugins roadmap_explorer_information_gain_plugins)
 
 ########################### COMPARISON SCRIPTS ###########################
 add_subdirectory(comparision_scripts)
@@ -150,6 +159,7 @@ install(TARGETS
   roadmap_explorer_bt_plugins
   roadmap_explorer_frontier_search_plugins
   roadmap_explorer_planner_plugins
+  roadmap_explorer_information_gain_plugins
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
@@ -168,7 +178,7 @@ DESTINATION share/${PROJECT_NAME}
 )
 
 ament_export_include_directories(include ${EIGEN3_INCLUDE_DIR})
-ament_export_libraries(roadmap_exploration_bt roadmap_explorer_bt_plugins roadmap_explorer_frontier_search_plugins roadmap_explorer_planner_plugins)
+ament_export_libraries(roadmap_exploration_bt roadmap_explorer_bt_plugins roadmap_explorer_frontier_search_plugins roadmap_explorer_planner_plugins roadmap_explorer_information_gain_plugins)
 ament_export_dependencies(rosidl_default_runtime ${dependencies})
 
 install(FILES core_plugins_description.xml frontier_search_plugins.xml frontier_planner_plugins.xml
@@ -177,5 +187,6 @@ install(FILES core_plugins_description.xml frontier_search_plugins.xml frontier_
 pluginlib_export_plugin_description_file(roadmap_explorer core_plugins_description.xml)
 pluginlib_export_plugin_description_file(roadmap_explorer frontier_search_plugins.xml)
 pluginlib_export_plugin_description_file(roadmap_explorer frontier_planner_plugins.xml)
+pluginlib_export_plugin_description_file(roadmap_explorer frontier_information_gain_plugins.xml)
 
 ament_package()
