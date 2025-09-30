@@ -68,6 +68,11 @@ public:
     outFile << ++serialNumber << "," << "planning_iteration" << "," << planningCount << "\n";
   }
 
+  int getPlanningCount() const
+  {
+    return planningCount;
+  }
+
 private:
   // Delete copy constructor and assignment operator to prevent copying
   EventLogger(const EventLogger &) = delete;
