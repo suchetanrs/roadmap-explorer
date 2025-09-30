@@ -1,4 +1,4 @@
-#include "roadmap_explorer/bt_plugins/core_plugins.hpp"
+#include "roadmap_explorer/bt_plugins/LogIterationPlugin.hpp"
 #include <pluginlib/class_list_macros.hpp>
 
 namespace roadmap_explorer

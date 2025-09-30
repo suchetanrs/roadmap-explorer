@@ -1,7 +1,7 @@
 // core_plugins.hpp
 #pragma once
 
-#include <roadmap_explorer/bt_plugins/interface_pluginlib.hpp>
+#include <roadmap_explorer/bt_plugins/BaseBTPlugin.hpp>
 #include "roadmap_explorer/util/Logger.hpp"
 #include "roadmap_explorer/util/EventLogger.hpp"
 
