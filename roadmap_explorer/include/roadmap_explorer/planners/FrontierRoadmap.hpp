@@ -54,9 +54,7 @@ public:
     std::lock_guard<std::mutex> lock(instanceMutex_);
     if (frontierRoadmapPtr == nullptr) {
       frontierRoadmapPtr.reset(new FrontierRoadMap(explore_costmap_ros, node_ptr));
-    }
-    else
-    {
+    } else {
       throw RoadmapExplorerException("FrontierRoadMap instance already exists!");
     }
   }

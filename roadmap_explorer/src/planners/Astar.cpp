@@ -19,7 +19,9 @@ double FrontierRoadmapAStar::heuristic(const Node & a, const Node & b)
          (a.frontier->getGoalPoint().y - b.frontier->getGoalPoint().y);
 }
 
-double FrontierRoadmapAStar::heuristic(const std::shared_ptr<Node> & a, const std::shared_ptr<Node> & b)
+double FrontierRoadmapAStar::heuristic(
+  const std::shared_ptr<Node> & a,
+  const std::shared_ptr<Node> & b)
 {
   return (a->frontier->getGoalPoint().x - b->frontier->getGoalPoint().x) *
          (a->frontier->getGoalPoint().x - b->frontier->getGoalPoint().x) +
@@ -35,7 +37,7 @@ double FrontierRoadmapAStar::heuristic(const FrontierPtr & a, const FrontierPtr 
 
 // Function to get the successors of a node (example for a grid)
 std::vector<std::shared_ptr<Node>> FrontierRoadmapAStar::getSuccessors(
-  const std::shared_ptr<Node> & current, const std::shared_ptr<Node> & goal, 
+  const std::shared_ptr<Node> & current, const std::shared_ptr<Node> & goal,
   const std::unordered_map<FrontierPtr, std::vector<FrontierPtr>, FrontierHash> & roadmap)
 {
   // PROFILE_FUNCTION;
@@ -57,7 +59,8 @@ std::vector<std::shared_ptr<Node>> FrontierRoadmapAStar::getSuccessors(
 
 // A* Algorithm function
 std::pair<std::vector<std::shared_ptr<Node>>, double> FrontierRoadmapAStar::getPlan(
-  const FrontierPtr & start, const FrontierPtr & goal, const std::unordered_map<FrontierPtr, std::vector<FrontierPtr>, FrontierHash> & roadmap)
+  const FrontierPtr & start, const FrontierPtr & goal, const std::unordered_map<FrontierPtr,
+  std::vector<FrontierPtr>, FrontierHash> & roadmap)
 {
   // PROFILE_FUNCTION;
   auto start_ = std::make_shared<Node>(start, 0.0, heuristic(start, goal));
@@ -75,8 +78,7 @@ std::pair<std::vector<std::shared_ptr<Node>>, double> FrontierRoadmapAStar::getP
     openList.pop();
 
     // If goal is reached (use frontier UID comparison for exact match)
-    if (current->frontier->getUID() == goal_->frontier->getUID())
-    {
+    if (current->frontier->getUID() == goal_->frontier->getUID()) {
       std::vector<std::shared_ptr<Node>> path;
       std::shared_ptr<Node> node = allNodes[current->frontier->getUID()];
       double total_path_length = 0;

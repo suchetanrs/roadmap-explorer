@@ -685,7 +685,9 @@ bool FrontierRoadMap::isConnectable(const FrontierPtr & f1, const FrontierPtr & 
   if (cell_gatherer.hasHitObstacle()) {
     return false;
   }
-  if (resolution > 0.0 && cell_gatherer.getNumUnknown() > RADIUS_TO_DECIDE_EDGES / resolution * 0.3) {
+  if (resolution > 0.0 &&
+    cell_gatherer.getNumUnknown() > RADIUS_TO_DECIDE_EDGES / resolution * 0.3)
+  {
     return false;
   }
   rosVisualizerInstance.visualizeMarkers("connecting_cells", cell_gatherer.getCells());
@@ -704,7 +706,9 @@ std::size_t FrontierRoadMap::countTotalItemsInSpatialMap()
       cell.second.end());
     total_items += cell.second.size();           // Add the size of each grid's list to the total count
   }
-  rosVisualizerInstance.visualizePointCloud("spatial_hashmap_points", master_frontier_list, "map", 50.0f);
+  rosVisualizerInstance.visualizePointCloud(
+    "spatial_hashmap_points", master_frontier_list, "map",
+    50.0f);
   // LOG_INFO("Total items in the spatial map is: " << total_items);
   return total_items;
 }
