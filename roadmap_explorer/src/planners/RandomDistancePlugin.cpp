@@ -7,6 +7,7 @@ void RandomDistancePlugin::configure(
 {
   LOG_INFO("RandomDistancePlugin::configure");
   exploration_costmap_ = explore_costmap_ros->getCostmap();
+  updateParameters();
 }
 
 void RandomDistancePlugin::reset()
@@ -26,8 +27,6 @@ void RandomDistancePlugin::setPlanForFrontier(
   const geometry_msgs::msg::Pose start_pose_w,
   FrontierPtr & goal_point_w)
 {
-  setPlanningParameters();
-
   // if already not achievable, return
   auto start_point_w = start_pose_w.position;
   if (goal_point_w->isAchievable() == false) {

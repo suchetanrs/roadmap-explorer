@@ -53,7 +53,7 @@ public:
   /**
    * @brief Set planning parameters specific to the planner. Run everytime you want to update the parameters.
    */
-  virtual void setPlanningParameters()
+  virtual void updateParameters()
   {
     max_planning_distance_ = parameterInstance.getValue<double>(
       "costCalculator.max_planning_distance_roadmap");
