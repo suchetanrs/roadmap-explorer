@@ -20,7 +20,8 @@ roadmap_explorer_node:
       max_planning_distance_roadmap: 12.5
 
     costAssigner:
-      cost_calculation_methods: ["RoadmapPlannerDistance", "ArrivalInformation"]
+      information_gain_plugin: "roadmap_explorer::CountBasedGain"
+      planner_plugin: "roadmap_explorer::PluginFrontierRoadmap"
 
     frontierRoadmap:
       max_graph_reconstruction_distance: 10.0

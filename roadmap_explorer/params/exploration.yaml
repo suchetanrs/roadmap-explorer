@@ -14,7 +14,8 @@ costCalculator:
   planner_allow_unknown: true
 
 costAssigner:
-  cost_calculation_methods: ["RoadmapPlannerDistance", "ArrivalInformation"]
+  information_gain_plugin: "roadmap_explorer::CountBasedGain"
+  planner_plugin: "roadmap_explorer::PluginFrontierRoadmap"
 
 frontierRoadmap:
   max_graph_reconstruction_distance: 25.0

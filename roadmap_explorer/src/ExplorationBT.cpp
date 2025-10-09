@@ -250,8 +250,7 @@ public:
   {
     EventLoggerInstance.startEvent("ProcessFrontierCosts");
     LOG_FLOW("MODULE ProcessFrontierCostsBT");
-    auto frontierCostsRequestPtr = std::make_shared<GetFrontierCostsRequest>();
-    auto frontierCostsResultPtr = std::make_shared<GetFrontierCostsResponse>();
+    auto frontierCostsRequestPtr = std::make_shared<CalculateFrontierCostsRequest>();
 
     frontierCostsRequestPtr->prohibited_frontiers =
       *(config().blackboard->get<std::shared_ptr<std::vector<FrontierPtr>>>(
@@ -277,16 +276,9 @@ public:
       LOG_FATAL("Failed to retrieve latest_robot_pose from blackboard.");
       throw RoadmapExplorerException("Failed to retrieve latest_robot_pose from blackboard.");
     }
-    if (!getInput<bool>(
-        "force_grid_based_planning",
-        frontierCostsRequestPtr->force_grid_base_planning))
-    {
-      BT::RuntimeError("No correct input recieved for force_grid_based_planning");
-    }
     LOG_INFO("Request to get frontier costs sent");
-    bool frontierCostsSuccess = cost_assigner_ptr_->getFrontierCosts(
-      frontierCostsRequestPtr,
-      frontierCostsResultPtr);
+    bool frontierCostsSuccess = cost_assigner_ptr_->populateFrontierCosts(
+      frontierCostsRequestPtr);
     if (frontierCostsSuccess == false) {
       LOG_INFO("Failed to receive response for getNextFrontier called from within the robot.");
       EventLoggerInstance.endEvent("ProcessFrontierCosts", 0);
@@ -308,9 +300,9 @@ public:
         "error_code_id", ExplorationErrorCode::NO_ACHIEVABLE_FRONTIERS_LEFT);
       return BT::NodeStatus::FAILURE;
     }
-    setOutput("frontier_costs_result", frontierCostsResultPtr->frontier_list);
+    setOutput("frontier_costs_result", frontierCostsRequestPtr->frontier_list);
     EventLoggerInstance.endEvent("ProcessFrontierCosts", 0);
-    rosVisualizerInstance.visualizeFrontierMarkers("frontier_cell_markers", frontierCostsResultPtr->frontier_list);
+    rosVisualizerInstance.visualizeFrontierMarkers("frontier_cell_markers", frontierCostsRequestPtr->frontier_list);
     return BT::NodeStatus::SUCCESS;
   }
 
@@ -318,7 +310,6 @@ public:
   {
     return {BT::InputPort<std::vector<FrontierPtr>>("frontier_list"),
       BT::InputPort<std::vector<std::vector<double>>>("every_frontier"),
-      BT::InputPort<bool>("force_grid_based_planning"),
       BT::OutputPort<std::vector<FrontierPtr>>("frontier_costs_result")};
   }
 

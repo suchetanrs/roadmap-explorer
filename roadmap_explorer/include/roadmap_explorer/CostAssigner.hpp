@@ -31,8 +31,9 @@
 #include "roadmap_explorer/util/Logger.hpp"
 #include "roadmap_explorer/util/RosVisualizer.hpp"
 #include "roadmap_explorer/util/EventLogger.hpp"
-#include "roadmap_explorer/Frontier.hpp"
 #include "roadmap_explorer/util/GeneralUtils.hpp"
+
+#include "roadmap_explorer/Frontier.hpp"
 #include "roadmap_explorer/information_gain/BaseInformationGain.hpp"
 #include "roadmap_explorer/frontier_search/BaseFrontierSearch.hpp"
 #include "roadmap_explorer/planners/BasePlanner.hpp"
@@ -40,21 +41,12 @@
 namespace roadmap_explorer
 {
 
-struct GetFrontierCostsRequest
+struct CalculateFrontierCostsRequest
 {
   geometry_msgs::msg::PoseStamped start_pose;
   std::vector<FrontierPtr> frontier_list;
   std::vector<std::vector<double>> every_frontier;
   std::vector<FrontierPtr> prohibited_frontiers;
-  bool force_grid_base_planning = false;
-};
-
-struct GetFrontierCostsResponse
-{
-  bool success;
-  std::vector<FrontierPtr> frontier_list;
-  std::vector<double> frontier_distances;
-  std::vector<double> frontier_arrival_information;
 };
 
 class CostAssigner
@@ -66,24 +58,26 @@ public:
 
   void updateBoundaryPolygon(geometry_msgs::msg::PolygonStamped & explore_boundary);
 
-  bool getFrontierCosts(
-    std::shared_ptr<GetFrontierCostsRequest> requestData,
-    std::shared_ptr<GetFrontierCostsResponse> resultData);
+  bool populateFrontierCosts(std::shared_ptr<CalculateFrontierCostsRequest> requestData);
 
 private:
-  bool processChosenApproach(
-    std::vector<FrontierPtr> & frontier_list,
-    geometry_msgs::msg::Pose & start_pose_w, bool force_grid_base_planning);
 
   bool assignCosts(
-    std::vector<FrontierPtr> & frontier_list, std::vector<double> polygon_xy_min_max,
-    geometry_msgs::msg::Pose start_pose_w, std::vector<std::vector<std::string>> & costTypes);
+    std::vector<FrontierPtr> & frontier_list, geometry_msgs::msg::Pose start_pose_w);
 
   void setFrontierBlacklist(std::vector<FrontierPtr> & blacklist);
 
   void recomputeNormalizationFactors(FrontierPtr & frontier);
 
-  geometry_msgs::msg::Polygon polygon_;
+  std::vector<FrontierPtr> findDuplicates(const std::vector<FrontierPtr> & vec);
+
+  void initializePlugins(const std::string & informationGainPlugin, const std::string & plannerPlugin);
+
+  void processFrontier(FrontierPtr & frontier,
+    const geometry_msgs::msg::Pose & start_pose_w);
+
+  void setFrontierUnachievable(FrontierPtr & frontier);
+  
   // min_x, min_y, max_x, max_y
   std::vector<double> polygon_xy_min_max_;
 
@@ -91,15 +85,19 @@ private:
   nav2_costmap_2d::Costmap2D * costmap_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros_;
 
+  // map of blacklists with hash map and equality which only considers goal point
   std::unordered_map<FrontierPtr, bool, FrontierHash,
     FrontierGoalPointEquality> frontier_blacklist_;
   std::mutex blacklist_mutex_;
 
   double min_traversable_distance = std::numeric_limits<double>::max();
   double max_traversable_distance = -1.0 * std::numeric_limits<double>::max();
+  std::shared_ptr<BasePlanner> planner_plugin_;
 
   double min_arrival_info_per_frontier = std::numeric_limits<double>::max();
   double max_arrival_info_per_frontier = -1.0 * std::numeric_limits<double>::max();
+  std::shared_ptr<BaseInformationGain> information_gain_plugin_;
+
 };
 }
 #endif

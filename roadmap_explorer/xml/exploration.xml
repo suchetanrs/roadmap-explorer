@@ -11,8 +11,9 @@
                     </ForceSuccess>
                     <UpdateFrontierRoadmap frontier_list="{the_frontier_list}" add_robot_pose_to_roadmap="true"/>
                     <Fallback>
-                        <ProcessFrontierCosts force_grid_based_planning="false" frontier_list="{the_frontier_list}" every_frontier="{the_every_frontier}" frontier_costs_result="{the_frontier_costs}"/>
-                        <ProcessFrontierCosts force_grid_based_planning="true" frontier_list="{the_frontier_list}" every_frontier="{the_every_frontier}" frontier_costs_result="{the_frontier_costs}"/>
+                        <ProcessFrontierCosts frontier_list="{the_frontier_list}" every_frontier="{the_every_frontier}" frontier_costs_result="{the_frontier_costs}"/>
+                        <!-- The below node is a fallback in case roadmap planning fails. It should use Grid based planning (TODO: suchetan) -->
+                        <!-- <ProcessFrontierCosts frontier_list="{the_frontier_list}" every_frontier="{the_every_frontier}" frontier_costs_result="{the_frontier_costs}"/> -->
                     </Fallback>
                     <RecoveryNode number_of_retries="2">
                         <OptimizeFullPath frontier_costs_result="{the_frontier_costs}" allocated_frontier="{the_allocated_frontier}" optimized_path="{optimized_path}"/>
