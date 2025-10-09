@@ -205,6 +205,7 @@ if(ament_cmake_gtest_FOUND)
     add_subdirectory(tests/bt_plugins)
     add_subdirectory(tests/frontier_search)
     add_subdirectory(tests/information_gain)
+    add_subdirectory(tests/other_tests)
 endif()
 
 ament_package()
