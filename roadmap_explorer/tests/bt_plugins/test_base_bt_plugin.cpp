@@ -2,6 +2,7 @@
 #include <memory>
 
 #include "roadmap_explorer/bt_plugins/BaseBTPlugin.hpp"
+#include "roadmap_explorer/ExplorationBT.hpp"
 
 #ifdef ROS_DISTRO_HUMBLE
   #include <behaviortree_cpp_v3/bt_factory.h>

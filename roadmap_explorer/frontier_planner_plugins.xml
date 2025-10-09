@@ -23,5 +23,12 @@
       A roadmap_explorer planner plugin that uses a frontier roadmap to compute the path to the frontier
     </description>
   </class>
-</library>
 
+  <class name="roadmap_explorer::RandomDistancePlugin" 
+         type="roadmap_explorer::RandomDistancePlugin" 
+         base_class_type="roadmap_explorer::BasePlanner">
+    <description>
+      A roadmap_explorer planner plugin that uses random costs to compute the path to the frontier
+    </description>
+  </class>
+</library>
