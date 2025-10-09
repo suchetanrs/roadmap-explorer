@@ -17,6 +17,8 @@ void CountBasedGain::configure(
 void CountBasedGain::reset()
 {
   arrival_info_limits_set_ = false;
+  min_arrival_info_gt_ = std::numeric_limits<double>::max();
+  max_arrival_info_gt_ = -1.0 * std::numeric_limits<double>::max();
 }
 
 void CountBasedGain::setInformationGainForFrontier(
