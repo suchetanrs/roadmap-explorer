@@ -7,27 +7,39 @@ using nav2_costmap_2d::FREE_SPACE;
 using nav2_costmap_2d::LETHAL_OBSTACLE;
 using nav2_costmap_2d::NO_INFORMATION;
 
-FrontierBFSearch::FrontierBFSearch(nav2_costmap_2d::Costmap2D & costmap)
+FrontierBFSearch::FrontierBFSearch()
 {
-  configure(&costmap);
+  costmap_ = nullptr;
   LOG_INFO("FrontierBFSearch::FrontierBFSearch");
 }
 
 FrontierBFSearch::~FrontierBFSearch()
 {
   LOG_INFO("FrontierBFSearch::~FrontierBFSearch()");
-  every_frontier_list.clear();
 }
 
-FrontierSearchResult FrontierBFSearch::searchFrom(geometry_msgs::msg::Point position, std::vector<FrontierPtr> & output_frontier_list)
+void FrontierBFSearch::configure(nav2_costmap_2d::Costmap2D * costmap)
 {
+  if (costmap == nullptr) {
+    throw std::runtime_error("Given input costmap is null");
+  }
+  costmap_ = costmap;
+  
   min_frontier_cluster_size_ = parameterInstance.getValue<double>(
     "frontierSearch.min_frontier_cluster_size");
   max_frontier_cluster_size_ = parameterInstance.getValue<double>(
     "frontierSearch.max_frontier_cluster_size");
   lethal_threshold_ = parameterInstance.getValue<int64_t>("frontierSearch.lethal_threshold");
-  LOG_INFO("MAX FRONTIER SEARCH DISTANCE: " << frontier_search_distance_);
+}
 
+void FrontierBFSearch::reset()
+{
+  costmap_ = nullptr;
+  every_frontier_list.clear();
+}
+
+FrontierSearchResult FrontierBFSearch::searchFrom(geometry_msgs::msg::Point position, std::vector<FrontierPtr> & output_frontier_list)
+{
   //  frontier_list to store the detected frontiers.
   std::vector<FrontierPtr> frontier_list;
 
@@ -39,8 +51,8 @@ FrontierSearchResult FrontierBFSearch::searchFrom(geometry_msgs::msg::Point posi
   }
 
   map_ = costmap_->getCharMap();
-  size_x_ = costmap_->getSizeInCellsX();
-  size_y_ = costmap_->getSizeInCellsY();
+  auto size_x_ = costmap_->getSizeInCellsX();
+  auto size_y_ = costmap_->getSizeInCellsY();
 
   // initialize flag arrays to keep track of visited and frontier cells
   std::vector<bool> frontier_flag(size_x_ * size_y_, false);

@@ -29,15 +29,13 @@ class FrontierBFSearch : public FrontierSearchBase
 {
 
 public:
-  FrontierBFSearch() = default;
-  FrontierBFSearch(nav2_costmap_2d::Costmap2D & costmap);
+  FrontierBFSearch();
 
   ~FrontierBFSearch() override;
 
-  void reset() override
-  {
-    every_frontier_list.clear();
-  }
+  void configure(nav2_costmap_2d::Costmap2D * costmap) override;
+
+  void reset() override;
 
   bool setFrontierSearchDistance(double value) override
   {
@@ -125,8 +123,8 @@ private:
   }
 
   unsigned char * map_;
-  unsigned int size_x_, size_y_;
   std::vector<std::vector<double>> every_frontier_list;
+  nav2_costmap_2d::Costmap2D * costmap_;
   int min_frontier_cluster_size_;
   int max_frontier_cluster_size_;
   unsigned char lethal_threshold_;

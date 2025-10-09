@@ -66,6 +66,7 @@ public:
     LOG_FLOW("MODULE SearchForFrontiersBT");
     EventLoggerInstance.startEvent("SearchForFrontiers");
     frontierSearchPtr_->reset();
+    frontierSearchPtr_->configure(explore_costmap_ros_->getLayeredCostmap()->getCostmap());
     explore_costmap_ros_->getCostmap()->getMutex()->lock();
     LOG_DEBUG("SearchForFrontiersBT OnStart called ");
     geometry_msgs::msg::PoseStamped robotP;
@@ -590,14 +591,10 @@ RoadmapExplorationBT::RoadmapExplorationBT(std::shared_ptr<nav2_util::LifecycleN
     // TODO: Make plugin name configurable via parameter
     
     frontierSearchPtr_ = plugin_loader.createSharedInstance(plugin_name);
-    frontierSearchPtr_->configure(explore_costmap_ros_->getLayeredCostmap()->getCostmap());
     LOG_INFO("Loaded frontier search plugin: " << plugin_name);
   } catch (const std::exception& e) {
     LOG_WARN("Failed to load frontier search plugin, using direct instantiation: " << e.what());
     throw std::runtime_error("Failed to load frontier search plugin");
-    // Fallback to direct instantiation
-    frontierSearchPtr_ = std::make_shared<FrontierBFSearch>(
-      *(explore_costmap_ros_->getLayeredCostmap()->getCostmap()));
   }
   
   full_path_optimizer_ = std::make_shared<FullPathOptimizer>(bt_node_, explore_costmap_ros_);

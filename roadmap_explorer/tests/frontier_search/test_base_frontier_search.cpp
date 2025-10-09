@@ -18,6 +18,11 @@ class TestFrontierSearch : public FrontierSearchBase
 public:
     TestFrontierSearch() = default;
     
+    void configure(nav2_costmap_2d::Costmap2D * costmap) override
+    {
+        costmap_ = costmap;
+    }
+    
     void reset() override 
     {
         reset_called_ = true;

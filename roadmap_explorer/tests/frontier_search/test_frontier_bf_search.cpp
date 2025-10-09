@@ -58,14 +58,20 @@ public:
     
     TestFrontierBFSearch(nav2_costmap_2d::Costmap2D & costmap)
     {
-        configure(&costmap);
-        
         // Set default test parameters
         min_frontier_cluster_size_ = 2.0;
         max_frontier_cluster_size_ = 15.0;
         lethal_threshold_ = 160;
         frontier_search_distance_ = 20.0;
         max_frontier_search_distance_ = 80.0;
+        
+        // Configure after setting parameters
+        configure(&costmap);
+    }
+    
+    void configure(nav2_costmap_2d::Costmap2D * costmap) override
+    {
+        costmap_ = costmap;
     }
 
     ~TestFrontierBFSearch() override
