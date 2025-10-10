@@ -6,4 +6,68 @@
       Registers all built-in exploration BT nodes into the factory.
     </description>
   </class>
+  
+  <class name="roadmap_explorer::UpdateBoundaryPlugin"
+         type="roadmap_explorer::UpdateBoundaryPlugin"
+         base_class_type="roadmap_explorer::BTPlugin">
+    <description>
+      Plugin for updating exploration boundary polygon.
+    </description>
+  </class>
+
+  <class name="roadmap_explorer::SearchForFrontiersPlugin"
+         type="roadmap_explorer::SearchForFrontiersPlugin"
+         base_class_type="roadmap_explorer::BTPlugin">
+    <description>
+      BT node for searching frontiers.
+    </description>
+  </class>
+
+  <class name="roadmap_explorer::CleanupRoadmapPlugin"
+         type="roadmap_explorer::CleanupRoadmapPlugin"
+         base_class_type="roadmap_explorer::BTPlugin">
+    <description>
+      BT node for cleaning up the exploration roadmap.
+    </description>
+  </class>
+
+  <class name="roadmap_explorer::UpdateRoadmapPlugin"
+         type="roadmap_explorer::UpdateRoadmapPlugin"
+         base_class_type="roadmap_explorer::BTPlugin">
+    <description>
+      BT node for updating the exploration roadmap.
+    </description>
+  </class>
+
+  <class name="roadmap_explorer::ProcessFrontierCostsPlugin"
+         type="roadmap_explorer::ProcessFrontierCostsPlugin"
+         base_class_type="roadmap_explorer::BTPlugin">
+    <description>
+      BT node for processing frontier costs.
+    </description>
+  </class>
+
+  <class name="roadmap_explorer::OptimizeFullPathPlugin"
+         type="roadmap_explorer::OptimizeFullPathPlugin"
+         base_class_type="roadmap_explorer::BTPlugin">
+    <description>
+      BT node for optimizing the full path.
+    </description>
+  </class>
+
+  <class name="roadmap_explorer::SendNav2GoalPlugin"
+         type="roadmap_explorer::SendNav2GoalPlugin"
+         base_class_type="roadmap_explorer::BTPlugin">
+    <description>
+      BT node for sending navigation goals to Nav2.
+    </description>
+  </class>
+
+  <class name="roadmap_explorer::BlacklistGoalPlugin"
+         type="roadmap_explorer::BlacklistGoalPlugin"
+         base_class_type="roadmap_explorer::BTPlugin">
+    <description>
+      Base class for all exploration BT plugins.
+    </description>
+  </class>
 </library>

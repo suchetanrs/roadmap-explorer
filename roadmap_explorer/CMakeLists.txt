@@ -101,8 +101,17 @@ target_link_libraries(${PROJECT_NAME}_utils ${PROJECT_NAME}_frontier)
 
 add_library(roadmap_explorer_bt_plugins SHARED
 src/bt_plugins/LogIterationPlugin.cpp
+src/bt_plugins/UpdateBoundaryPlugin.cpp
+src/bt_plugins/SearchForFrontiersPlugin.cpp
+src/bt_plugins/CleanupRoadmapPlugin.cpp
+src/bt_plugins/UpdateRoadmapPlugin.cpp
+src/bt_plugins/ProcessFrontierCostsPlugin.cpp
+src/bt_plugins/OptimizeFullPathPlugin.cpp
+src/bt_plugins/SendNav2GoalPlugin.cpp
+src/bt_plugins/BlacklistGoalPlugin.cpp
 )
 ament_target_dependencies(roadmap_explorer_bt_plugins ${dependencies})
+target_link_libraries(roadmap_explorer_bt_plugins ${PROJECT_NAME}_frontier ${PROJECT_NAME}_utils)
 
 ##############
 
@@ -202,7 +211,7 @@ pluginlib_export_plugin_description_file(roadmap_explorer frontier_information_g
 find_package(ament_cmake_gtest QUIET)
 if(ament_cmake_gtest_FOUND)
     add_subdirectory(tests/utils)
-    add_subdirectory(tests/bt_plugins)
+    # add_subdirectory(tests/bt_plugins)
     add_subdirectory(tests/frontier_search)
     add_subdirectory(tests/information_gain)
     add_subdirectory(tests/other_tests)

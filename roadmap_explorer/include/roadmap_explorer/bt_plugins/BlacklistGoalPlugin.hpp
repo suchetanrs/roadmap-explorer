@@ -7,12 +7,12 @@
 
 namespace roadmap_explorer
 {
-    class LogIteration : public BTPlugin
+    class BlacklistGoalPlugin : public BTPlugin
     {
         public:
-        LogIteration();
+        BlacklistGoalPlugin();
 
-        ~LogIteration();
+        ~BlacklistGoalPlugin();
 
         void registerNodes(BT::BehaviorTreeFactory & factory, std::shared_ptr<BTContext> context) override;
     };

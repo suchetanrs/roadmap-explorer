@@ -1,4 +1,4 @@
-// core_plugins.hpp
+// update_boundary_plugin.hpp
 #pragma once
 
 #include <roadmap_explorer/bt_plugins/BaseBTPlugin.hpp>
@@ -7,12 +7,12 @@
 
 namespace roadmap_explorer
 {
-    class LogIteration : public BTPlugin
+    class ProcessFrontierCostsPlugin : public BTPlugin
     {
         public:
-        LogIteration();
+        ProcessFrontierCostsPlugin();
 
-        ~LogIteration();
+        ~ProcessFrontierCostsPlugin();
 
         void registerNodes(BT::BehaviorTreeFactory & factory, std::shared_ptr<BTContext> context) override;
     };

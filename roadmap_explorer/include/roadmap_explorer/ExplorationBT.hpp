@@ -38,32 +38,13 @@
 #include "roadmap_explorer/SensorSimulator.hpp"
 
 #include "roadmap_explorer_msgs/action/explore.hpp"
-#include "roadmap_explorer/bt_plugins/LogIterationPlugin.hpp"
+#include "roadmap_explorer/bt_plugins/BaseBTPlugin.hpp"
+#include "roadmap_explorer/bt_plugins/BTContext.hpp"
 
 namespace roadmap_explorer
 {
 
-enum class ExplorationErrorCode
-{
-  NO_FRONTIERS_IN_CURRENT_RADIUS,
-  MAX_FRONTIER_SEARCH_RADIUS_EXCEEDED,
-  COST_COMPUTATION_FAILURE,
-  NO_ACHIEVABLE_FRONTIERS_LEFT,
-  FULL_PATH_OPTIMIZATION_FAILURE,
-  REFINED_PATH_COMPUTATION_FAILURE,
-  UNHANDLED_ERROR,
-  NAV2_GOAL_ABORT,
-  NO_ERROR
-};
-
 using ExploreActionResult = roadmap_explorer_msgs::action::Explore_Result;
-
-inline void blacklistFrontier(const FrontierPtr & frontier, BT::Blackboard::Ptr blackboard)
-{
-  auto blacklisted_frontiers = blackboard->get<std::shared_ptr<std::vector<FrontierPtr>>>(
-    "blacklisted_frontiers");
-  blacklisted_frontiers->push_back(frontier);
-}
 
 class RoadmapExplorationBT
 {

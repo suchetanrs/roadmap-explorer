@@ -5,14 +5,16 @@
 #include "roadmap_explorer/util/Logger.hpp"
 #include "roadmap_explorer/util/EventLogger.hpp"
 
+#include "roadmap_explorer/Nav2Interface.hpp"
+
 namespace roadmap_explorer
 {
-    class LogIteration : public BTPlugin
+    class SendNav2GoalPlugin : public BTPlugin
     {
         public:
-        LogIteration();
+        SendNav2GoalPlugin();
 
-        ~LogIteration();
+        ~SendNav2GoalPlugin();
 
         void registerNodes(BT::BehaviorTreeFactory & factory, std::shared_ptr<BTContext> context) override;
     };
