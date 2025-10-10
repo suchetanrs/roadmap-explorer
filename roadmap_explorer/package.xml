@@ -30,6 +30,7 @@
   <depend>nav2_navfn_planner</depend>
   <depend>nav2_theta_star_planner</depend>
   <depend>nav2_map_server</depend>
+  <depend>boost</depend>
   
   <build_depend>ros_environment</build_depend>
   
