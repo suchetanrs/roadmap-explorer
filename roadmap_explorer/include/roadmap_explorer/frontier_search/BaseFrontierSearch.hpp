@@ -5,7 +5,7 @@
 #include <memory>
 
 #include <rclcpp/rclcpp.hpp>
-#include <nav2_costmap_2d/costmap_2d.hpp>
+#include <nav2_costmap_2d/costmap_2d_ros.hpp>
 #include <geometry_msgs/msg/point.hpp>
 
 #include "roadmap_explorer/Frontier.hpp"
@@ -48,7 +48,7 @@ public:
    * @param costmap Pointer to the costmap for frontier detection.
    * @param node Shared pointer to the lifecycle node for parameter management
    */
-  virtual void configure(nav2_costmap_2d::Costmap2D * costmap, std::shared_ptr<nav2_util::LifecycleNode> node) = 0;
+  virtual void configure(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros, std::shared_ptr<nav2_util::LifecycleNode> node) = 0;
 
   /**
    * @brief Reset the frontier search state
@@ -76,7 +76,8 @@ public:
   virtual std::vector<std::vector<double>> getAllFrontiers() = 0;
 
 protected:
-  nav2_costmap_2d::Costmap2D * costmap_ = nullptr; ///< Pointer to the costmap used for frontier detection
+  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros_ = nullptr; ///< Pointer to the costmap used for frontier detection
+  std::shared_ptr<nav2_util::LifecycleNode> node_ = nullptr; ///< Shared pointer to the lifecycle node
 };
 
 }  // namespace roadmap_explorer

@@ -2,11 +2,10 @@
 
 namespace roadmap_explorer
 {
-void PluginNavFn::configure(
-  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros)
+void PluginNavFn::configure(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros, std::shared_ptr<nav2_util::LifecycleNode> node)
 {
   exploration_costmap_ = explore_costmap_ros->getCostmap();
-  updateParameters();
+  (void)node;
 }
 
 void PluginNavFn::reset()

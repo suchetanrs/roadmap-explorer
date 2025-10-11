@@ -16,7 +16,7 @@ public:
   ~RandomDistancePlugin() override = default;
 
   void configure(
-    std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros) override;
+    std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros, std::shared_ptr<nav2_util::LifecycleNode> node) override;
 
   void reset() override;
 
@@ -25,6 +25,9 @@ public:
   void setPlanForFrontier(
     const geometry_msgs::msg::Pose start_pose_w,
     FrontierPtr & goal_point_w) override;
+
+private:
+  nav2_costmap_2d::Costmap2D * exploration_costmap_ = nullptr;
 };
 
 }  // namespace roadmap_explorer

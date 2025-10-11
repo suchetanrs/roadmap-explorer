@@ -18,12 +18,12 @@ FrontierBFSearch::~FrontierBFSearch()
   LOG_INFO("FrontierBFSearch::~FrontierBFSearch()");
 }
 
-void FrontierBFSearch::configure(nav2_costmap_2d::Costmap2D * costmap, std::shared_ptr<nav2_util::LifecycleNode> node)
+void FrontierBFSearch::configure(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros, std::shared_ptr<nav2_util::LifecycleNode> node)
 {
-  if (costmap == nullptr) {
+  if (explore_costmap_ros == nullptr) {
     throw std::runtime_error("Given input costmap is null");
   }
-  costmap_ = costmap;
+  costmap_ = explore_costmap_ros->getCostmap();
 
   nav2_util::declare_parameter_if_not_declared(
     node, "frontierSearch.min_frontier_cluster_size", rclcpp::ParameterValue(

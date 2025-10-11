@@ -32,18 +32,6 @@ void ParameterHandler::makeParameters(std::shared_ptr<nav2_util::LifecycleNode> 
 
   // --- costCalculator ---
   nav2_util::declare_parameter_if_not_declared(
-    node, "costCalculator.max_camera_depth", rclcpp::ParameterValue(
-      2.0));
-  nav2_util::declare_parameter_if_not_declared(
-    node, "costCalculator.delta_theta", rclcpp::ParameterValue(
-      0.10));
-  nav2_util::declare_parameter_if_not_declared(
-    node, "costCalculator.camera_fov", rclcpp::ParameterValue(
-      1.04));
-  nav2_util::declare_parameter_if_not_declared(
-    node, "costCalculator.factor_of_max_is_min", rclcpp::ParameterValue(
-      0.70));
-  nav2_util::declare_parameter_if_not_declared(
     node, "costCalculator.closeness_rejection_threshold", rclcpp::ParameterValue(
       0.5));
   nav2_util::declare_parameter_if_not_declared(
@@ -53,14 +41,6 @@ void ParameterHandler::makeParameters(std::shared_ptr<nav2_util::LifecycleNode> 
     node, "costCalculator.max_planning_distance_roadmap", rclcpp::ParameterValue(
       6.0));
 
-  parameter_map_["costCalculator.max_camera_depth"] = node->get_parameter(
-    "costCalculator.max_camera_depth").as_double();
-  parameter_map_["costCalculator.delta_theta"] =
-    node->get_parameter("costCalculator.delta_theta").as_double();
-  parameter_map_["costCalculator.camera_fov"] =
-    node->get_parameter("costCalculator.camera_fov").as_double();
-  parameter_map_["costCalculator.factor_of_max_is_min"] = node->get_parameter(
-    "costCalculator.factor_of_max_is_min").as_double();
   parameter_map_["costCalculator.closeness_rejection_threshold"] = node->get_parameter(
     "costCalculator.closeness_rejection_threshold").as_double();
   parameter_map_["costCalculator.planner_allow_unknown"] = node->get_parameter(

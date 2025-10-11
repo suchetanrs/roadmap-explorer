@@ -41,7 +41,7 @@ public:
    * @param explore_costmap_ros Shared pointer to the costmap ROS wrapper
    */
   virtual void configure(
-    std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros) = 0;
+    std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros, std::shared_ptr<nav2_util::LifecycleNode> node) = 0;
 
   /**
    * @brief Reset the planner state
@@ -49,19 +49,6 @@ public:
    * Clears any internal state or cached data from previous planning operations.
    */
   virtual void reset() = 0;
-
-  /**
-   * @brief Set planning parameters specific to the planner. Run everytime you want to update the parameters.
-   */
-  virtual void updateParameters()
-  {
-    max_planning_distance_ = parameterInstance.getValue<double>(
-      "costCalculator.max_planning_distance_roadmap");
-    closeness_rejection_threshold_ = parameterInstance.getValue<double>(
-      "costCalculator.closeness_rejection_threshold");
-    planner_allow_unknown_ =
-      parameterInstance.getValue<bool>("costCalculator.planner_allow_unknown");
-  }
 
   /**
    * @brief Plan a path from start pose to frontier goal
@@ -73,7 +60,7 @@ public:
     FrontierPtr & goal_point_w) = 0;
 
 protected:
-  nav2_costmap_2d::Costmap2D * exploration_costmap_;
+  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros_;
   double closeness_rejection_threshold_ = 0.5;
   double max_planning_distance_ = 50.0;
   bool planner_allow_unknown_ = false;

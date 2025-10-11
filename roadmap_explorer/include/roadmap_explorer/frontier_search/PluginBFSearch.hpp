@@ -33,7 +33,7 @@ public:
 
   ~FrontierBFSearch() override;
 
-  void configure(nav2_costmap_2d::Costmap2D * costmap, std::shared_ptr<nav2_util::LifecycleNode> node) override;
+  void configure(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros, std::shared_ptr<nav2_util::LifecycleNode> node) override;
 
   void reset() override;
 
@@ -82,6 +82,8 @@ private:
   int min_frontier_cluster_size_;
   int max_frontier_cluster_size_;
   unsigned char lethal_threshold_;
+
+  nav2_costmap_2d::Costmap2D * costmap_ = nullptr; ///< Pointer to the costmap used for frontier detection
 };
 
 // Define a custom functor with an extra argument

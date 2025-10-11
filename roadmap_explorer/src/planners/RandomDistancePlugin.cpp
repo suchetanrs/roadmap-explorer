@@ -2,12 +2,11 @@
 
 namespace roadmap_explorer
 {
-void RandomDistancePlugin::configure(
-  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros)
+void RandomDistancePlugin::configure(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros, std::shared_ptr<nav2_util::LifecycleNode> node)
 {
   LOG_INFO("RandomDistancePlugin::configure");
   exploration_costmap_ = explore_costmap_ros->getCostmap();
-  updateParameters();
+  (void)node;
 }
 
 void RandomDistancePlugin::reset()

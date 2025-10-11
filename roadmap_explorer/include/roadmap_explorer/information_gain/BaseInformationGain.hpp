@@ -41,7 +41,7 @@ public:
    * @param explore_costmap_ros Shared pointer to the costmap ROS wrapper
    */
   virtual void configure(
-    std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros) = 0;
+    std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros, std::shared_ptr<nav2_util::LifecycleNode> node) = 0;
 
   /**
    * @brief Reset the information gain calculator state
@@ -49,21 +49,6 @@ public:
    * Clears any internal state or cached data from previous calculations.
    */
   virtual void reset() = 0;
-
-  /**
-   * @brief Set parameters for information gain calculation
-   *
-   * Updates internal parameters from the parameter server. Should be called
-   * whenever parameters need to be refreshed.
-   */
-  virtual void updateParameters()
-  {
-    MAX_CAMERA_DEPTH = parameterInstance.getValue<double>("costCalculator.max_camera_depth");
-    DELTA_THETA = parameterInstance.getValue<double>("costCalculator.delta_theta");
-    CAMERA_FOV = parameterInstance.getValue<double>("costCalculator.camera_fov");
-    factor_of_max_is_min =
-      parameterInstance.getValue<double>("costCalculator.factor_of_max_is_min");
-  }
 
   /**
    * @brief Calculate and set the information gain for a frontier
@@ -79,12 +64,8 @@ public:
     std::vector<double> & polygon_xy_min_max) = 0;
 
 protected:
-  nav2_costmap_2d::Costmap2D * exploration_costmap_ = nullptr;
-
-  double MAX_CAMERA_DEPTH;
-  double DELTA_THETA;
-  double CAMERA_FOV;
-  double factor_of_max_is_min = 0.70;
+  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros_ = nullptr;
+  std::shared_ptr<nav2_util::LifecycleNode> node_ = nullptr;
 };
 
 }  // namespace roadmap_explorer

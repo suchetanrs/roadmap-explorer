@@ -45,7 +45,7 @@ public:
    * @param explore_costmap_ros Shared pointer to the costmap ROS wrapper
    */
   void configure(
-    std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros) override;
+    std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros, std::shared_ptr<nav2_util::LifecycleNode> node) override;
 
   /**
    * @brief Reset the calculator state
@@ -61,13 +61,19 @@ public:
     FrontierPtr & frontier,
     std::vector<double> & polygon_xy_min_max) override;
 
+private:
+
   double setArrivalInformationLimits();
 
-private:
   bool arrival_info_limits_set_ = false;
-  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros_;
+  nav2_costmap_2d::Costmap2D * exploration_costmap_ = nullptr;
   double min_arrival_info_gt_ = std::numeric_limits<double>::max();
   double max_arrival_info_gt_ = -1.0 * std::numeric_limits<double>::max();
+
+  double MAX_CAMERA_DEPTH;
+  double DELTA_THETA;
+  double CAMERA_FOV;
+  double factor_of_max_is_min = 0.70;
 };
 
 }  // namespace roadmap_explorer

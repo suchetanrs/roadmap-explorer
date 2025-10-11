@@ -82,12 +82,11 @@ include_directories(
   ${YAML_CPP_INCLUDE_DIRS}
 )
 
-########################### FRONTIER ###########################
+########################### Libraries ###########################
 add_library(${PROJECT_NAME}_frontier SHARED
 src/Frontier.cpp)
 ament_target_dependencies(${PROJECT_NAME}_frontier ${dependencies})
 
-########################### UTILS ###########################
 
 add_library(${PROJECT_NAME}_utils SHARED
 src/util/EventLogger.cpp
@@ -97,12 +96,30 @@ src/Helpers.cpp
 ament_target_dependencies(${PROJECT_NAME}_utils ${dependencies})
 target_link_libraries(${PROJECT_NAME}_utils ${PROJECT_NAME}_frontier)
 
-##############
 
 add_library(roadmap_explorer_frontier_search_plugins SHARED 
 src/frontier_search/PluginBFSearch.cpp
 )
 ament_target_dependencies(roadmap_explorer_frontier_search_plugins ${dependencies})
+
+
+add_library(roadmap_explorer_information_gain_plugins SHARED
+src/information_gain/CountBasedGain.cpp
+)
+ament_target_dependencies(roadmap_explorer_information_gain_plugins ${dependencies})
+
+
+add_library(roadmap_explorer_planner_plugins SHARED
+src/planners/ThetaStar.cpp
+src/planners/Astar.cpp
+src/planners/NavFn.cpp
+src/planners/NavFnPlugin.cpp
+src/planners/FrontierRoadmap.cpp
+src/planners/FrontierRoadmapPlugin.cpp
+src/planners/EuclideanPlugin.cpp
+src/planners/RandomDistancePlugin.cpp
+)
+ament_target_dependencies(roadmap_explorer_planner_plugins ${dependencies})
 
 # ########################### PLUGINLIB LIBRARIES ###########################
 
@@ -120,26 +137,7 @@ ament_target_dependencies(roadmap_explorer_frontier_search_plugins ${dependencie
 # ament_target_dependencies(roadmap_explorer_bt_plugins ${dependencies})
 # target_link_libraries(roadmap_explorer_bt_plugins ${PROJECT_NAME}_frontier ${PROJECT_NAME}_utils)
 
-# ##############
-
-# add_library(roadmap_explorer_planner_plugins SHARED
-# src/planners/ThetaStar.cpp
-# src/planners/Astar.cpp
-# src/planners/NavFn.cpp
-# src/planners/NavFnPlugin.cpp
-# src/planners/FrontierRoadmap.cpp
-# src/planners/FrontierRoadmapPlugin.cpp
-# src/planners/EuclideanPlugin.cpp
-# src/planners/RandomDistancePlugin.cpp
-# )
-# ament_target_dependencies(roadmap_explorer_planner_plugins ${dependencies})
-
-# ##############
-
-# add_library(roadmap_explorer_information_gain_plugins SHARED
-# src/information_gain/CountBasedGain.cpp
-# )
-# ament_target_dependencies(roadmap_explorer_information_gain_plugins ${dependencies})
+# #############
 
 
 # ########################### CORE LIBRARY ###########################
@@ -174,10 +172,10 @@ install(TARGETS
   # roadmap_exploration_bt
   ${PROJECT_NAME}_frontier
   ${PROJECT_NAME}_utils
-  # roadmap_explorer_bt_plugins
   roadmap_explorer_frontier_search_plugins
+  roadmap_explorer_information_gain_plugins
+  # roadmap_explorer_bt_plugins
   # roadmap_explorer_planner_plugins
-  # roadmap_explorer_information_gain_plugins
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
@@ -200,10 +198,10 @@ ament_export_libraries(
 # roadmap_exploration_bt 
 ${PROJECT_NAME}_frontier 
 ${PROJECT_NAME}_utils 
-# roadmap_explorer_bt_plugins 
 roadmap_explorer_frontier_search_plugins 
+roadmap_explorer_information_gain_plugins
+# roadmap_explorer_bt_plugins 
 # roadmap_explorer_planner_plugins 
-# roadmap_explorer_information_gain_plugins
 )
 ament_export_dependencies(rosidl_default_runtime ${dependencies})
 
