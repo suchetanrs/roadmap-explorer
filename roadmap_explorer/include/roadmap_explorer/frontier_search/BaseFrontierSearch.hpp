@@ -25,7 +25,7 @@ enum class FrontierSearchResult
 
 /**
  * @brief Base class for frontier search algorithms
- * 
+ *
  * This abstract base class defines the interface that all frontier search
  * algorithms must implement. It provides a plugin-based architecture for
  * different frontier detection strategies.
@@ -51,7 +51,7 @@ public:
 
   /**
    * @brief Reset the frontier search state
-   * 
+   *
    * Clears any internal state or cached data from previous searches.
    */
   virtual void reset() = 0;
@@ -90,7 +90,7 @@ public:
   virtual std::vector<std::vector<double>> getAllFrontiers() = 0;
 
 protected:
-  double frontier_search_distance_; ///< Maximum distance to search for frontiers from the robot position
+  double frontier_search_distance_ = 0.0; ///< Maximum distance to search for frontiers from the robot position
 
   nav2_costmap_2d::Costmap2D * costmap_ = nullptr; ///< Pointer to the costmap used for frontier detection
 };

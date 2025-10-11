@@ -50,7 +50,9 @@ public:
     return true;
   }
 
-  FrontierSearchResult searchFrom(geometry_msgs::msg::Point position, std::vector<FrontierPtr> & output_frontier_list) override;
+  FrontierSearchResult searchFrom(
+    geometry_msgs::msg::Point position,
+    std::vector<FrontierPtr> & output_frontier_list) override;
 
   std::vector<std::vector<double>> getAllFrontiers() override;
 
@@ -61,70 +63,34 @@ protected:
 
   bool isNewFrontierCell(unsigned int idx, const std::vector<bool> & frontier_flag);
 
-  // TODO(suchetan): Is there a better way to do this? Using a graph “medoid” or geodesic (path) median?
+  // TODO(suchetan): Is there a better way to do this? Using a graph "medoid" or geodesic (path) median?
   std::pair<double, double> getCentroidOfCells(
     std::vector<std::pair<double, double>> & cells,
-    double distance_to_offset)
-  {
-    double sumX = 0;
-    double sumY = 0;
-
-    for (const auto & point : cells) {
-      sumX += point.first;
-      sumY += point.second;
-    }
-
-    double centerX = static_cast<double>(sumX) / cells.size();
-    double centerY = static_cast<double>(sumY) / cells.size();
-
-    bool offset_centroid = false;
-    double varX = 0, varY = 0;
-    for (const auto & point : cells) {
-      if (sqrt(
-          pow(
-            point.first - centerX,
-            2) + pow(point.second - centerY, 2)) < costmap_->getResolution() * 3)
-      {
-        offset_centroid = true;
-      }
-      varX += abs(point.first - centerX);
-      varY += abs(point.second - centerY);
-    }
-    LOG_DEBUG("Centroid before: " << centerX << " , " << centerY);
-    LOG_DEBUG("VarX: " << varX);
-    LOG_DEBUG("VarY: " << varY);
-
-    if (varX > varY && offset_centroid) {
-      centerY -= distance_to_offset;
-    }
-    if (varX < varY && offset_centroid) {
-      centerX -= distance_to_offset;
-    }
-
-    LOG_DEBUG("Centroid: " << centerX << " , " << centerY);
-
-    return std::make_pair(centerX, centerY);
-  }
+    double distance_to_offset);
 
 private:
-  inline bool isLethal(unsigned char value)
+  inline bool isLethal(unsigned char value) const
   {
     return (int)value >= lethal_threshold_ && value != nav2_costmap_2d::NO_INFORMATION;
   }
 
-  inline bool isUnknown(unsigned char value)
+  inline bool isUnknown(unsigned char value) const
   {
     return value == nav2_costmap_2d::NO_INFORMATION;
   }
 
-  inline bool isFree(unsigned char value)
+  inline bool isFree(unsigned char value) const
   {
     return (int)value < lethal_threshold_;
   }
 
+  // Constants for geometric calculations
+  static constexpr double DIAGONAL_FACTOR = 1.414;  // sqrt(2) approximation
+  static constexpr double CENTROID_OFFSET_MULTIPLIER = 2.0;
+  static constexpr int CENTROID_RESOLUTION_FACTOR = 3;
+
   unsigned char * map_;
-  std::vector<std::vector<double>> every_frontier_list;
-  nav2_costmap_2d::Costmap2D * costmap_;
+  std::vector<std::vector<double>> every_frontier_list_;
   int min_frontier_cluster_size_;
   int max_frontier_cluster_size_;
   unsigned char lethal_threshold_;
@@ -139,12 +105,6 @@ public:
 
   bool operator()(const std::pair<double, double> & a, const std::pair<double, double> & b) const
   {
-    // auto angle_a = atan2(a.second - centroid.second, a.first - centroid.first); // delta y / delta x
-    // if(angle_a < 0) angle_a = angle_a + (2 * M_PI);
-    // auto angle_b = atan2(b.second - centroid.second, b.first - centroid.first);
-    // if(angle_b < 0) angle_b = angle_b + (2 * M_PI);
-    // return angle_a < angle_b;
-
     auto angle_a = atan2(a.second - centroid.second, a.first - centroid.first);         // delta y / delta x
     if (angle_a < 0) {
       angle_a = angle_a + (2 * M_PI);
@@ -153,6 +113,7 @@ public:
     if (angle_b < 0) {
       angle_b = angle_b + (2 * M_PI);
     }
+    // Handle angle wraparound at 0/2π boundary
     if (0 <= angle_a && angle_a <= M_PI / 2 && 3 * M_PI / 2 <= angle_b && angle_b <= 2 * M_PI) {
       return false;
     }
