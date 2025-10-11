@@ -61,8 +61,9 @@ public:
     MAX_CAMERA_DEPTH = parameterInstance.getValue<double>("costCalculator.max_camera_depth");
     DELTA_THETA = parameterInstance.getValue<double>("costCalculator.delta_theta");
     CAMERA_FOV = parameterInstance.getValue<double>("costCalculator.camera_fov");
-    factor_of_max_is_min = parameterInstance.getValue<double>("costCalculator.factor_of_max_is_min");
-  };
+    factor_of_max_is_min =
+      parameterInstance.getValue<double>("costCalculator.factor_of_max_is_min");
+  }
 
   /**
    * @brief Calculate and set the information gain for a frontier

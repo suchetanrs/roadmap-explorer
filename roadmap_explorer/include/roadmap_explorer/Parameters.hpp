@@ -36,7 +36,7 @@ public:
     }
   }
 
-  void makeParameters(bool use_ros_parameters, std::shared_ptr<nav2_util::LifecycleNode> node);
+  void makeParameters(std::shared_ptr<nav2_util::LifecycleNode> node);
 
   static void createInstance()
   {
@@ -72,10 +72,6 @@ public:
   }
 
 private:
-  void makeParametersROS(std::shared_ptr<nav2_util::LifecycleNode> node);
-
-  void makeParametersYAMLcpp();
-
   void sanityCheckParameters();
 
   rcl_interfaces::msg::SetParametersResult  dynamicReconfigureCallback(

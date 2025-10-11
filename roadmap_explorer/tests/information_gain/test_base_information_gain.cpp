@@ -83,7 +83,7 @@ protected:
     // Initialize ParameterHandler for testing
     try {
       ParameterHandler::createInstance();
-      parameterInstance.makeParameters(false, node_);
+      parameterInstance.makeParameters(node_);
     } catch (const std::exception&) {
       // ParameterHandler might already exist, ignore
     }

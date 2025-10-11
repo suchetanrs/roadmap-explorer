@@ -34,7 +34,7 @@ RoadmapExplorationBT::RoadmapExplorationBT(std::shared_ptr<nav2_util::LifecycleN
 
   EventLogger::createInstance();
   ParameterHandler::createInstance();
-  parameterInstance.makeParameters(true, node);
+  parameterInstance.makeParameters(node);
   RosVisualizer::createInstance(bt_node_, explore_costmap_ros_->getCostmap());
   FrontierRoadMap::createInstance(explore_costmap_ros_, node);
 

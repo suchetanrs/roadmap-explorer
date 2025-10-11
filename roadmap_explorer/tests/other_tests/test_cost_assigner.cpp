@@ -113,7 +113,7 @@ protected:
         // Initialize ParameterHandler for testing
         try {
             ParameterHandler::createInstance();
-            parameterInstance.makeParameters(false, node_);
+            parameterInstance.makeParameters(node_);
             
             // Set default plugin parameters
             parameterInstance.setValue("costAssigner.information_gain_plugin", 

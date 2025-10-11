@@ -87,7 +87,6 @@ add_library(${PROJECT_NAME}_frontier SHARED
 src/Frontier.cpp)
 ament_target_dependencies(${PROJECT_NAME}_frontier ${dependencies})
 
-
 ########################### UTILS ###########################
 
 add_library(${PROJECT_NAME}_utils SHARED
@@ -97,6 +96,13 @@ src/Helpers.cpp
 )
 ament_target_dependencies(${PROJECT_NAME}_utils ${dependencies})
 target_link_libraries(${PROJECT_NAME}_utils ${PROJECT_NAME}_frontier)
+
+##############
+
+add_library(roadmap_explorer_frontier_search_plugins SHARED 
+src/frontier_search/PluginBFSearch.cpp
+)
+ament_target_dependencies(roadmap_explorer_frontier_search_plugins ${dependencies})
 
 ########################### PLUGINLIB LIBRARIES ###########################
 
@@ -113,13 +119,6 @@ src/bt_plugins/BlacklistGoalPlugin.cpp
 )
 ament_target_dependencies(roadmap_explorer_bt_plugins ${dependencies})
 target_link_libraries(roadmap_explorer_bt_plugins ${PROJECT_NAME}_frontier ${PROJECT_NAME}_utils)
-
-##############
-
-add_library(roadmap_explorer_frontier_search_plugins SHARED 
-src/frontier_search/PluginBFSearch.cpp
-)
-ament_target_dependencies(roadmap_explorer_frontier_search_plugins ${dependencies})
 
 ##############
 
