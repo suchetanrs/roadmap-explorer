@@ -32,6 +32,9 @@ void CountBasedGain::configure(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> ex
   factor_of_max_is_min = node->get_parameter(
     name + ".factor_of_max_is_min").as_double();
 
+  LOG_DEBUG(
+    "CountBasedGain: MAX_CAMERA_DEPTH: " << MAX_CAMERA_DEPTH << ", DELTA_THETA: " << DELTA_THETA << ", CAMERA_FOV: " << CAMERA_FOV << ", factor_of_max_is_min: " << factor_of_max_is_min);
+
   setArrivalInformationLimits();
 }
 

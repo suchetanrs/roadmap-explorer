@@ -4,25 +4,31 @@ roadmap_explorer_node:
     localisation_only_mode: True # false if in slam mode (mapping is active and you want the exploration to run on that)
     
     frontierSearch:
-      min_frontier_cluster_size: 1.0
-      max_frontier_cluster_size: 20.0
       frontier_search_distance: 25.0 # This should be equal to the parameter frontier_search_distance in frontier_roadmap_node
-      lethal_threshold: 160 # >= is lethal, < is free space.
       max_permissable_frontier_search_distance: 140.0
-
-    costCalculator:
-      max_camera_depth: 2.0
-      delta_theta: 0.10
-      camera_fov: 1.04
-      factor_of_max_is_min: 0.70
-      closeness_rejection_threshold: 0.5
-      planner_allow_unknown: true
-      max_planning_distance_roadmap: 12.5
+      plugin_name: "GridBasedBFS"
+      GridBasedBFS:
+        plugin_type: "roadmap_explorer::FrontierBFSearch"
+        min_frontier_cluster_size: 1.0
+        max_frontier_cluster_size: 20.0
+        lethal_threshold: 160 # >= is lethal, < is free space.
 
     costAssigner:
-      information_gain_plugin: "roadmap_explorer::CountBasedGain"
-      planner_plugin: "roadmap_explorer::PluginFrontierRoadmap"
-
+      information_gain_plugin_name: "CountBasedGain"
+      CountBasedGain:
+        plugin_type: "roadmap_explorer::CountBasedGain"
+        max_camera_depth: 2.0
+        delta_theta: 0.10
+        camera_fov: 1.04
+        factor_of_max_is_min: 0.70
+      
+      planner_plugin_name: "FrontierRoadmap"
+      FrontierRoadmap:
+        plugin_type: "roadmap_explorer::PluginFrontierRoadmap"
+        closeness_rejection_threshold: 0.5
+        planner_allow_unknown: true
+        max_planning_distance_roadmap: 12.5
+    
     frontierRoadmap:
       max_graph_reconstruction_distance: 10.0
       grid_cell_size: 1.0                           # Assuming each cell is 1x1 in size

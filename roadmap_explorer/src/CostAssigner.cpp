@@ -7,19 +7,65 @@ using nav2_costmap_2d::LETHAL_OBSTACLE;
 using nav2_costmap_2d::NO_INFORMATION;
 using rcl_interfaces::msg::ParameterType;
 
-CostAssigner::CostAssigner(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros)
+CostAssigner::CostAssigner(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros, std::shared_ptr<nav2_util::LifecycleNode> node)
 {
   layered_costmap_ = explore_costmap_ros->getLayeredCostmap();
   costmap_ = explore_costmap_ros->getCostmap();
   explore_costmap_ros_ = explore_costmap_ros;
   LOG_DEBUG("Got costmap pointer");
 
+  node_ = node;
+
+  nav2_util::declare_parameter_if_not_declared(
+    node, "costAssigner.information_gain_plugin_name", rclcpp::ParameterValue(
+      "CountBasedGain"));
+  nav2_util::declare_parameter_if_not_declared(
+    node, "costAssigner.planner_plugin_name", rclcpp::ParameterValue(
+      "FrontierRoadmap"));
+  
+  information_gain_plugin_name_ =
+    node->get_parameter("costAssigner.information_gain_plugin_name").as_string();
+  information_gain_plugin_name_ = "costAssigner." + information_gain_plugin_name_;
+  planner_plugin_name_ =
+    node->get_parameter("costAssigner.planner_plugin_name").as_string();
+  planner_plugin_name_ = "costAssigner." + planner_plugin_name_;
+
+  LOG_DEBUG("Information gain plugin name: " << information_gain_plugin_name_);
+  LOG_DEBUG("Planner plugin name: " << planner_plugin_name_);
+  
+  nav2_util::declare_parameter_if_not_declared(
+    node, information_gain_plugin_name_ + ".plugin_type", rclcpp::ParameterValue(
+      "roadmap_explorer::CountBasedGain"));
+    
+  nav2_util::declare_parameter_if_not_declared(
+    node, planner_plugin_name_ + ".plugin_type", rclcpp::ParameterValue(
+      "roadmap_explorer::PluginFrontierRoadmap"));
+  
+  information_gain_plugin_type_ =
+    node->get_parameter(information_gain_plugin_name_ + ".plugin_type").as_string();
+  planner_plugin_type_ =
+    node->get_parameter(planner_plugin_name_ + ".plugin_type").as_string();
+
+  LOG_DEBUG("Information gain plugin type: " << information_gain_plugin_type_);
+  LOG_DEBUG("Planner plugin type: " << planner_plugin_type_);
+
   LOG_INFO("CostAssigner::CostAssigner");
+  
+  // Initialize plugins once for all frontiers
+  initializePlugins();
 }
 
 CostAssigner::~CostAssigner()
 {
   LOG_INFO("CostAssigner::~CostAssigner()");
+  
+  // Reset plugin instances before destroying class loaders
+  information_gain_plugin_.reset();
+  planner_plugin_.reset();
+  
+  // Now it's safe to destroy the class loaders
+  information_gain_loader_.reset();
+  planner_loader_.reset();
 }
 
 bool CostAssigner::populateFrontierCosts(
@@ -85,15 +131,6 @@ bool CostAssigner::assignCosts(
   std::vector<FrontierPtr> & frontier_list,
   geometry_msgs::msg::Pose start_pose_w)
 {
-  auto informationGainPlugin = parameterInstance.getValue<std::string>(
-    "costAssigner.information_gain_plugin");
-
-  auto plannerPlugin = parameterInstance.getValue<std::string>(
-    "costAssigner.planner_plugin");
-
-  LOG_INFO("Information gain plugin: " << informationGainPlugin);
-  LOG_INFO("Planner plugin: " << plannerPlugin);
-
   min_traversable_distance = std::numeric_limits<double>::max();
   max_traversable_distance = -1.0 * std::numeric_limits<double>::max();
 
@@ -111,9 +148,6 @@ bool CostAssigner::assignCosts(
     LOG_ERROR("FrontierPtr cannot be selected, no polygon.");
     return false;
   }
-
-  // Initialize plugins once for all frontiers
-  initializePlugins(informationGainPlugin, plannerPlugin);
 
   // Process each frontier
   LOG_DEBUG("FrontierPtr list size is (loop): " + std::to_string(frontier_list.size()));
@@ -137,32 +171,42 @@ void CostAssigner::setFrontierBlacklist(std::vector<FrontierPtr> & blacklist)
   LOG_DEBUG("Blacklist size is: " << frontier_blacklist_.size());
 }
 
-void CostAssigner::initializePlugins(const std::string & informationGainPlugin, const std::string & plannerPlugin)
+void CostAssigner::initializePlugins()
 {
+  // Only initialize plugins if they haven't been initialized yet
+  if (information_gain_plugin_ && planner_plugin_) {
+    LOG_DEBUG("Plugins already initialized, skipping initialization");
+    return;
+  }
+
   // Initialize information gain plugin if needed
-  try {
-    pluginlib::ClassLoader<BaseInformationGain> plugin_loader(
-      "roadmap_explorer", "roadmap_explorer::BaseInformationGain");
-    
-    information_gain_plugin_ = plugin_loader.createSharedInstance(informationGainPlugin);
-    information_gain_plugin_->configure(explore_costmap_ros_);
-    LOG_INFO("Loaded information gain plugin: " << informationGainPlugin);
-  } catch (const std::exception& e) {
-    LOG_WARN("Failed to load information gain plugin: " << e.what());
-    throw std::runtime_error("Failed to load information gain plugin");
+  if (!information_gain_plugin_) {
+    try {
+      information_gain_loader_ = std::make_shared<pluginlib::ClassLoader<BaseInformationGain>>(
+        "roadmap_explorer", "roadmap_explorer::BaseInformationGain");
+      
+      information_gain_plugin_ = information_gain_loader_->createSharedInstance(information_gain_plugin_type_);
+      information_gain_plugin_->configure(explore_costmap_ros_, information_gain_plugin_name_, node_);
+      LOG_INFO("Loaded information gain plugin: " << information_gain_plugin_type_);
+    } catch (const std::exception& e) {
+      LOG_WARN("Failed to load information gain plugin: " << e.what());
+      throw std::runtime_error("Failed to load information gain plugin");
+    }
   }
 
   // Initialize planner plugin if needed
-  try {
-    pluginlib::ClassLoader<BasePlanner> plugin_loader(
-      "roadmap_explorer", "roadmap_explorer::BasePlanner");
+  if (!planner_plugin_) {
+    try {
+      planner_loader_ = std::make_shared<pluginlib::ClassLoader<BasePlanner>>(
+        "roadmap_explorer", "roadmap_explorer::BasePlanner");
 
-    planner_plugin_ = plugin_loader.createSharedInstance(plannerPlugin);
-    planner_plugin_->configure(explore_costmap_ros_);
-    LOG_INFO("Loaded planner plugin: " << plannerPlugin);
-  } catch (const std::exception& e) {
-    LOG_WARN("Failed to load planner plugin: " << e.what());
-    throw std::runtime_error("Failed to load planner plugin");
+      planner_plugin_ = planner_loader_->createSharedInstance(planner_plugin_type_);
+      planner_plugin_->configure(explore_costmap_ros_, planner_plugin_name_, node_);
+      LOG_INFO("Loaded planner plugin: " << planner_plugin_type_);
+    } catch (const std::exception& e) {
+      LOG_WARN("Failed to load planner plugin: " << e.what());
+      throw std::runtime_error("Failed to load planner plugin");
+    }
   }
 }
 

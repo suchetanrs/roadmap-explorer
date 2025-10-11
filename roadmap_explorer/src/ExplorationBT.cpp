@@ -44,22 +44,31 @@ RoadmapExplorationBT::RoadmapExplorationBT(std::shared_ptr<nav2_util::LifecycleN
     "navigate_to_pose",
     "goal_update");
 
-  cost_assigner_ptr_ = std::make_shared<CostAssigner>(explore_costmap_ros_);
+  cost_assigner_ptr_ = std::make_shared<CostAssigner>(explore_costmap_ros_, bt_node_);
   
+
+  // initialize frontier search plugin
+
+  nav2_util::declare_parameter_if_not_declared(
+      bt_node_, "frontierSearch.plugin_name", rclcpp::ParameterValue(
+      "GridBasedBFS"));
+  auto plugin_name = bt_node_->get_parameter("frontierSearch.plugin_name").as_string();
+  nav2_util::declare_parameter_if_not_declared(
+      bt_node_, "frontierSearch." + plugin_name + ".plugin_type", rclcpp::ParameterValue(
+      "roadmap_explorer::FrontierBFSearch"));
+  auto plugin_type = bt_node_->get_parameter("frontierSearch." + plugin_name + ".plugin_type").as_string();
   // Try to load frontier search plugin, fallback to direct instantiation
   try {
-    pluginlib::ClassLoader<FrontierSearchBase> plugin_loader(
+    frontier_search_loader_ = std::make_shared<pluginlib::ClassLoader<FrontierSearchBase>>(
       "roadmap_explorer", "roadmap_explorer::FrontierSearchBase");
-    
-    std::string plugin_name = "roadmap_explorer::FrontierBFSearch";
-    // TODO: Make plugin name configurable via parameter
-    
-    frontierSearchPtr_ = plugin_loader.createSharedInstance(plugin_name);
-    LOG_INFO("Loaded frontier search plugin: " << plugin_name);
+    frontierSearchPtr_ = frontier_search_loader_->createSharedInstance(plugin_type);
+    frontierSearchPtr_->configure(explore_costmap_ros_, "frontierSearch." + plugin_name, bt_node_);
+    LOG_INFO("Loaded frontier search plugin: " << plugin_type);
   } catch (const std::exception& e) {
     LOG_WARN("Failed to load frontier search plugin, using direct instantiation: " << e.what());
     throw std::runtime_error("Failed to load frontier search plugin");
   }
+  resetFrontierSearchDistance();
   
   full_path_optimizer_ = std::make_shared<FullPathOptimizer>(bt_node_, explore_costmap_ros_);
 
@@ -72,15 +81,14 @@ RoadmapExplorationBT::RoadmapExplorationBT(std::shared_ptr<nav2_util::LifecycleN
 
 bool RoadmapExplorationBT::incrementFrontierSearchDistance()
 {
-  double increment_value = parameterInstance.getValue<double>("explorationBT.increment_search_distance_by");
+  auto current_frontier_search_distance = blackboard->get<double>("current_frontier_search_distance");
+  double increment_value = parameterInstance.getValue<double>("frontierSearch.increment_search_distance_by");
   LOG_WARN("Incrementing frontier search distance by " << increment_value);
-  auto current_distance = frontierSearchPtr_->getFrontierSearchDistance();
-  auto distance_to_set = current_distance + increment_value;
-  auto success = frontierSearchPtr_->setFrontierSearchDistance(distance_to_set);
-  if (!success) {
-    LOG_ERROR("Maximum frontier search distance exceeded. Returning false.");
+  auto distance_to_set = current_frontier_search_distance + increment_value;
+  if (distance_to_set > parameterInstance.getValue<double>("frontierSearch.max_permissible_frontier_search_distance")) {
     return false;
   }
+  blackboard->set<double>("current_frontier_search_distance", distance_to_set);
   return true;
 }
 
@@ -89,13 +97,21 @@ bool RoadmapExplorationBT::resetFrontierSearchDistance()
   LOG_DEBUG("Resetting frontier search distance to default value");
   auto original_search_distance = parameterInstance.getValue<double>(
     "frontierSearch.frontier_search_distance");
-  frontierSearchPtr_->setFrontierSearchDistance(original_search_distance);
+  blackboard->set<double>("current_frontier_search_distance", original_search_distance);
   return true;
 }
 
 RoadmapExplorationBT::~RoadmapExplorationBT()
 {
   LOG_INFO("RoadmapExplorationBT::~RoadmapExplorationBT()");
+  
+  // Reset plugin instances before destroying class loaders
+  frontierSearchPtr_.reset();
+  cost_assigner_ptr_.reset();
+  full_path_optimizer_.reset();
+  sensor_simulator_.reset();
+  nav2_interface_.reset();
+  
   FrontierRoadMap::destroyInstance();
   RosVisualizer::destroyInstance();
   ParameterHandler::destroyInstance();
@@ -104,6 +120,10 @@ RoadmapExplorationBT::~RoadmapExplorationBT()
   explore_costmap_ros_->cleanup();
   explore_costmap_ros_.reset();
   explore_costmap_thread_.reset();
+  
+  // Now it's safe to destroy the class loaders
+  frontier_search_loader_.reset();
+  bt_plugin_loader_.reset();
 }
 
 bool RoadmapExplorationBT::makeBTNodes()
@@ -121,15 +141,15 @@ bool RoadmapExplorationBT::makeBTNodes()
   bt_context->full_path_optimizer = full_path_optimizer_;
   bt_context->nav2_interface = nav2_interface_;
 
-  pluginlib::ClassLoader<roadmap_explorer::BTPlugin> loader(
+  bt_plugin_loader_ = std::make_shared<pluginlib::ClassLoader<roadmap_explorer::BTPlugin>>(
   "roadmap_explorer",           // your package name
   "roadmap_explorer::BTPlugin"  // the interface
   );
 
-  LOG_WARN("Loading BT plugins (size): " << loader.getDeclaredClasses().size());
+  LOG_WARN("Loading BT plugins (size): " << bt_plugin_loader_->getDeclaredClasses().size());
 
-  for (auto & lookup_name : loader.getDeclaredClasses()) {
-    auto plugin = loader.createSharedInstance(lookup_name);
+  for (auto & lookup_name : bt_plugin_loader_->getDeclaredClasses()) {
+    auto plugin = bt_plugin_loader_->createSharedInstance(lookup_name);
     plugin->registerNodes(factory, bt_context);
     LOG_WARN("Loaded BT plugin: " << lookup_name.c_str());
   }

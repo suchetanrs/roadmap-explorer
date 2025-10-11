@@ -41,11 +41,14 @@ void FrontierBFSearch::configure(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> 
     name + ".max_frontier_cluster_size").as_double();
   lethal_threshold_ = node->get_parameter(
     name + ".lethal_threshold").as_int();
+
+  LOG_DEBUG("min_frontier_cluster_size: " << min_frontier_cluster_size_);
+  LOG_DEBUG("max_frontier_cluster_size: " << max_frontier_cluster_size_);
+  LOG_DEBUG("lethal_threshold: " << static_cast<int>(lethal_threshold_));
 }
 
 void FrontierBFSearch::reset()
 {
-  costmap_ = nullptr;
   every_frontier_list_.clear();
 }
 
@@ -136,6 +139,11 @@ FrontierSearchResult FrontierBFSearch::searchFrom(
   if (findDuplicates(frontier_list).size() > 0) {
     throw RoadmapExplorerException("Duplicate frontiers found.");
   }
+  if (frontier_list.size() == 0) {
+    LOG_INFO("Search was true but no frontiers found.");
+    return FrontierSearchResult::NO_FRONTIERS_FOUND;
+  }
+
   return FrontierSearchResult::SUCCESSFUL_SEARCH;
 }
 

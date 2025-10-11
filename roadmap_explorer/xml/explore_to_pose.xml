@@ -3,7 +3,7 @@
     <PipelineSequence name="NavigateWithReplanning">
       <!-- Please make sure that this frequency is not close to the bt loop duration. It can result in an undetermined number of retries-->
       <!-- For example, if this is 1 Hz, loop duration must be much less than 100ms. (Possibly 60-70ms)-->
-      <RateController hz="1.0">
+      <RateController hz="10.0">
         <RecoveryNode number_of_retries="3" name="ComputePathToPose">
           <ReactiveSequence>
             <PlannerSelector selected_planner="{selected_planner}" default_planner="GridBased" topic_name="planner_selector"/>

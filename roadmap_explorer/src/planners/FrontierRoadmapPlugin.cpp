@@ -10,18 +10,16 @@ void PluginFrontierRoadmap::configure(std::shared_ptr<nav2_costmap_2d::Costmap2D
     node, name + ".closeness_rejection_threshold", rclcpp::ParameterValue(
       0.5));
   nav2_util::declare_parameter_if_not_declared(
-    node, name + ".planner_allow_unknown", rclcpp::ParameterValue(
-      true));
-  nav2_util::declare_parameter_if_not_declared(
     node, name + ".max_planning_distance_roadmap", rclcpp::ParameterValue(
       6.0));
 
   closeness_rejection_threshold_ = node->get_parameter(
     name + ".closeness_rejection_threshold").as_double();
-  planner_allow_unknown_ = node->get_parameter(
-    name + ".planner_allow_unknown").as_bool();
   max_planning_distance_ = node->get_parameter(
     name + ".max_planning_distance_roadmap").as_double();
+
+  LOG_DEBUG("closess_rejection_threshold: " << closeness_rejection_threshold_);
+  LOG_DEBUG("max_planning_distance_roadmap: " << max_planning_distance_);
 }
 
 void PluginFrontierRoadmap::reset()

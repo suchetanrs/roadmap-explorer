@@ -24,27 +24,17 @@ void ParameterHandler::makeParameters(std::shared_ptr<nav2_util::LifecycleNode> 
   nav2_util::declare_parameter_if_not_declared(
     node, "frontierSearch.max_permissable_frontier_search_distance", rclcpp::ParameterValue(
       100.0));
-
+  nav2_util::declare_parameter_if_not_declared(
+    node, "frontierSearch.increment_search_distance_by", rclcpp::ParameterValue(
+      0.1));
+  
   parameter_map_["frontierSearch.frontier_search_distance"] = node->get_parameter(
     "frontierSearch.frontier_search_distance").as_double();
   parameter_map_["frontierSearch.max_permissable_frontier_search_distance"] = node->get_parameter(
     "frontierSearch.max_permissable_frontier_search_distance").as_double();
-
-  // --- costCalculator ---
-
-  // --- costAssigner ---
-  nav2_util::declare_parameter_if_not_declared(
-    node, "costAssigner.information_gain_plugin", rclcpp::ParameterValue(
-      "roadmap_explorer::CountBasedGain"));
-  nav2_util::declare_parameter_if_not_declared(
-    node, "costAssigner.planner_plugin", rclcpp::ParameterValue(
-      "roadmap_explorer::PluginFrontierRoadmap"));
-
-  parameter_map_["costAssigner.information_gain_plugin"] =
-    node->get_parameter("costAssigner.information_gain_plugin").as_string();
-  parameter_map_["costAssigner.planner_plugin"] =
-    node->get_parameter("costAssigner.planner_plugin").as_string();
-
+  parameter_map_["frontierSearch.increment_search_distance_by"] =
+    node->get_parameter("frontierSearch.increment_search_distance_by").as_double();
+  
   // --- frontierRoadmap ---
   nav2_util::declare_parameter_if_not_declared(
     node,
@@ -134,9 +124,6 @@ void ParameterHandler::makeParameters(std::shared_ptr<nav2_util::LifecycleNode> 
     node,
     "explorationBT.abort_exploration_on_nav2_abort", rclcpp::ParameterValue(
       true));
-  nav2_util::declare_parameter_if_not_declared(
-    node, "explorationBT.increment_search_distance_by", rclcpp::ParameterValue(
-      0.1));
 
   parameter_map_["explorationBT.bt_sleep_ms"] =
     node->get_parameter("explorationBT.bt_sleep_ms").as_int();
@@ -148,8 +135,6 @@ void ParameterHandler::makeParameters(std::shared_ptr<nav2_util::LifecycleNode> 
     node->get_parameter("explorationBT.exploration_boundary").as_double_array();
   parameter_map_["explorationBT.abort_exploration_on_nav2_abort"] =
     node->get_parameter("explorationBT.abort_exploration_on_nav2_abort").as_bool();
-  parameter_map_["explorationBT.increment_search_distance_by"] =
-    node->get_parameter("explorationBT.increment_search_distance_by").as_double();
 
   nav2_util::declare_parameter_if_not_declared(
     node, "sensorSimulator.input_map_topic", rclcpp::ParameterValue(
@@ -195,11 +180,11 @@ void ParameterHandler::makeParameters(std::shared_ptr<nav2_util::LifecycleNode> 
 
   sanityCheckParameters();
 
-  dynamic_param_callback_handle_ =
-    node->add_on_set_parameters_callback(
-    std::bind(
-      &ParameterHandler::dynamicReconfigureCallback,
-      this, std::placeholders::_1));
+  // dynamic_param_callback_handle_ =
+  //   node->add_on_set_parameters_callback(
+  //   std::bind(
+  //     &ParameterHandler::dynamicReconfigureCallback,
+  //     this, std::placeholders::_1));
 }
 
 void ParameterHandler::sanityCheckParameters()
@@ -214,12 +199,6 @@ void ParameterHandler::sanityCheckParameters()
   {
     throw RoadmapExplorerException(
             "Both use_euclidean_distance and use_roadmap_planner_distance are set to false. Please set only one of them to true.");
-  }
-
-  if (getValue<int64_t>("frontierSearch.lethal_threshold") > 255 ||
-    getValue<int64_t>("frontierSearch.lethal_threshold") < 0)
-  {
-    throw RoadmapExplorerException("Lethal thresholds out of unsigned char range.");
   }
 }
 

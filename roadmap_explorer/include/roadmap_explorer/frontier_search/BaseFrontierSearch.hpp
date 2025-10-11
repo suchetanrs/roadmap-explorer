@@ -20,7 +20,8 @@ enum class FrontierSearchResult
 {
   ROBOT_OUT_OF_BOUNDS = 0,        ///< Robot position is outside the costmap bounds
   CANNOT_FIND_CELL_TO_SEARCH = 1, ///< No valid cells found to start the search
-  SUCCESSFUL_SEARCH = 2           ///< Search completed successfully
+  SUCCESSFUL_SEARCH = 2,           ///< Search completed successfully
+  NO_FRONTIERS_FOUND = 3
 };
 
 /**

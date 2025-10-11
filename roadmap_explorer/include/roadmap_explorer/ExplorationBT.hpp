@@ -81,6 +81,9 @@ private:
 
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros_;
   std::unique_ptr<nav2_util::NodeThread> explore_costmap_thread_;
+
+  std::shared_ptr<pluginlib::ClassLoader<FrontierSearchBase>> frontier_search_loader_;
+  std::shared_ptr<pluginlib::ClassLoader<roadmap_explorer::BTPlugin>> bt_plugin_loader_;
 };
 }
 

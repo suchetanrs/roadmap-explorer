@@ -28,7 +28,6 @@ namespace roadmap_explorer
         LOG_FLOW("MODULE SearchForFrontiersBT");
         EventLoggerInstance.startEvent("SearchForFrontiers");
         frontierSearchPtr_->reset();
-        frontierSearchPtr_->configure(explore_costmap_ros_->getLayeredCostmap()->getCostmap());
         explore_costmap_ros_->getCostmap()->getMutex()->lock();
         LOG_DEBUG("SearchForFrontiersBT OnStart called ");
         geometry_msgs::msg::PoseStamped robotP;
@@ -36,8 +35,8 @@ namespace roadmap_explorer
         config().blackboard->set<geometry_msgs::msg::PoseStamped>("latest_robot_pose", robotP);
         LOG_INFO("Using robot pose: " << robotP.pose.position.x << ", " << robotP.pose.position.y);
         std::vector<FrontierPtr> frontier_list;
-        LOG_WARN("Current search radius: " << frontierSearchPtr_->getFrontierSearchDistance());
-        auto searchResult = frontierSearchPtr_->searchFrom(robotP.pose.position, frontier_list);
+        auto current_frontier_search_distance = config().blackboard->get<double>("current_frontier_search_distance");
+        auto searchResult = frontierSearchPtr_->searchFrom(robotP.pose.position, frontier_list, current_frontier_search_distance);
         if (searchResult != FrontierSearchResult::SUCCESSFUL_SEARCH)
         {
             LOG_INFO("No frontiers in current search radius.")
@@ -48,16 +47,6 @@ namespace roadmap_explorer
             return BT::NodeStatus::FAILURE;
         }
         auto every_frontier = frontierSearchPtr_->getAllFrontiers();
-        if (frontier_list.size() == 0) {
-            LOG_INFO("No frontiers found in search. Incrementing search radius and returning BT Failure.");
-            // EventLoggerInstance.endEvent("SearchForFrontiers", 0);
-            explore_costmap_ros_->getCostmap()->getMutex()->unlock();
-            LOG_INFO("Search was true but no frontiers found.");
-            config().blackboard->set<ExplorationErrorCode>(
-                "error_code_id",
-                ExplorationErrorCode::NO_FRONTIERS_IN_CURRENT_RADIUS);
-            return BT::NodeStatus::FAILURE;
-        }
         LOG_INFO("Recieved " << frontier_list.size() << " frontiers");
         setOutput("frontier_list", frontier_list);
         setOutput("every_frontier", every_frontier);
@@ -82,6 +71,9 @@ namespace roadmap_explorer
     std::shared_ptr<FrontierSearchBase> frontierSearchPtr_;
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros_;
     std::shared_ptr<nav2_util::LifecycleNode> ros_node_ptr_;
+    double original_search_distance_;
+    double increment_value_;
+    double current_search_distance_;
     };
 
     SearchForFrontiersPlugin::SearchForFrontiersPlugin()

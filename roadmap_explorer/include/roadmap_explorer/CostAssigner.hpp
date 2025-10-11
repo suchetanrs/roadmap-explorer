@@ -28,6 +28,8 @@
 #include <tf2_ros/buffer.h>
 #include <tf2/LinearMath/Quaternion.h>
 
+#include <pluginlib/class_loader.hpp>
+
 #include "roadmap_explorer/util/Logger.hpp"
 #include "roadmap_explorer/util/RosVisualizer.hpp"
 #include "roadmap_explorer/util/EventLogger.hpp"
@@ -52,7 +54,7 @@ struct CalculateFrontierCostsRequest
 class CostAssigner
 {
 public:
-  CostAssigner(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros);
+  CostAssigner(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros, std::shared_ptr<nav2_util::LifecycleNode> node);
 
   ~CostAssigner();
 
@@ -69,7 +71,7 @@ private:
 
   void recomputeNormalizationFactors(FrontierPtr & frontier);
 
-  void initializePlugins(const std::string & informationGainPlugin, const std::string & plannerPlugin);
+  void initializePlugins();
 
   void processFrontier(FrontierPtr & frontier,
     const geometry_msgs::msg::Pose & start_pose_w);
@@ -82,6 +84,7 @@ private:
   nav2_costmap_2d::LayeredCostmap * layered_costmap_;
   nav2_costmap_2d::Costmap2D * costmap_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros_;
+  std::shared_ptr<nav2_util::LifecycleNode> node_;
 
   // map of blacklists with hash map and equality which only considers goal point
   std::unordered_map<FrontierPtr, bool, FrontierHash,
@@ -91,10 +94,16 @@ private:
   double min_traversable_distance = std::numeric_limits<double>::max();
   double max_traversable_distance = -1.0 * std::numeric_limits<double>::max();
   std::shared_ptr<BasePlanner> planner_plugin_;
+  std::shared_ptr<pluginlib::ClassLoader<BasePlanner>> planner_loader_;
+  std::string planner_plugin_name_;
+  std::string planner_plugin_type_;
 
   double min_arrival_info_per_frontier = std::numeric_limits<double>::max();
   double max_arrival_info_per_frontier = -1.0 * std::numeric_limits<double>::max();
   std::shared_ptr<BaseInformationGain> information_gain_plugin_;
+  std::shared_ptr<pluginlib::ClassLoader<BaseInformationGain>> information_gain_loader_;
+  std::string information_gain_plugin_name_;
+  std::string information_gain_plugin_type_;
 
 };
 }
