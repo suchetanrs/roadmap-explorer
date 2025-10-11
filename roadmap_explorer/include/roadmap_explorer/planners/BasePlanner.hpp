@@ -82,5 +82,3 @@ protected:
 }  // namespace roadmap_explorer
 
 #endif  // BASE_PLANNER_HPP_
-
-

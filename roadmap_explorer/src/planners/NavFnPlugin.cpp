@@ -49,7 +49,7 @@ void PluginNavFn::setPlanForFrontier(
 
   // check if the set euclidean distance is greater than max planning distance, if yes, set to a large value and return
   if (goal_point_w->getPathLengthInM() >
-  parameterInstance.getValue<double>("costCalculator.max_planning_distance_roadmap"))
+    parameterInstance.getValue<double>("costCalculator.max_planning_distance_roadmap"))
   {
     goal_point_w->setAchievability(true);
     goal_point_w->setPathLength(goal_point_w->getPathLength() * 5.0);
