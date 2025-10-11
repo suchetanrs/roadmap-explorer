@@ -41,7 +41,7 @@ public:
    * @param explore_costmap_ros Shared pointer to the costmap ROS wrapper
    */
   virtual void configure(
-    std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros, std::shared_ptr<nav2_util::LifecycleNode> node) = 0;
+    std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros, std::string name, std::shared_ptr<nav2_util::LifecycleNode> node) = 0;
 
   /**
    * @brief Reset the information gain calculator state

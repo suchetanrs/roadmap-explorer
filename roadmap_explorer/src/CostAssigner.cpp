@@ -111,11 +111,6 @@ bool CostAssigner::assignCosts(
     LOG_ERROR("FrontierPtr cannot be selected, no polygon.");
     return false;
   }
-  
-  // Check for duplicates
-  if (findDuplicates(frontier_list).size() > 0) {
-    throw RoadmapExplorerException("Duplicate frontiers found.");
-  }
 
   // Initialize plugins once for all frontiers
   initializePlugins(informationGainPlugin, plannerPlugin);
@@ -128,25 +123,6 @@ bool CostAssigner::assignCosts(
   }
 
   return true;
-}
-
-std::vector<FrontierPtr> CostAssigner::findDuplicates(const std::vector<FrontierPtr> & vec)
-{
-  std::vector<FrontierPtr> duplicates;
-
-  // Iterate through the vector
-  for (size_t i = 0; i < vec.size(); ++i) {
-    // Compare the current element with all subsequent elements
-    for (size_t j = i + 1; j < vec.size(); ++j) {
-      if (vec[i] == vec[j]) {
-        // If a duplicate is found, add it to the duplicates vector
-        duplicates.push_back(vec[i]);
-        break;             // Break the inner loop to avoid adding the same duplicate multiple times
-      }
-    }
-  }
-
-  return duplicates;
 }
 
 void CostAssigner::setFrontierBlacklist(std::vector<FrontierPtr> & blacklist)

@@ -2,10 +2,26 @@
 
 namespace roadmap_explorer
 {
-void PluginNavFn::configure(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros, std::shared_ptr<nav2_util::LifecycleNode> node)
+void PluginNavFn::configure(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros, std::string name, std::shared_ptr<nav2_util::LifecycleNode> node)
 {
   exploration_costmap_ = explore_costmap_ros->getCostmap();
-  (void)node;
+
+  nav2_util::declare_parameter_if_not_declared(
+    node, name + ".closeness_rejection_threshold", rclcpp::ParameterValue(
+      0.5));
+  nav2_util::declare_parameter_if_not_declared(
+    node, name + ".planner_allow_unknown", rclcpp::ParameterValue(
+      true));
+  nav2_util::declare_parameter_if_not_declared(
+    node, name + ".max_planning_distance_roadmap", rclcpp::ParameterValue(
+      6.0));
+
+  closeness_rejection_threshold_ = node->get_parameter(
+    name + ".closeness_rejection_threshold").as_double();
+  planner_allow_unknown_ = node->get_parameter(
+    name + ".planner_allow_unknown").as_bool();
+  max_planning_distance_ = node->get_parameter(
+    name + ".max_planning_distance_roadmap").as_double();
 }
 
 void PluginNavFn::reset()
@@ -47,8 +63,7 @@ void PluginNavFn::setPlanForFrontier(
   goal_point_w->setPathHeading(std::numeric_limits<double>::max());
 
   // check if the set euclidean distance is greater than max planning distance, if yes, set to a large value and return
-  if (goal_point_w->getPathLengthInM() >
-    parameterInstance.getValue<double>("costCalculator.max_planning_distance_roadmap"))
+  if (goal_point_w->getPathLengthInM() > max_planning_distance_)
   {
     goal_point_w->setAchievability(true);
     goal_point_w->setPathLength(goal_point_w->getPathLength() * 5.0);

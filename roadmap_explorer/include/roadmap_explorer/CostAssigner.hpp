@@ -69,8 +69,6 @@ private:
 
   void recomputeNormalizationFactors(FrontierPtr & frontier);
 
-  std::vector<FrontierPtr> findDuplicates(const std::vector<FrontierPtr> & vec);
-
   void initializePlugins(const std::string & informationGainPlugin, const std::string & plannerPlugin);
 
   void processFrontier(FrontierPtr & frontier,

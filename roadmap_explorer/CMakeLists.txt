@@ -169,13 +169,13 @@ add_subdirectory(comparision_scripts)
 ########################### INSTALLATION ###########################
 
 install(TARGETS
-  # roadmap_exploration_bt
   ${PROJECT_NAME}_frontier
   ${PROJECT_NAME}_utils
   roadmap_explorer_frontier_search_plugins
   roadmap_explorer_information_gain_plugins
+  roadmap_explorer_planner_plugins
+  # roadmap_exploration_bt
   # roadmap_explorer_bt_plugins
-  # roadmap_explorer_planner_plugins
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
@@ -195,13 +195,13 @@ DESTINATION share/${PROJECT_NAME}
 
 ament_export_include_directories(include ${EIGEN3_INCLUDE_DIR})
 ament_export_libraries(
-# roadmap_exploration_bt 
 ${PROJECT_NAME}_frontier 
 ${PROJECT_NAME}_utils 
 roadmap_explorer_frontier_search_plugins 
 roadmap_explorer_information_gain_plugins
+roadmap_explorer_planner_plugins 
+# roadmap_exploration_bt 
 # roadmap_explorer_bt_plugins 
-# roadmap_explorer_planner_plugins 
 )
 ament_export_dependencies(rosidl_default_runtime ${dependencies})
 

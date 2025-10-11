@@ -31,22 +31,6 @@ void ParameterHandler::makeParameters(std::shared_ptr<nav2_util::LifecycleNode> 
     "frontierSearch.max_permissable_frontier_search_distance").as_double();
 
   // --- costCalculator ---
-  nav2_util::declare_parameter_if_not_declared(
-    node, "costCalculator.closeness_rejection_threshold", rclcpp::ParameterValue(
-      0.5));
-  nav2_util::declare_parameter_if_not_declared(
-    node, "costCalculator.planner_allow_unknown", rclcpp::ParameterValue(
-      true));
-  nav2_util::declare_parameter_if_not_declared(
-    node, "costCalculator.max_planning_distance_roadmap", rclcpp::ParameterValue(
-      6.0));
-
-  parameter_map_["costCalculator.closeness_rejection_threshold"] = node->get_parameter(
-    "costCalculator.closeness_rejection_threshold").as_double();
-  parameter_map_["costCalculator.planner_allow_unknown"] = node->get_parameter(
-    "costCalculator.planner_allow_unknown").as_bool();
-  parameter_map_["costCalculator.max_planning_distance_roadmap"] = node->get_parameter(
-    "costCalculator.max_planning_distance_roadmap").as_double();
 
   // --- costAssigner ---
   nav2_util::declare_parameter_if_not_declared(

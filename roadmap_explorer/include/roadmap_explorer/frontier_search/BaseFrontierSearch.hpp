@@ -48,7 +48,7 @@ public:
    * @param costmap Pointer to the costmap for frontier detection.
    * @param node Shared pointer to the lifecycle node for parameter management
    */
-  virtual void configure(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros, std::shared_ptr<nav2_util::LifecycleNode> node) = 0;
+  virtual void configure(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros, std::string name, std::shared_ptr<nav2_util::LifecycleNode> node) = 0;
 
   /**
    * @brief Reset the frontier search state

@@ -45,7 +45,7 @@ public:
    * @param explore_costmap_ros Shared pointer to the costmap ROS wrapper
    */
   void configure(
-    std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros, std::shared_ptr<nav2_util::LifecycleNode> node) override;
+    std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros, std::string name, std::shared_ptr<nav2_util::LifecycleNode> node) override;
 
   /**
    * @brief Reset the calculator state

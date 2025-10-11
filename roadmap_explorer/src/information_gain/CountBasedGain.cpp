@@ -3,7 +3,7 @@
 namespace roadmap_explorer
 {
 
-void CountBasedGain::configure(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros, std::shared_ptr<nav2_util::LifecycleNode> node)
+void CountBasedGain::configure(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros, std::string name, std::shared_ptr<nav2_util::LifecycleNode> node)
 {
   LOG_INFO("CountBasedGain::configure");
   exploration_costmap_ = explore_costmap_ros->getCostmap();
@@ -11,26 +11,26 @@ void CountBasedGain::configure(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> ex
   arrival_info_limits_set_ = false;
 
   nav2_util::declare_parameter_if_not_declared(
-    node, "costCalculator.max_camera_depth", rclcpp::ParameterValue(
+    node, name + ".max_camera_depth", rclcpp::ParameterValue(
       2.0));
   nav2_util::declare_parameter_if_not_declared(
-    node, "costCalculator.delta_theta", rclcpp::ParameterValue(
+    node, name + ".delta_theta", rclcpp::ParameterValue(
       0.10));
   nav2_util::declare_parameter_if_not_declared(
-    node, "costCalculator.camera_fov", rclcpp::ParameterValue(
+    node, name + ".camera_fov", rclcpp::ParameterValue(
       1.04));
   nav2_util::declare_parameter_if_not_declared(
-    node, "costCalculator.factor_of_max_is_min", rclcpp::ParameterValue(
+    node, name + ".factor_of_max_is_min", rclcpp::ParameterValue(
       0.70));
 
   MAX_CAMERA_DEPTH = node->get_parameter(
-    "costCalculator.max_camera_depth").as_double();
+    name + ".max_camera_depth").as_double();
   DELTA_THETA =
-    node->get_parameter("costCalculator.delta_theta").as_double();
+    node->get_parameter(name + ".delta_theta").as_double();
   CAMERA_FOV =
-    node->get_parameter("costCalculator.camera_fov").as_double();
+    node->get_parameter(name + ".camera_fov").as_double();
   factor_of_max_is_min = node->get_parameter(
-    "costCalculator.factor_of_max_is_min").as_double();
+    name + ".factor_of_max_is_min").as_double();
 
   setArrivalInformationLimits();
 }

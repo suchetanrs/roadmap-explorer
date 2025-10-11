@@ -33,7 +33,7 @@ public:
 
   ~FrontierBFSearch() override;
 
-  void configure(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros, std::shared_ptr<nav2_util::LifecycleNode> node) override;
+  void configure(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros, std::string name, std::shared_ptr<nav2_util::LifecycleNode> node) override;
 
   void reset() override;
 
@@ -71,6 +71,8 @@ private:
   {
     return (int)value < lethal_threshold_;
   }
+
+  std::vector<FrontierPtr> findDuplicates(const std::vector<FrontierPtr> & vec);
 
   // Constants for geometric calculations
   static constexpr double DIAGONAL_FACTOR = 1.414;  // sqrt(2) approximation

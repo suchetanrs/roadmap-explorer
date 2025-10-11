@@ -18,7 +18,7 @@ FrontierBFSearch::~FrontierBFSearch()
   LOG_INFO("FrontierBFSearch::~FrontierBFSearch()");
 }
 
-void FrontierBFSearch::configure(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros, std::shared_ptr<nav2_util::LifecycleNode> node)
+void FrontierBFSearch::configure(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros, std::string name, std::shared_ptr<nav2_util::LifecycleNode> node)
 {
   if (explore_costmap_ros == nullptr) {
     throw std::runtime_error("Given input costmap is null");
@@ -26,21 +26,21 @@ void FrontierBFSearch::configure(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> 
   costmap_ = explore_costmap_ros->getCostmap();
 
   nav2_util::declare_parameter_if_not_declared(
-    node, "frontierSearch.min_frontier_cluster_size", rclcpp::ParameterValue(
+    node, name + ".min_frontier_cluster_size", rclcpp::ParameterValue(
       1.0));
   nav2_util::declare_parameter_if_not_declared(
-    node, "frontierSearch.max_frontier_cluster_size", rclcpp::ParameterValue(
+    node, name + ".max_frontier_cluster_size", rclcpp::ParameterValue(
       20.0));
   nav2_util::declare_parameter_if_not_declared(
-    node, "frontierSearch.lethal_threshold", rclcpp::ParameterValue(
+    node, name + ".lethal_threshold", rclcpp::ParameterValue(
       160));
 
   min_frontier_cluster_size_ = node->get_parameter(
-    "frontierSearch.min_frontier_cluster_size").as_double();
+    name + ".min_frontier_cluster_size").as_double();
   max_frontier_cluster_size_ = node->get_parameter(
-    "frontierSearch.max_frontier_cluster_size").as_double();
+    name + ".max_frontier_cluster_size").as_double();
   lethal_threshold_ = node->get_parameter(
-    "frontierSearch.lethal_threshold").as_int();
+    name + ".lethal_threshold").as_int();
 }
 
 void FrontierBFSearch::reset()
@@ -131,6 +131,11 @@ FrontierSearchResult FrontierBFSearch::searchFrom(
     }
   }
   output_frontier_list = frontier_list;
+  
+  // Check for duplicates
+  if (findDuplicates(frontier_list).size() > 0) {
+    throw RoadmapExplorerException("Duplicate frontiers found.");
+  }
   return FrontierSearchResult::SUCCESSFUL_SEARCH;
 }
 
@@ -336,6 +341,25 @@ std::pair<double, double> FrontierBFSearch::getCentroidOfCells(
   LOG_DEBUG("Centroid: " << centerX << " , " << centerY);
 
   return std::make_pair(centerX, centerY);
+}
+
+std::vector<FrontierPtr> FrontierBFSearch::findDuplicates(const std::vector<FrontierPtr> & vec)
+{
+  std::vector<FrontierPtr> duplicates;
+
+  // Iterate through the vector
+  for (size_t i = 0; i < vec.size(); ++i) {
+    // Compare the current element with all subsequent elements
+    for (size_t j = i + 1; j < vec.size(); ++j) {
+      if (vec[i] == vec[j]) {
+        // If a duplicate is found, add it to the duplicates vector
+        duplicates.push_back(vec[i]);
+        break;             // Break the inner loop to avoid adding the same duplicate multiple times
+      }
+    }
+  }
+
+  return duplicates;
 }
 
 }
