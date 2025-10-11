@@ -20,12 +20,12 @@ class EventLogger
 public:
   ~EventLogger();
 
-  static void createInstance()
+  static void createInstance(bool logToCSV = false)
   {
     LOG_INFO("Creating event logger instance");
     std::lock_guard<std::mutex> lock(instanceMutex_);
     if (EventLoggerPtr_ == nullptr) {
-      EventLoggerPtr_.reset(new EventLogger());
+      EventLoggerPtr_.reset(new EventLogger(logToCSV));
     } else {
       throw RoadmapExplorerException("EventLogger instance already exists!");
     }
@@ -77,7 +77,7 @@ private:
   // Delete copy constructor and assignment operator to prevent copying
   EventLogger(const EventLogger &) = delete;
   EventLogger & operator=(const EventLogger &) = delete;
-  EventLogger();
+  EventLogger(bool logToCSV);
 
   static std::unique_ptr<EventLogger> EventLoggerPtr_;
   static std::mutex instanceMutex_;

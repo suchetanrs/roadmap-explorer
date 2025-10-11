@@ -3,8 +3,8 @@
 std::unique_ptr<EventLogger> EventLogger::EventLoggerPtr_ = nullptr;
 std::mutex EventLogger::instanceMutex_;
 
-EventLogger::EventLogger()
-: logToCSV(false), serialNumber(0), baseFilename("event_log")
+EventLogger::EventLogger(bool logToCSV)
+: serialNumber(0), baseFilename("event_log")
 {
 
   if (logToCSV) {
