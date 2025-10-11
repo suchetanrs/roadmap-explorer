@@ -18,18 +18,29 @@ FrontierBFSearch::~FrontierBFSearch()
   LOG_INFO("FrontierBFSearch::~FrontierBFSearch()");
 }
 
-void FrontierBFSearch::configure(nav2_costmap_2d::Costmap2D * costmap)
+void FrontierBFSearch::configure(nav2_costmap_2d::Costmap2D * costmap, std::shared_ptr<nav2_util::LifecycleNode> node)
 {
   if (costmap == nullptr) {
     throw std::runtime_error("Given input costmap is null");
   }
   costmap_ = costmap;
 
-  min_frontier_cluster_size_ = parameterInstance.getValue<double>(
-    "frontierSearch.min_frontier_cluster_size");
-  max_frontier_cluster_size_ = parameterInstance.getValue<double>(
-    "frontierSearch.max_frontier_cluster_size");
-  lethal_threshold_ = parameterInstance.getValue<int64_t>("frontierSearch.lethal_threshold");
+  nav2_util::declare_parameter_if_not_declared(
+    node, "frontierSearch.min_frontier_cluster_size", rclcpp::ParameterValue(
+      1.0));
+  nav2_util::declare_parameter_if_not_declared(
+    node, "frontierSearch.max_frontier_cluster_size", rclcpp::ParameterValue(
+      20.0));
+  nav2_util::declare_parameter_if_not_declared(
+    node, "frontierSearch.lethal_threshold", rclcpp::ParameterValue(
+      160));
+
+  min_frontier_cluster_size_ = node->get_parameter(
+    "frontierSearch.min_frontier_cluster_size").as_double();
+  max_frontier_cluster_size_ = node->get_parameter(
+    "frontierSearch.max_frontier_cluster_size").as_double();
+  lethal_threshold_ = node->get_parameter(
+    "frontierSearch.lethal_threshold").as_int();
 }
 
 void FrontierBFSearch::reset()
@@ -40,7 +51,8 @@ void FrontierBFSearch::reset()
 
 FrontierSearchResult FrontierBFSearch::searchFrom(
   geometry_msgs::msg::Point position,
-  std::vector<FrontierPtr> & output_frontier_list)
+  std::vector<FrontierPtr> & output_frontier_list,
+  double max_frontier_search_distance)
 {
   // Clear the accumulated frontier list from previous searches
   every_frontier_list_.clear();
@@ -78,7 +90,7 @@ FrontierSearchResult FrontierBFSearch::searchFrom(
   }
   visited_flag[bfs.front()] = true;
 
-  auto distance_to_check_ = frontier_search_distance_ +
+  auto distance_to_check_ = max_frontier_search_distance +
     (max_frontier_cluster_size_ * costmap_->getResolution() * DIAGONAL_FACTOR);
   distance_to_check_ = std::pow(distance_to_check_, 2);
 

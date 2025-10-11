@@ -17,31 +17,16 @@ ParameterHandler::~ParameterHandler()
 
 void ParameterHandler::makeParameters(std::shared_ptr<nav2_util::LifecycleNode> node)
 {
-  // --- frontierSearch ---
-  nav2_util::declare_parameter_if_not_declared(
-    node, "frontierSearch.min_frontier_cluster_size", rclcpp::ParameterValue(
-      1.0));
-  nav2_util::declare_parameter_if_not_declared(
-    node, "frontierSearch.max_frontier_cluster_size", rclcpp::ParameterValue(
-      20.0));
+
   nav2_util::declare_parameter_if_not_declared(
     node, "frontierSearch.frontier_search_distance", rclcpp::ParameterValue(
       50.0));
   nav2_util::declare_parameter_if_not_declared(
-    node, "frontierSearch.lethal_threshold", rclcpp::ParameterValue(
-      160));
-  nav2_util::declare_parameter_if_not_declared(
     node, "frontierSearch.max_permissable_frontier_search_distance", rclcpp::ParameterValue(
       100.0));
 
-  parameter_map_["frontierSearch.min_frontier_cluster_size"] = node->get_parameter(
-    "frontierSearch.min_frontier_cluster_size").as_double();
-  parameter_map_["frontierSearch.max_frontier_cluster_size"] = node->get_parameter(
-    "frontierSearch.max_frontier_cluster_size").as_double();
   parameter_map_["frontierSearch.frontier_search_distance"] = node->get_parameter(
     "frontierSearch.frontier_search_distance").as_double();
-  parameter_map_["frontierSearch.lethal_threshold"] = node->get_parameter(
-    "frontierSearch.lethal_threshold").as_int();
   parameter_map_["frontierSearch.max_permissable_frontier_search_distance"] = node->get_parameter(
     "frontierSearch.max_permissable_frontier_search_distance").as_double();
 

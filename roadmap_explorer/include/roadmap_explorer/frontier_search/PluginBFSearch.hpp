@@ -33,26 +33,14 @@ public:
 
   ~FrontierBFSearch() override;
 
-  void configure(nav2_costmap_2d::Costmap2D * costmap) override;
+  void configure(nav2_costmap_2d::Costmap2D * costmap, std::shared_ptr<nav2_util::LifecycleNode> node) override;
 
   void reset() override;
 
-  bool setFrontierSearchDistance(double value) override
-  {
-    frontier_search_distance_ = value;
-    LOG_INFO("Setting search distance to: " << frontier_search_distance_);
-    if (frontier_search_distance_ > parameterInstance.getValue<double>(
-        "frontierSearch.max_permissable_frontier_search_distance"))
-    {
-      LOG_ERROR("Frontier search distance exceeded maximum limit");
-      return false;
-    }
-    return true;
-  }
-
   FrontierSearchResult searchFrom(
     geometry_msgs::msg::Point position,
-    std::vector<FrontierPtr> & output_frontier_list) override;
+    std::vector<FrontierPtr> & output_frontier_list,
+    double max_frontier_search_distance) override;
 
   std::vector<std::vector<double>> getAllFrontiers() override;
 
