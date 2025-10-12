@@ -1,3 +1,25 @@
+/**
+    Copyright 2025 Suchetan Saravanan.
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+*/
+
+
 #include <vector>
 #include <algorithm>
 #include <limits>
@@ -54,10 +76,10 @@ void FullPathOptimizer::addToMarkerArraySolidPolygon(
   marker.scale.y = radius * 2;
   marker.scale.z = 1.0;
   marker.color.a = 0.30;       // Semi-transparent
-  marker.color.r = r;          // Red color
+  marker.color.r = r;
   marker.color.g = g;
   marker.color.b = b;
-  marker.lifetime = rclcpp::Duration::from_seconds(2.5);
+  marker.lifetime = rclcpp::Duration::from_seconds(MARKER_LIFETIME_SECONDS);
   marker_array.markers.push_back(marker);
 }
 
@@ -79,7 +101,7 @@ double FullPathOptimizer::calculatePathLength(std::vector<FrontierPtr> & path)
     if (it2 != frontier_pair_distances_.end()) {
       LOG_TRACE(
         "Using cache value bw " << path[i + 1] << " to " << path[i] << ". The value is: " <<
-          it->second.path_length_m);
+          it2->second.path_length_m);
       totalLength += it2->second.path_length_m;
       continue;
     }
@@ -93,7 +115,7 @@ double FullPathOptimizer::calculatePathLength(std::vector<FrontierPtr> & path)
       frontier_pair_distances_[FrontierPair(path[i + 1], path[i])] = current_length;
     } else if (current_length.path_exists == false) {
       // set it to a large value since path could not be found.
-      totalLength += local_frontier_search_radius * 100000;
+      totalLength += local_frontier_search_radius * PATH_NOT_FOUND_PENALTY_MULTIPLIER;
       frontier_pair_distances_[FrontierPair(path[i], path[i + 1])] = current_length;
       std::reverse(current_length.path.begin(), current_length.path.end());
       frontier_pair_distances_[FrontierPair(path[i + 1], path[i])] = current_length;
@@ -181,7 +203,7 @@ void FullPathOptimizer::getFilteredFrontiersN(
   bool global_assigned = false;
   // to cater first case.
   if (all_frontiers.size() == 0) {
-    LOG_WARN("No achievable frontiers exist during sorting.")
+    LOG_WARN("No achievable frontiers exist during sorting.");
     return;
   }
   int counter = 1;
@@ -258,7 +280,6 @@ bool FullPathOptimizer::getBestFullPath(
   LOG_DEBUG("************************");
   LOG_DEBUG("************************");
   do{
-    // LOG_DEBUG("Inserting robot Pose frontier to the beginning.");
     sortedFrontiers.local_frontiers.insert(
       sortedFrontiers.local_frontiers.begin(), robotPoseFrontier);
 
@@ -286,7 +307,7 @@ bool FullPathOptimizer::getBestFullPath(
         path_heading = path_heading - (2 * M_PI);
       }
 
-      currentLength += (abs(path_heading) * 2.3);
+      currentLength += (abs(path_heading) * YAW_COST_WEIGHT);
     }
 
     if (add_distance_to_robot_to_tsp) {
@@ -322,7 +343,7 @@ bool FullPathOptimizer::getBestFullPath(
   } while (std::next_permutation(
     sortedFrontiers.local_frontiers.begin(),
     sortedFrontiers.local_frontiers.end()) && rclcpp::ok());
-  if (minLength >= local_frontier_search_radius * 100000) {
+  if (minLength >= local_frontier_search_radius * PATH_NOT_FOUND_PENALTY_MULTIPLIER) {
     LOG_ERROR("Zero frontiers were reasonable post FI check...returning zero frontier.");
     return false;
   }
@@ -365,7 +386,7 @@ bool FullPathOptimizer::getNextGoal(
     // LOG_ERROR("Could not find local frontiers. Returning a zero frontiers. The program may crash if goal point is checked...");
     if (sortedFrontiers.global_frontiers.size() >= 1) {
       LOG_WARN(
-        "Could not find more than one global frontiers frontiers. Returning the best global frontier.");
+        "Could not find local frontiers. Returning the best global frontier.");
       nextFrontier = sortedFrontiers.closest_global_frontier;
 
       nav_msgs::msg::Path globalReposPath;

@@ -1,7 +1,23 @@
-#include <tf2/utils.h>
-#include <algorithm>
-#include <cmath>
-#include <chrono>
+/**
+    Copyright 2025 Suchetan Saravanan.
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+*/
 
 #include "roadmap_explorer/SensorSimulator.hpp"
 
@@ -9,6 +25,9 @@ using std::placeholders::_1;
 
 namespace roadmap_explorer
 {
+
+// Threshold for considering a cell as an obstacle (occupancy grid value 0-100)
+constexpr int OBSTACLE_THRESHOLD = 80;
 
 SensorSimulator::SensorSimulator(
   std::shared_ptr<nav2_util::LifecycleNode> node,
@@ -29,7 +48,7 @@ SensorSimulator::SensorSimulator(
     map_sub_ = node_->create_subscription<nav_msgs::msg::OccupancyGrid>(
     parameterInstance.getValue<std::string>(
       "sensorSimulator.input_map_topic"), qos,
-    std::bind(&SensorSimulator::mapCallback, this, _1), options); 
+    std::bind(&SensorSimulator::mapCallback, this, _1), options);
   }
   else
   {
@@ -93,16 +112,16 @@ bool SensorSimulator::loadMap(std::string instance_name, std::string base_path)
 void SensorSimulator::mapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg)
 {
   std::lock_guard<std::recursive_mutex> lock(map_mutex_);
-  latest_map_ = msg;                         // always keep the freshest copy
+  latest_map_ = msg;
 
-  /* ---------- first ever map ------------------------------------------------ */
+  // First ever map - initialize explored map
   if (!explored_map_) {
     explored_map_ = std::make_shared<nav_msgs::msg::OccupancyGrid>(*msg);
     std::fill(explored_map_->data.begin(), explored_map_->data.end(), -1);
     return;
   }
 
-  /* ---------- has geometry (size/origin/resolution) changed? ---------------- */
+  // Check if geometry (size/origin/resolution) has changed
   const bool geometry_changed =
     explored_map_->info.width != msg->info.width ||
     explored_map_->info.height != msg->info.height ||
@@ -112,8 +131,8 @@ void SensorSimulator::mapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr 
     explored_map_->info.origin.position.x != msg->info.origin.position.x ||
     explored_map_->info.origin.position.y != msg->info.origin.position.y;
 
-  if (!geometry_changed && !manual_cleanup_requested_) { // nothing changed → just keep the previous explored grid
-    return;
+  if (!geometry_changed && !manual_cleanup_requested_) {
+    return;  // Nothing changed, keep the previous explored grid
   }
 
   updateAfterChangedGeometry(msg);
@@ -126,25 +145,25 @@ void SensorSimulator::updateAfterChangedGeometry(
   const nav_msgs::msg::OccupancyGrid::SharedPtr updated_msg)
 {
   std::lock_guard<std::recursive_mutex> lock(map_mutex_);
-  /* ---------- rebuild explored map with the new geometry -------------------- */
-  nav_msgs::msg::OccupancyGrid old_explored = *explored_map_;  // keep a copy
+  // Rebuild explored map with the new geometry
+  nav_msgs::msg::OccupancyGrid old_explored = *explored_map_;
   if(updated_msg != nullptr)
   {
-    explored_map_ = std::make_shared<nav_msgs::msg::OccupancyGrid>(*updated_msg);                                       // new metadata
+    explored_map_ = std::make_shared<nav_msgs::msg::OccupancyGrid>(*updated_msg);
   }
-  /* new cell indices */
+
   const double new_res = explored_map_->info.resolution;
   const auto & new_org = explored_map_->info.origin.position;
   std::fill(explored_map_->data.begin(), explored_map_->data.end(), -1);
 
-  /* ---------- project every previously known cell into the new grid --------- */
+  // Project every previously known cell into the new grid
   for (std::size_t idx = 0; idx < old_explored.data.size(); ++idx) {
     const int8_t val = old_explored.data[idx];
-    if (val == -1) {          // cell was still unknown → skip
-      continue;
+    if (val == -1) {
+      continue;  // cell was still unknown, skip
     }
 
-    /* old cell centre in world coordinates */
+    // Old cell centre in world coordinates
     double wx, wy;
     cellToWorld(old_explored, idx, wx, wy);
 
@@ -156,12 +175,11 @@ void SensorSimulator::updateAfterChangedGeometry(
       new_row >= static_cast<int>(explored_map_->info.height))
     {
       continue;               // world point lies outside the new map
-
     }
     const std::size_t new_idx =
       static_cast<std::size_t>(new_row) * explored_map_->info.width + new_col;
 
-    explored_map_->data[new_idx] = updated_msg->data[new_idx];   // copy the refreshed value into the explored_map
+    explored_map_->data[new_idx] = updated_msg->data[new_idx];
   }
 
   LOG_INFO("Map geometry changed and rebuilt explored map " <<
@@ -179,7 +197,7 @@ void SensorSimulator::timerCallback()
   LOG_DEBUG("TIMER CB");
   if (!latest_map_) {
     LOG_ERROR("No latest map");
-    return;  // no map yet
+    return;
   }
 
   geometry_msgs::msg::PoseStamped base_pose;
@@ -190,7 +208,7 @@ void SensorSimulator::timerCallback()
   }
   const double base_yaw = roadmap_explorer::quatToEuler(base_pose.pose.orientation)[2];
 
-  /* ----------------------------- ray-casting ----------------------------- */
+  // Ray-casting to simulate sensor field of view
   auto min_angle = parameterInstance.getValue<double>("sensorSimulator.sensor_min_angle");
   auto max_angle = parameterInstance.getValue<double>("sensorSimulator.sensor_max_angle");
   auto delta_theta = parameterInstance.getValue<double>("sensorSimulator.angular_resolution");
@@ -199,7 +217,7 @@ void SensorSimulator::timerCallback()
     a <= max_angle;
     a += delta_theta)
   {
-    markRay(base_pose.pose, base_yaw + a);  // cast in world frame
+    markRay(base_pose.pose, base_yaw + a);
   }
 
   explored_map_->header.stamp = node_->now();
@@ -224,10 +242,10 @@ void SensorSimulator::markRay(
   auto sensor_range = parameterInstance.getValue<double>("sensorSimulator.sensor_max_range");
 
   for (double r = 0.0; r <= sensor_range; r += res) {
-    const double wx = base_pose.position.x + r * dx;   // world
+    const double wx = base_pose.position.x + r * dx;
     const double wy = base_pose.position.y + r * dy;
 
-    const int mx = static_cast<int>((wx - org.x) / res); // map cell
+    const int mx = static_cast<int>((wx - org.x) / res);
     const int my = static_cast<int>((wy - org.y) / res);
 
     if (mx < 0 || my < 0 || mx >= w || my >= h) {
@@ -239,7 +257,7 @@ void SensorSimulator::markRay(
 
     explored_map_->data[idx] = latest_map_->data[idx];
 
-    if (latest_map_->data[idx] > 80) {
+    if (latest_map_->data[idx] > OBSTACLE_THRESHOLD) {
       break;
     }
   }

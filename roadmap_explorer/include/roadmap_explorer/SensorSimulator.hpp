@@ -1,11 +1,37 @@
+/**
+    Copyright 2025 Suchetan Saravanan.
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+*/
+
 #ifndef SENSOR_SIMULATOR_HPP_
 #define SENSOR_SIMULATOR_HPP_
+
+#include <algorithm>
+#include <cmath>
+#include <chrono>
 
 #include <rclcpp/rclcpp.hpp>
 #include <nav_msgs/msg/occupancy_grid.hpp>
 #include <geometry_msgs/msg/transform_stamped.hpp>
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
+#include <tf2/utils.h>
 
 #include <nav2_costmap_2d/costmap_2d_ros.hpp>
 #include <nav2_map_server/map_io.hpp>
@@ -17,20 +43,9 @@
 namespace roadmap_explorer
 {
 
-struct WorldPoint
-{
-  WorldPoint(double xin, double yin)
-  {
-    x = xin;
-    y = yin;
-  }
-  double x;
-  double y;
-};
-
 /**
- * @brief Node that projects the robot’s field of view onto a persistent
- *        “explored map”, re-using the underlying values of the full map.
+ * @brief Node that projects the robot's field of view onto a persistent
+ *        "explored map", re-using the underlying values of the full map.
  */
 class SensorSimulator
 {

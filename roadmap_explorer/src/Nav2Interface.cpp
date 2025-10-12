@@ -1,3 +1,25 @@
+/**
+    Copyright 2025 Suchetan Saravanan.
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+*/
+
+
 #include "roadmap_explorer/Nav2Interface.hpp"
 
 namespace roadmap_explorer
@@ -58,25 +80,27 @@ bool Nav2Interface<ActionT>::sendCancelWaitForResponse(
     return false;
   }
   // Get the cancellation future from nav2.
-  LOG_INFO("Acquiring lock");
+  // Lock ordering: always acquire goal_state_mutex_ before nav2Clientlock_ to prevent deadlock
+  LOG_INFO("Acquiring lock for cancel operation");
+  std::lock_guard<std::recursive_mutex> lock(goal_state_mutex_);
   std::lock_guard<std::mutex> lock2(nav2Clientlock_);
   LOG_INFO("Canceling goal");
-  // auto cancel_future = nav2Client_->async_cancel_goal(current_goal_handle_);
-  // lock the status mutex so that the result callback is not executed until we are done waiting or get a response.
-  std::lock_guard<std::recursive_mutex> lock(goal_state_mutex_);
+  
   auto cancel_future = nav2Client_->async_cancel_all_goals();
-  //TODO(suchetan): Avoid infinite wait here. But how? we cant use spin_until_future_complete.
-  LOG_WARN("Sent cancel request to nav2. Will wait infinitely for the cancel response");
-  int time_to_wait_sec = 5;
-  int count = 1;
+  LOG_WARN("Sent cancel request to nav2, waiting for response");
+  
+  // Wait for cancel response with timeout (ROS2 recommended approach)
+  const int timeout_seconds = 5;
+  int elapsed_seconds = 0;
   while (cancel_future.wait_for(std::chrono::seconds(1)) != std::future_status::ready) {
-    LOG_ERROR("Waiting for cancel response");
-    count++;
-    if (count > time_to_wait_sec) {
-      LOG_FATAL("DID NOT GET A CANCEL RESPONSE. WILL NOT WAIT FOR RESPONSE. MOVING ON TO RESULT.");
-      // fill no error response for now (manually) and move on to check if we recieved a result once the mutex is released.
+    elapsed_seconds++;
+    LOG_WARN("Waiting for cancel response (" << elapsed_seconds << "/" << timeout_seconds << " seconds)");
+    
+    if (elapsed_seconds >= timeout_seconds) {
+      LOG_ERROR(
+        "Cancel request timed out after " << timeout_seconds << " seconds. The action server may be unresponsive. Moving on to result.");
       response.return_code = action_msgs::srv::CancelGoal::Response::ERROR_NONE;
-      return true;
+      return false;
     }
   }
 
@@ -107,7 +131,9 @@ void Nav2Interface<ActionT>::cancelAllGoals()
       LOG_ERROR("No ongoing goal in nav2.");
       nav2_goal_state_ = NavGoalStatus::CANCELLED;
     }
-  } else {LOG_ERROR("sendCancelWaitForResponse did not succeed cancelAllGoals")}
+  } else {
+    LOG_ERROR("sendCancelWaitForResponse did not succeed in cancelAllGoals");
+  }
 }
 
 template<typename ActionT>
@@ -163,11 +189,11 @@ bool Nav2Interface<ActionT>::canSendNewGoal()
 {
   if (current_goal_handle_ != nullptr) {
     LOG_ERROR(
-      "Goal handle not null. There is an ongoing goal but you are sending a new one. Terminate this first.")
+      "Goal handle not null. There is an ongoing goal but you are sending a new one. Terminate this first.");
     return false;
   }
   if (nav2_goal_state_ == NavGoalStatus::ONGOING) {
-    LOG_ERROR("There is an ongoing goal but you are sending a new one. Terminate this first.")
+    LOG_ERROR("There is an ongoing goal but you are sending a new one. Terminate this first.");
     return false;
   }
   if (nav2_goal_state_ == NavGoalStatus::CANCELLING) {
@@ -212,7 +238,9 @@ void Nav2Interface<ActionT>::sendUpdatedGoal(geometry_msgs::msg::PoseStamped pos
   if (isGoalActive()) {
     LOG_INFO("Updated goal being sent to nav2");
     updated_goal_publisher_->publish(pose);
-  } else {LOG_ERROR("There is no ongoing goal. What are you re-planning? ");}
+  } else {
+    LOG_ERROR("There is no ongoing goal. What are you re-planning?");
+  }
 }
 
 template<typename ActionT>
@@ -223,6 +251,7 @@ void Nav2Interface<ActionT>::nav2GoalFeedbackCallback(
   (void)feedback;
 }
 
-// TODO: suchetan Since the linker cannot find the definitions of many templates if we define this in nav2_navigate_to_pose.cpp, we need to do it here.
+// Explicit template instantiation for NavigateToPose action.
+// This is required because template definitions must be visible at instantiation time.
 template class Nav2Interface<nav2_msgs::action::NavigateToPose>;
 }  // namespace roadmap_explorer
