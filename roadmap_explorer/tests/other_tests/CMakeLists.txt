@@ -32,7 +32,7 @@ ament_target_dependencies(test_cost_assigner
   ${dependencies}
 )
 target_link_libraries(test_cost_assigner
-  roadmap_exploration_bt
+  roadmap_explorer_core
   roadmap_explorer_frontier
   roadmap_explorer_utils
   roadmap_explorer_bt_plugins

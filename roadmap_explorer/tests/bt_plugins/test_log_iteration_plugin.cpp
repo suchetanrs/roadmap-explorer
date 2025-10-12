@@ -57,6 +57,7 @@ protected:
     node_.reset();
     tf_buffer_.reset();
     costmap_ros_.reset();
+    context_.reset();
     
     // Clean up EventLogger
     try {
@@ -67,10 +68,20 @@ protected:
     
     rclcpp::shutdown();
   }
+  
+  // Helper function to create BTContext
+  std::shared_ptr<BTContext> createContext() {
+    auto context = std::make_shared<BTContext>();
+    context->node = node_;
+    context->explore_costmap_ros = costmap_ros_;
+    context->tf_buffer = tf_buffer_;
+    return context;
+  }
 
   std::shared_ptr<nav2_util::LifecycleNode> node_;
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
+  std::shared_ptr<BTContext> context_;
   std::unique_ptr<LogIteration> plugin_;
   std::unique_ptr<BT::BehaviorTreeFactory> factory_;
 };
@@ -94,7 +105,8 @@ TEST_F(LogIterationPluginTest, ConstructorDestructor)
 TEST_F(LogIterationPluginTest, RegisterNodes)
 {
   // Register nodes
-  EXPECT_NO_THROW(plugin_->registerNodes(*factory_, node_, costmap_ros_, tf_buffer_));
+  context_ = createContext();
+  EXPECT_NO_THROW(plugin_->registerNodes(*factory_, context_));
   
   // Try to instantiate the registered node to verify registration worked
   BT::NodeConfiguration config;
@@ -106,7 +118,8 @@ TEST_F(LogIterationPluginTest, RegisterNodes)
 TEST_F(LogIterationPluginTest, InstantiateRegisteredNode)
 {
   // Register nodes first
-  plugin_->registerNodes(*factory_, node_, costmap_ros_, tf_buffer_);
+  context_ = createContext();
+  plugin_->registerNodes(*factory_, context_);
   
   // Create node configuration
   BT::NodeConfiguration config;
@@ -122,7 +135,8 @@ TEST_F(LogIterationPluginTest, InstantiateRegisteredNode)
 TEST_F(LogIterationPluginTest, LogIterationBTNodeBehavior)
 {
   // Register nodes first
-  plugin_->registerNodes(*factory_, node_, costmap_ros_, tf_buffer_);
+  context_ = createContext();
+  plugin_->registerNodes(*factory_, context_);
   
   // Create node configuration
   BT::NodeConfiguration config;
@@ -149,7 +163,8 @@ TEST_F(LogIterationPluginTest, LogIterationBTNodeBehavior)
 TEST_F(LogIterationPluginTest, MultipleTicks)
 {
   // Register nodes first
-  plugin_->registerNodes(*factory_, node_, costmap_ros_, tf_buffer_);
+  context_ = createContext();
+  plugin_->registerNodes(*factory_, context_);
   
   // Create node configuration
   BT::NodeConfiguration config;
@@ -181,7 +196,8 @@ TEST_F(LogIterationPluginTest, InheritanceFromBTPlugin)
   EXPECT_NE(base_ptr, nullptr);
   
   // Test polymorphic behavior
-  EXPECT_NO_THROW(base_ptr->registerNodes(*factory_, node_, costmap_ros_, tf_buffer_));
+  context_ = createContext();
+  EXPECT_NO_THROW(base_ptr->registerNodes(*factory_, context_));
   
   // Verify registration worked by trying to instantiate
   BT::NodeConfiguration config;
@@ -193,7 +209,8 @@ TEST_F(LogIterationPluginTest, InheritanceFromBTPlugin)
 TEST_F(LogIterationPluginTest, DifferentNodeNames)
 {
   // Register nodes first
-  plugin_->registerNodes(*factory_, node_, costmap_ros_, tf_buffer_);
+  context_ = createContext();
+  plugin_->registerNodes(*factory_, context_);
   
   // Create a simple behavior tree XML with multiple LogIterationBT nodes
   std::string bt_xml = R"(
@@ -227,7 +244,8 @@ TEST_F(LogIterationPluginTest, DifferentNodeNames)
 TEST_F(LogIterationPluginTest, NodeTypeConsistency)
 {
   // Register nodes first
-  plugin_->registerNodes(*factory_, node_, costmap_ros_, tf_buffer_);
+  context_ = createContext();
+  plugin_->registerNodes(*factory_, context_);
   
   // Create node configuration
   BT::NodeConfiguration config;
@@ -245,7 +263,8 @@ TEST_F(LogIterationPluginTest, NodeTypeConsistency)
 TEST_F(LogIterationPluginTest, ErrorHandlingInvalidParameters)
 {
   // Register nodes first
-  plugin_->registerNodes(*factory_, node_, costmap_ros_, tf_buffer_);
+  context_ = createContext();
+  plugin_->registerNodes(*factory_, context_);
   
   // Try to instantiate with invalid node type name
   BT::NodeConfiguration config;
@@ -260,7 +279,11 @@ TEST_F(LogIterationPluginTest, ErrorHandlingInvalidParameters)
 TEST_F(LogIterationPluginTest, NullCostmapHandling)
 {
   // This should not crash even with null costmap
-  EXPECT_NO_THROW(plugin_->registerNodes(*factory_, node_, nullptr, tf_buffer_));
+  auto null_costmap_context = std::make_shared<BTContext>();
+  null_costmap_context->node = node_;
+  null_costmap_context->explore_costmap_ros = nullptr;
+  null_costmap_context->tf_buffer = tf_buffer_;
+  EXPECT_NO_THROW(plugin_->registerNodes(*factory_, null_costmap_context));
   
   // Verify registration worked by trying to instantiate
   BT::NodeConfiguration config;
@@ -273,7 +296,11 @@ TEST_F(LogIterationPluginTest, NullCostmapHandling)
 TEST_F(LogIterationPluginTest, NullTfBufferHandling)
 {
   // This should not crash even with null tf_buffer
-  EXPECT_NO_THROW(plugin_->registerNodes(*factory_, node_, costmap_ros_, nullptr));
+  auto null_tf_context = std::make_shared<BTContext>();
+  null_tf_context->node = node_;
+  null_tf_context->explore_costmap_ros = costmap_ros_;
+  null_tf_context->tf_buffer = nullptr;
+  EXPECT_NO_THROW(plugin_->registerNodes(*factory_, null_tf_context));
   
   // Verify registration worked by trying to instantiate
   BT::NodeConfiguration config;
@@ -286,7 +313,8 @@ TEST_F(LogIterationPluginTest, NullTfBufferHandling)
 TEST_F(LogIterationPluginTest, BasicThreadSafety)
 {
   // Register nodes first
-  plugin_->registerNodes(*factory_, node_, costmap_ros_, tf_buffer_);
+  context_ = createContext();
+  plugin_->registerNodes(*factory_, context_);
   
   // Create a simple behavior tree XML with multiple LogIterationBT nodes
   std::string bt_xml = R"(

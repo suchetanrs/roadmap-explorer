@@ -136,7 +136,7 @@ TEST_F(CountBasedGainTest, DefaultConstructor)
 // Test configure method
 TEST_F(CountBasedGainTest, Configure)
 {
-  EXPECT_NO_THROW(plugin_->configure(costmap_ros_));
+  EXPECT_NO_THROW(plugin_->configure(costmap_ros_, "test_plugin", node_));
 }
 
 // Test configure with null costmap
@@ -151,27 +151,35 @@ TEST_F(CountBasedGainTest, ConfigureWithNullCostmap)
 // Test reset method
 TEST_F(CountBasedGainTest, Reset)
 {
-  plugin_->configure(costmap_ros_);
+  plugin_->configure(costmap_ros_, "test_plugin", node_);
   EXPECT_NO_THROW(plugin_->reset());
 }
 
 // Test setArrivalInformationLimits method
+// Note: setArrivalInformationLimits is now private and called automatically in configure
 TEST_F(CountBasedGainTest, SetArrivalInformationLimits)
 {
-  plugin_->configure(costmap_ros_);
+  // Configure automatically calls setArrivalInformationLimits
+  EXPECT_NO_THROW(plugin_->configure(costmap_ros_, "test_plugin", node_));
   
-  double result = plugin_->setArrivalInformationLimits();
-  EXPECT_GE(result, 0.0);
+  // We can't directly test the private method, but we can verify that
+  // the plugin configured successfully and is ready to use
+  auto frontier = std::make_shared<Frontier>();
+  geometry_msgs::msg::Point goal_point;
+  goal_point.x = 2.0;
+  goal_point.y = 2.0;
+  goal_point.z = 0.0;
+  frontier->setGoalPoint(goal_point);
+  frontier->setSize(15.0);
   
-  // Calling it again should return 0 (already set)
-  double second_result = plugin_->setArrivalInformationLimits();
-  EXPECT_EQ(second_result, 0.0);
+  std::vector<double> polygon_bounds = {-5.0, -5.0, 5.0, 5.0};
+  EXPECT_NO_THROW(plugin_->setInformationGainForFrontier(frontier, polygon_bounds));
 }
 
 // Test setInformationGainForFrontier with valid frontier
 TEST_F(CountBasedGainTest, SetInformationGainForFrontierValid)
 {
-  plugin_->configure(costmap_ros_);
+  plugin_->configure(costmap_ros_, "test_plugin", node_);
   
   // Create a test frontier in free space
   auto frontier = std::make_shared<Frontier>();
@@ -196,7 +204,7 @@ TEST_F(CountBasedGainTest, SetInformationGainForFrontierValid)
 // Test setInformationGainForFrontier with frontier outside map
 TEST_F(CountBasedGainTest, SetInformationGainForFrontierOutsideMap)
 {
-  plugin_->configure(costmap_ros_);
+  plugin_->configure(costmap_ros_, "test_plugin", node_);
   
   // Create a frontier outside the map
   auto frontier = std::make_shared<Frontier>();
@@ -218,7 +226,7 @@ TEST_F(CountBasedGainTest, SetInformationGainForFrontierOutsideMap)
 // Test setInformationGainForFrontier with frontier near obstacles
 TEST_F(CountBasedGainTest, SetInformationGainForFrontierNearObstacles)
 {
-  plugin_->configure(costmap_ros_);
+  plugin_->configure(costmap_ros_, "test_plugin", node_);
   
   // Create a frontier near obstacles but not necessarily unachievable
   auto frontier = std::make_shared<Frontier>();
@@ -241,7 +249,7 @@ TEST_F(CountBasedGainTest, SetInformationGainForFrontierNearObstacles)
 // Test with different polygon bounds
 TEST_F(CountBasedGainTest, DifferentPolygonBounds)
 {
-  plugin_->configure(costmap_ros_);
+  plugin_->configure(costmap_ros_, "test_plugin", node_);
   
   auto frontier = std::make_shared<Frontier>();
   geometry_msgs::msg::Point goal_point;
@@ -269,7 +277,7 @@ TEST_F(CountBasedGainTest, DifferentPolygonBounds)
 // Test multiple frontiers
 TEST_F(CountBasedGainTest, MultipleFrontiers)
 {
-  plugin_->configure(costmap_ros_);
+  plugin_->configure(costmap_ros_, "test_plugin", node_);
   
   std::vector<geometry_msgs::msg::Point> test_points;
   geometry_msgs::msg::Point p1, p2, p3;
@@ -297,25 +305,33 @@ TEST_F(CountBasedGainTest, MultipleFrontiers)
 // Test reset functionality
 TEST_F(CountBasedGainTest, ResetFunctionality)
 {
-  plugin_->configure(costmap_ros_);
+  plugin_->configure(costmap_ros_, "test_plugin", node_);
   
-  // Set arrival information limits
-  double result1 = plugin_->setArrivalInformationLimits();
-  EXPECT_GE(result1, 0.0);
+  // Create a frontier and calculate information gain
+  auto frontier = std::make_shared<Frontier>();
+  geometry_msgs::msg::Point goal_point;
+  goal_point.x = 2.0;
+  goal_point.y = 2.0;
+  goal_point.z = 0.0;
+  frontier->setGoalPoint(goal_point);
+  frontier->setSize(15.0);
   
-  // Reset should clear the limits
-  plugin_->reset();
+  std::vector<double> polygon_bounds = {-5.0, -5.0, 5.0, 5.0};
+  EXPECT_NO_THROW(plugin_->setInformationGainForFrontier(frontier, polygon_bounds));
   
-  // Setting limits again should work
-  double result2 = plugin_->setArrivalInformationLimits();
-  EXPECT_GE(result2, 0.0);
+  // Reset should clear internal state
+  EXPECT_NO_THROW(plugin_->reset());
+  
+  // After reset, we should be able to reconfigure and use again
+  EXPECT_NO_THROW(plugin_->configure(costmap_ros_, "test_plugin", node_));
+  EXPECT_NO_THROW(plugin_->setInformationGainForFrontier(frontier, polygon_bounds));
 }
 
 // Test with larger costmap for more realistic scenarios
 TEST_F(CountBasedGainTest, LargeCostmapTest)
 {
   createLargeCostmap();
-  plugin_->configure(costmap_ros_);
+  plugin_->configure(costmap_ros_, "test_plugin", node_);
   
   // Test frontier in known area
   auto frontier1 = std::make_shared<Frontier>();
@@ -350,7 +366,7 @@ TEST_F(CountBasedGainTest, LargeCostmapTest)
 // Test edge cases with polygon bounds
 TEST_F(CountBasedGainTest, EdgeCasePolygonBounds)
 {
-  plugin_->configure(costmap_ros_);
+  plugin_->configure(costmap_ros_, "test_plugin", node_);
   
   auto frontier = std::make_shared<Frontier>();
   geometry_msgs::msg::Point goal_point;
@@ -372,7 +388,7 @@ TEST_F(CountBasedGainTest, EdgeCasePolygonBounds)
 // Test information gain calculation consistency
 TEST_F(CountBasedGainTest, InformationGainConsistency)
 {
-  plugin_->configure(costmap_ros_);
+  plugin_->configure(costmap_ros_, "test_plugin", node_);
   
   auto frontier = std::make_shared<Frontier>();
   geometry_msgs::msg::Point goal_point;
@@ -404,7 +420,7 @@ TEST_F(CountBasedGainTest, VirtualDestructor)
 {
   // Test that the virtual destructor works correctly
   std::unique_ptr<BaseInformationGain> base_ptr = std::make_unique<CountBasedGain>();
-  base_ptr->configure(costmap_ros_);
+  base_ptr->configure(costmap_ros_, "test_plugin", node_);
   
   // Should not crash when destroyed
   base_ptr.reset();

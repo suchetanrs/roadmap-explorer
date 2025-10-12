@@ -27,29 +27,21 @@ public:
   
   void registerNodes(
     BT::BehaviorTreeFactory & factory,
-    std::shared_ptr<nav2_util::LifecycleNode> node,
-    std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros,
-    std::shared_ptr<tf2_ros::Buffer> tf_buffer) override
+    std::shared_ptr<BTContext> context) override
   {
     register_nodes_called_ = true;
     factory_ = &factory;
-    node_ = node;
-    costmap_ros_ = explore_costmap_ros;
-    tf_buffer_ = tf_buffer;
+    context_ = context;
   }
   
   bool wasRegisterNodesCalled() const { return register_nodes_called_; }
   BT::BehaviorTreeFactory* getFactory() const { return factory_; }
-  std::shared_ptr<nav2_util::LifecycleNode> getNode() const { return node_; }
-  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> getCostmapRos() const { return costmap_ros_; }
-  std::shared_ptr<tf2_ros::Buffer> getTfBuffer() const { return tf_buffer_; }
+  std::shared_ptr<BTContext> getContext() const { return context_; }
 
 private:
   bool register_nodes_called_;
   BT::BehaviorTreeFactory* factory_;
-  std::shared_ptr<nav2_util::LifecycleNode> node_;
-  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
-  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
+  std::shared_ptr<BTContext> context_;
 };
 
 class BaseBTPluginTest : public ::testing::Test
@@ -117,17 +109,21 @@ TEST_F(BaseBTPluginTest, BTPluginInterface)
   // Test that registerNodes hasn't been called yet
   EXPECT_FALSE(mock_plugin_->wasRegisterNodesCalled());
   
+  // Create BTContext
+  auto context = std::make_shared<BTContext>();
+  context->node = node_;
+  context->explore_costmap_ros = costmap_ros_;
+  context->tf_buffer = tf_buffer_;
+  
   // Call registerNodes
-  mock_plugin_->registerNodes(*factory_, node_, costmap_ros_, tf_buffer_);
+  mock_plugin_->registerNodes(*factory_, context);
   
   // Verify that registerNodes was called
   EXPECT_TRUE(mock_plugin_->wasRegisterNodesCalled());
   
   // Verify that the parameters were stored correctly
   EXPECT_EQ(mock_plugin_->getFactory(), factory_.get());
-  EXPECT_EQ(mock_plugin_->getNode(), node_);
-  EXPECT_EQ(mock_plugin_->getCostmapRos(), costmap_ros_);
-  EXPECT_EQ(mock_plugin_->getTfBuffer(), tf_buffer_);
+  EXPECT_EQ(mock_plugin_->getContext(), context);
 }
 
 // Test virtual destructor
@@ -156,7 +152,13 @@ TEST_F(BaseBTPluginTest, PolymorphicBehavior)
   // Test that registerNodes can be called through base pointer
   EXPECT_FALSE(mock_ptr->wasRegisterNodesCalled());
   
-  plugin->registerNodes(*factory_, node_, costmap_ros_, tf_buffer_);
+  // Create BTContext
+  auto context = std::make_shared<BTContext>();
+  context->node = node_;
+  context->explore_costmap_ros = costmap_ros_;
+  context->tf_buffer = tf_buffer_;
+  
+  plugin->registerNodes(*factory_, context);
   
   EXPECT_TRUE(mock_ptr->wasRegisterNodesCalled());
 }

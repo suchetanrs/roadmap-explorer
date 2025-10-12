@@ -21,11 +21,29 @@ public:
   MockInformationGain() = default;
   virtual ~MockInformationGain() = default;
 
-  void configure(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros) override
+  void configure(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros, 
+                 std::string name, 
+                 std::shared_ptr<nav2_util::LifecycleNode> node) override
   {
     configure_called_ = true;
+    explore_costmap_ros_ = explore_costmap_ros;
+    node_ = node;
     exploration_costmap_ = explore_costmap_ros->getCostmap();
-    updateParameters();
+    
+    // Declare and get parameters
+    nav2_util::declare_parameter_if_not_declared(
+      node, name + ".max_camera_depth", rclcpp::ParameterValue(2.0));
+    nav2_util::declare_parameter_if_not_declared(
+      node, name + ".delta_theta", rclcpp::ParameterValue(0.10));
+    nav2_util::declare_parameter_if_not_declared(
+      node, name + ".camera_fov", rclcpp::ParameterValue(1.04));
+    nav2_util::declare_parameter_if_not_declared(
+      node, name + ".factor_of_max_is_min", rclcpp::ParameterValue(0.70));
+    
+    MAX_CAMERA_DEPTH = node->get_parameter(name + ".max_camera_depth").as_double();
+    DELTA_THETA = node->get_parameter(name + ".delta_theta").as_double();
+    CAMERA_FOV = node->get_parameter(name + ".camera_fov").as_double();
+    factor_of_max_is_min = node->get_parameter(name + ".factor_of_max_is_min").as_double();
   }
 
   void reset() override
@@ -53,7 +71,14 @@ public:
   FrontierPtr last_frontier_;
   std::vector<double> last_polygon_;
   
-  // Expose protected members for testing
+  // Mock member variables for testing
+  nav2_costmap_2d::Costmap2D* exploration_costmap_ = nullptr;
+  double MAX_CAMERA_DEPTH = 0.0;
+  double DELTA_THETA = 0.0;
+  double CAMERA_FOV = 0.0;
+  double factor_of_max_is_min = 0.0;
+  
+  // Expose members for testing
   nav2_costmap_2d::Costmap2D* getExplorationCostmap() const { return exploration_costmap_; }
   double getMaxCameraDepth() const { return MAX_CAMERA_DEPTH; }
   double getDeltaTheta() const { return DELTA_THETA; }
@@ -147,7 +172,7 @@ TEST_F(BaseInformationGainTest, Configure)
 {
   EXPECT_FALSE(plugin_->configure_called_);
   
-  plugin_->configure(costmap_ros_);
+  plugin_->configure(costmap_ros_, "test_plugin", node_);
   
   EXPECT_TRUE(plugin_->configure_called_);
   EXPECT_NE(plugin_->getExplorationCostmap(), nullptr);
@@ -166,7 +191,7 @@ TEST_F(BaseInformationGainTest, Reset)
 // Test updateParameters method
 TEST_F(BaseInformationGainTest, UpdateParameters)
 {
-  plugin_->configure(costmap_ros_);
+  plugin_->configure(costmap_ros_, "test_plugin", node_);
   
   // Parameters should be loaded after configure
   EXPECT_GT(plugin_->getMaxCameraDepth(), 0.0);
@@ -179,7 +204,7 @@ TEST_F(BaseInformationGainTest, UpdateParameters)
 // Test setInformationGainForFrontier method
 TEST_F(BaseInformationGainTest, SetInformationGainForFrontier)
 {
-  plugin_->configure(costmap_ros_);
+  plugin_->configure(costmap_ros_, "test_plugin", node_);
   
   // Create a test frontier
   auto frontier = std::make_shared<Frontier>();
@@ -221,7 +246,7 @@ TEST_F(BaseInformationGainTest, VirtualDestructor)
 // Test parameter access after configuration
 TEST_F(BaseInformationGainTest, ParameterAccess)
 {
-  plugin_->configure(costmap_ros_);
+  plugin_->configure(costmap_ros_, "test_plugin", node_);
   
   // Test that parameters are accessible and have reasonable values
   double max_depth = plugin_->getMaxCameraDepth();
@@ -245,19 +270,19 @@ TEST_F(BaseInformationGainTest, ParameterAccess)
 // Test multiple configure calls
 TEST_F(BaseInformationGainTest, MultipleConfigure)
 {
-  plugin_->configure(costmap_ros_);
+  plugin_->configure(costmap_ros_, "test_plugin", node_);
   EXPECT_TRUE(plugin_->configure_called_);
   
   // Reset the flag and configure again
   plugin_->configure_called_ = false;
-  plugin_->configure(costmap_ros_);
+  plugin_->configure(costmap_ros_, "test_plugin", node_);
   EXPECT_TRUE(plugin_->configure_called_);
 }
 
 // Test frontier with different positions
 TEST_F(BaseInformationGainTest, FrontierDifferentPositions)
 {
-  plugin_->configure(costmap_ros_);
+  plugin_->configure(costmap_ros_, "test_plugin", node_);
   
   std::vector<geometry_msgs::msg::Point> test_points;
   geometry_msgs::msg::Point p1, p2, p3;
@@ -288,7 +313,7 @@ TEST_F(BaseInformationGainTest, FrontierDifferentPositions)
 // Test with different polygon bounds
 TEST_F(BaseInformationGainTest, DifferentPolygonBounds)
 {
-  plugin_->configure(costmap_ros_);
+  plugin_->configure(costmap_ros_, "test_plugin", node_);
   
   auto frontier = std::make_shared<Frontier>();
   geometry_msgs::msg::Point goal_point;

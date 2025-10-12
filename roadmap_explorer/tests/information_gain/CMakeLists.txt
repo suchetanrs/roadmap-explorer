@@ -36,7 +36,7 @@ target_link_libraries(test_base_information_gain
   roadmap_explorer_frontier
   roadmap_explorer_utils
   roadmap_explorer_information_gain_plugins
-  roadmap_exploration_bt
+  roadmap_explorer_bt
 )
 
 # Test for CountBasedGain
@@ -50,5 +50,5 @@ target_link_libraries(test_count_based_gain
   roadmap_explorer_frontier
   roadmap_explorer_utils
   roadmap_explorer_information_gain_plugins
-  roadmap_exploration_bt
+  roadmap_explorer_bt
 )

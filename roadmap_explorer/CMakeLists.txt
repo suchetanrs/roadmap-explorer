@@ -152,6 +152,7 @@ src/bt_plugins/BlacklistGoalPlugin.cpp
 )
 ament_target_dependencies(${PROJECT_NAME}_bt_plugins ${dependencies})
 target_link_libraries(${PROJECT_NAME}_bt_plugins 
+${PROJECT_NAME}_core
 ${PROJECT_NAME}_frontier 
 ${PROJECT_NAME}_utils
 ${PROJECT_NAME}_frontier_search_plugins 
@@ -250,10 +251,10 @@ pluginlib_export_plugin_description_file(roadmap_explorer frontier_information_g
 find_package(ament_cmake_gtest QUIET)
 if(ament_cmake_gtest_FOUND)
     add_subdirectory(tests/utils)
-    # add_subdirectory(tests/bt_plugins)
-    # add_subdirectory(tests/frontier_search)
-    # add_subdirectory(tests/information_gain)
-    # add_subdirectory(tests/other_tests)
+    add_subdirectory(tests/bt_plugins)
+    add_subdirectory(tests/frontier_search)
+    add_subdirectory(tests/information_gain)
+    add_subdirectory(tests/other_tests)
 endif()
 
 ament_package()

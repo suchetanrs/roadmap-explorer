@@ -54,6 +54,7 @@ protected:
     node_.reset();
     tf_buffer_.reset();
     costmap_ros_.reset();
+    context_.reset();
     
     // Clean up EventLogger
     try {
@@ -64,10 +65,20 @@ protected:
     
     rclcpp::shutdown();
   }
+  
+  // Helper function to create BTContext
+  std::shared_ptr<BTContext> createContext() {
+    auto context = std::make_shared<BTContext>();
+    context->node = node_;
+    context->explore_costmap_ros = costmap_ros_;
+    context->tf_buffer = tf_buffer_;
+    return context;
+  }
 
   std::shared_ptr<nav2_util::LifecycleNode> node_;
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
+  std::shared_ptr<BTContext> context_;
   std::unique_ptr<BT::BehaviorTreeFactory> factory_;
 };
 
@@ -96,7 +107,8 @@ TEST_F(BTPluginIntegrationTest, PluginlibLoading)
         EXPECT_NE(plugin, nullptr);
         
         // Test that it can register nodes
-        plugin->registerNodes(*factory_, node_, costmap_ros_, tf_buffer_);
+        context_ = createContext();
+        plugin->registerNodes(*factory_, context_);
         
         // Verify registration by trying to instantiate
         BT::NodeConfiguration config;
@@ -120,7 +132,8 @@ TEST_F(BTPluginIntegrationTest, DirectInstantiationIntegration)
   auto log_iteration_plugin = std::make_unique<LogIteration>();
   
   // Register nodes
-  log_iteration_plugin->registerNodes(*factory_, node_, costmap_ros_, tf_buffer_);
+  context_ = createContext();
+  log_iteration_plugin->registerNodes(*factory_, context_);
   
   // Verify registration by trying to instantiate
   BT::NodeConfiguration test_config;
@@ -156,12 +169,13 @@ TEST_F(BTPluginIntegrationTest, MultiplePluginIntegration)
   auto plugin2 = std::make_unique<LogIteration>();
   
   // Register nodes from both plugins (should not conflict)
-  plugin1->registerNodes(*factory_, node_, costmap_ros_, tf_buffer_);
+  context_ = createContext();
+  plugin1->registerNodes(*factory_, context_);
   
   // Second registration might throw in some BT versions if the same type is registered twice
   // This is acceptable behavior, so we test that it either succeeds or throws gracefully
   try {
-    plugin2->registerNodes(*factory_, node_, costmap_ros_, tf_buffer_);
+    plugin2->registerNodes(*factory_, context_);
     // If no exception, that's fine
   } catch (const std::exception& e) {
     // If exception is thrown, that's also acceptable for duplicate registration
@@ -185,7 +199,8 @@ TEST_F(BTPluginIntegrationTest, BehaviorTreeCreation)
 {
   // Register the plugin
   auto plugin = std::make_unique<LogIteration>();
-  plugin->registerNodes(*factory_, node_, costmap_ros_, tf_buffer_);
+  context_ = createContext();
+  plugin->registerNodes(*factory_, context_);
   
   // Create a simple behavior tree XML with LogIterationBT
   std::string bt_xml = R"(
@@ -218,7 +233,8 @@ TEST_F(BTPluginIntegrationTest, MultipleBTNodes)
 {
   // Register the plugin
   auto plugin = std::make_unique<LogIteration>();
-  plugin->registerNodes(*factory_, node_, costmap_ros_, tf_buffer_);
+  context_ = createContext();
+  plugin->registerNodes(*factory_, context_);
   
   // Create a behavior tree XML with multiple LogIterationBT nodes
   std::string bt_xml = R"(
@@ -253,7 +269,8 @@ TEST_F(BTPluginIntegrationTest, BehaviorTreeErrorHandling)
 {
   // Register the plugin
   auto plugin = std::make_unique<LogIteration>();
-  plugin->registerNodes(*factory_, node_, costmap_ros_, tf_buffer_);
+  context_ = createContext();
+  plugin->registerNodes(*factory_, context_);
   
   // Create a behavior tree XML with invalid node (should fail)
   std::string invalid_bt_xml = R"(
@@ -278,7 +295,8 @@ TEST_F(BTPluginIntegrationTest, DifferentNodeConfigurations)
 {
   // Register the plugin
   auto plugin = std::make_unique<LogIteration>();
-  plugin->registerNodes(*factory_, node_, costmap_ros_, tf_buffer_);
+  context_ = createContext();
+  plugin->registerNodes(*factory_, context_);
   
   // Test using XML-based approach with different node configurations
   std::string bt_xml = R"(
@@ -312,7 +330,8 @@ TEST_F(BTPluginIntegrationTest, PluginLifecycle)
   {
     // Create plugin in limited scope
     auto plugin = std::make_unique<LogIteration>();
-    plugin->registerNodes(*factory_, node_, costmap_ros_, tf_buffer_);
+    context_ = createContext();
+    plugin->registerNodes(*factory_, context_);
     
     // Use the plugin
     BT::NodeConfiguration config;
@@ -341,7 +360,8 @@ TEST_F(BTPluginIntegrationTest, ConcurrentFactoryAccess)
 {
   // Register the plugin
   auto plugin = std::make_unique<LogIteration>();
-  plugin->registerNodes(*factory_, node_, costmap_ros_, tf_buffer_);
+  context_ = createContext();
+  plugin->registerNodes(*factory_, context_);
   
   // Test concurrent access using XML-based approach
   std::string bt_xml = R"(

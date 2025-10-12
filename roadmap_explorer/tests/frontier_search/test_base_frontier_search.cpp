@@ -4,7 +4,9 @@
 
 #include <rclcpp/rclcpp.hpp>
 #include <nav2_costmap_2d/costmap_2d.hpp>
+#include <nav2_costmap_2d/costmap_2d_ros.hpp>
 #include <nav2_costmap_2d/cost_values.hpp>
+#include <nav2_util/lifecycle_node.hpp>
 #include <geometry_msgs/msg/point.hpp>
 
 #include "roadmap_explorer/frontier_search/BaseFrontierSearch.hpp"
@@ -18,9 +20,13 @@ class TestFrontierSearch : public FrontierSearchBase
 public:
     TestFrontierSearch() = default;
     
-    void configure(nav2_costmap_2d::Costmap2D * costmap) override
+    void configure(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros, 
+                   std::string /*name*/, 
+                   std::shared_ptr<nav2_util::LifecycleNode> node) override
     {
-        costmap_ = costmap;
+        explore_costmap_ros_ = explore_costmap_ros;
+        node_ = node;
+        costmap_ = explore_costmap_ros ? explore_costmap_ros->getCostmap() : nullptr;
     }
     
     void reset() override 
@@ -29,23 +35,14 @@ public:
         test_frontiers_.clear();
     }
     
-    bool setFrontierSearchDistance(double value) override 
-    {
-        set_distance_called_ = true;
-        set_distance_value_ = value;
-        if (value > max_distance_) {
-            return false;
-        }
-        frontier_search_distance_ = value;
-        return true;
-    }
-    
     FrontierSearchResult searchFrom(
         geometry_msgs::msg::Point position,
-        std::vector<FrontierPtr> & output_frontier_list) override 
+        std::vector<FrontierPtr> & output_frontier_list,
+        double max_frontier_search_distance) override 
     {
         search_called_ = true;
         search_position_ = position;
+        max_search_distance_used_ = max_frontier_search_distance;
         
         // Simulate different search results based on position
         if (position.x < 0 || position.y < 0) {
@@ -81,29 +78,23 @@ public:
     
     // Test helper methods
     bool wasResetCalled() const { return reset_called_; }
-    bool wasSetDistanceCalled() const { return set_distance_called_; }
     bool wasSearchCalled() const { return search_called_; }
     bool wasGetAllCalled() const { return get_all_called_; }
-    double getSetDistanceValue() const { return set_distance_value_; }
     geometry_msgs::msg::Point getSearchPosition() const { return search_position_; }
+    double getMaxSearchDistanceUsed() const { return max_search_distance_used_; }
     
-    void setMaxDistance(double max_dist) { max_distance_ = max_dist; }
-    void setInitialDistance(double init_dist) { 
-        frontier_search_distance_ = init_dist;
-    }
     void addTestFrontier(const std::vector<double>& frontier) {
         test_frontiers_.push_back(frontier);
     }
 
 private:
     bool reset_called_ = false;
-    bool set_distance_called_ = false;
     bool search_called_ = false;
     bool get_all_called_ = false;
-    double set_distance_value_ = 0.0;
-    double max_distance_ = 100.0;
+    double max_search_distance_used_ = 0.0;
     geometry_msgs::msg::Point search_position_;
     std::vector<std::vector<double>> test_frontiers_;
+    nav2_costmap_2d::Costmap2D* costmap_ = nullptr;
 };
 
 class BaseFrontierSearchTest : public ::testing::Test
@@ -116,19 +107,12 @@ protected:
             rclcpp::init(0, nullptr);
         }
         
-        // Create test costmap
-        costmap_ = std::make_unique<nav2_costmap_2d::Costmap2D>(
-            10, 10,  // width, height
-            1.0,     // resolution
-            0.0, 0.0 // origin_x, origin_y
-        );
+        // Create lifecycle node for testing
+        node_ = std::make_shared<nav2_util::LifecycleNode>("test_node");
         
-        // Initialize costmap with free space
-        for (unsigned int x = 0; x < 10; ++x) {
-            for (unsigned int y = 0; y < 10; ++y) {
-                costmap_->setCost(x, y, nav2_costmap_2d::FREE_SPACE);
-            }
-        }
+        // Create test costmap ROS wrapper
+        // Note: In a real scenario, this would be properly initialized with tf, etc.
+        // For testing purposes, we'll just create the frontier search without full costmap_ros
         
         // Create test frontier search instance
         frontier_search_ = std::make_unique<TestFrontierSearch>();
@@ -137,10 +121,10 @@ protected:
     void TearDown() override
     {
         frontier_search_.reset();
-        costmap_.reset();
+        node_.reset();
     }
 
-    std::unique_ptr<nav2_costmap_2d::Costmap2D> costmap_;
+    std::shared_ptr<nav2_util::LifecycleNode> node_;
     std::unique_ptr<TestFrontierSearch> frontier_search_;
 };
 
@@ -154,17 +138,14 @@ TEST_F(BaseFrontierSearchTest, DefaultConstructor)
 // Test configure method
 TEST_F(BaseFrontierSearchTest, Configure)
 {
-    frontier_search_->configure(costmap_.get());
-    
-    // The base class configure should set the costmap pointer
-    // We can't directly access it, but we can test that it doesn't crash
-    EXPECT_NO_THROW(frontier_search_->configure(costmap_.get()));
+    // The configure method should not crash with valid inputs
+    EXPECT_NO_THROW(frontier_search_->configure(nullptr, "test_frontier_search", node_));
 }
 
 // Test configure with nullptr
 TEST_F(BaseFrontierSearchTest, ConfigureWithNullptr)
 {
-    EXPECT_NO_THROW(frontier_search_->configure(nullptr));
+    EXPECT_NO_THROW(frontier_search_->configure(nullptr, "test", nullptr));
 }
 
 // Test reset method
@@ -175,45 +156,22 @@ TEST_F(BaseFrontierSearchTest, Reset)
     EXPECT_TRUE(frontier_search_->wasResetCalled());
 }
 
-// Test setFrontierSearchDistance method
-TEST_F(BaseFrontierSearchTest, SetFrontierSearchDistance)
+// Test searchFrom with max distance parameter
+TEST_F(BaseFrontierSearchTest, SearchFromWithMaxDistance)
 {
-    frontier_search_->setInitialDistance(10.0);
-    frontier_search_->setMaxDistance(50.0);
+    geometry_msgs::msg::Point position;
+    position.x = 5.0;
+    position.y = 5.0;
+    position.z = 0.0;
     
-    EXPECT_FALSE(frontier_search_->wasSetDistanceCalled());
+    std::vector<FrontierPtr> output_frontiers;
+    double max_distance = 25.0;
     
-    // Test successful set
-    bool result = frontier_search_->setFrontierSearchDistance(25.0);
-    EXPECT_TRUE(result);
-    EXPECT_TRUE(frontier_search_->wasSetDistanceCalled());
-    EXPECT_DOUBLE_EQ(frontier_search_->getSetDistanceValue(), 25.0);
-    EXPECT_DOUBLE_EQ(frontier_search_->getFrontierSearchDistance(), 25.0);
-}
-
-// Test setFrontierSearchDistance exceeding maximum
-TEST_F(BaseFrontierSearchTest, SetFrontierSearchDistanceExceedsMax)
-{
-    frontier_search_->setInitialDistance(10.0);
-    frontier_search_->setMaxDistance(20.0);
+    FrontierSearchResult result = frontier_search_->searchFrom(position, output_frontiers, max_distance);
     
-    // Test set that would exceed maximum
-    bool result = frontier_search_->setFrontierSearchDistance(30.0);
-    EXPECT_FALSE(result);
-    EXPECT_TRUE(frontier_search_->wasSetDistanceCalled());
-    EXPECT_DOUBLE_EQ(frontier_search_->getSetDistanceValue(), 30.0);
-    // Distance should not have changed
-    EXPECT_DOUBLE_EQ(frontier_search_->getFrontierSearchDistance(), 10.0);
-}
-
-// Test getFrontierSearchDistance method
-TEST_F(BaseFrontierSearchTest, GetFrontierSearchDistance)
-{
-    frontier_search_->setInitialDistance(25.0);
-    EXPECT_DOUBLE_EQ(frontier_search_->getFrontierSearchDistance(), 25.0);
-    
-    frontier_search_->setFrontierSearchDistance(35.0);
-    EXPECT_DOUBLE_EQ(frontier_search_->getFrontierSearchDistance(), 35.0);
+    EXPECT_TRUE(frontier_search_->wasSearchCalled());
+    EXPECT_EQ(result, FrontierSearchResult::SUCCESSFUL_SEARCH);
+    EXPECT_DOUBLE_EQ(frontier_search_->getMaxSearchDistanceUsed(), 25.0);
 }
 
 // Test searchFrom method with valid position
@@ -225,10 +183,11 @@ TEST_F(BaseFrontierSearchTest, SearchFromValidPosition)
     position.z = 0.0;
     
     std::vector<FrontierPtr> output_frontiers;
+    double max_distance = 50.0;
     
     EXPECT_FALSE(frontier_search_->wasSearchCalled());
     
-    FrontierSearchResult result = frontier_search_->searchFrom(position, output_frontiers);
+    FrontierSearchResult result = frontier_search_->searchFrom(position, output_frontiers, max_distance);
     
     EXPECT_TRUE(frontier_search_->wasSearchCalled());
     EXPECT_EQ(result, FrontierSearchResult::SUCCESSFUL_SEARCH);
@@ -261,8 +220,9 @@ TEST_F(BaseFrontierSearchTest, SearchFromOutOfBounds)
     position.z = 0.0;
     
     std::vector<FrontierPtr> output_frontiers;
+    double max_distance = 50.0;
     
-    FrontierSearchResult result = frontier_search_->searchFrom(position, output_frontiers);
+    FrontierSearchResult result = frontier_search_->searchFrom(position, output_frontiers, max_distance);
     
     EXPECT_TRUE(frontier_search_->wasSearchCalled());
     EXPECT_EQ(result, FrontierSearchResult::ROBOT_OUT_OF_BOUNDS);
@@ -278,8 +238,9 @@ TEST_F(BaseFrontierSearchTest, SearchFromCannotFindCell)
     position.z = 0.0;
     
     std::vector<FrontierPtr> output_frontiers;
+    double max_distance = 50.0;
     
-    FrontierSearchResult result = frontier_search_->searchFrom(position, output_frontiers);
+    FrontierSearchResult result = frontier_search_->searchFrom(position, output_frontiers, max_distance);
     
     EXPECT_TRUE(frontier_search_->wasSearchCalled());
     EXPECT_EQ(result, FrontierSearchResult::CANNOT_FIND_CELL_TO_SEARCH);
@@ -337,40 +298,36 @@ TEST_F(BaseFrontierSearchTest, FrontierSearchResultEnumValues)
 // Test multiple operations in sequence
 TEST_F(BaseFrontierSearchTest, MultipleOperationsSequence)
 {
-    frontier_search_->setInitialDistance(10.0);
-    frontier_search_->setMaxDistance(50.0);
-    
     // Configure
-    frontier_search_->configure(costmap_.get());
+    frontier_search_->configure(nullptr, "test_frontier_search", node_);
     
     // Reset
     frontier_search_->reset();
     EXPECT_TRUE(frontier_search_->wasResetCalled());
     
-    // Set distance
-    bool set_result = frontier_search_->setFrontierSearchDistance(25.0);
-    EXPECT_TRUE(set_result);
-    EXPECT_DOUBLE_EQ(frontier_search_->getFrontierSearchDistance(), 25.0);
-    
-    // Search for frontiers
+    // Search for frontiers with a specific max distance
     geometry_msgs::msg::Point position;
     position.x = 10.0;
     position.y = 10.0;
     position.z = 0.0;
     
     std::vector<FrontierPtr> output_frontiers;
-    FrontierSearchResult search_result = frontier_search_->searchFrom(position, output_frontiers);
+    double max_distance = 25.0;
+    FrontierSearchResult search_result = frontier_search_->searchFrom(position, output_frontiers, max_distance);
     
     EXPECT_EQ(search_result, FrontierSearchResult::SUCCESSFUL_SEARCH);
     EXPECT_EQ(output_frontiers.size(), 2);
+    EXPECT_DOUBLE_EQ(frontier_search_->getMaxSearchDistanceUsed(), 25.0);
     
     // Get all frontiers
     auto all_frontiers = frontier_search_->getAllFrontiers();
     EXPECT_TRUE(frontier_search_->wasGetAllCalled());
     
-    // Set different distance
-    frontier_search_->setFrontierSearchDistance(15.0);
-    EXPECT_DOUBLE_EQ(frontier_search_->getFrontierSearchDistance(), 15.0);
+    // Search with different distance
+    output_frontiers.clear();
+    double new_max_distance = 15.0;
+    frontier_search_->searchFrom(position, output_frontiers, new_max_distance);
+    EXPECT_DOUBLE_EQ(frontier_search_->getMaxSearchDistanceUsed(), 15.0);
 }
 
 int main(int argc, char** argv)

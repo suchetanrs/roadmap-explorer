@@ -26,10 +26,12 @@ class MockInformationGain : public BaseInformationGain
 public:
     MockInformationGain() = default;
     
-    void configure(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros) override
+    void configure(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros, std::string name, std::shared_ptr<nav2_util::LifecycleNode> node) override
     {
+        (void)name;  // Suppress unused parameter warning
         configured_ = true;
         costmap_ros_ = explore_costmap_ros;
+        node_ = node;
     }
     
     void reset() override
@@ -61,8 +63,10 @@ class MockPlanner : public BasePlanner
 public:
     MockPlanner() = default;
     
-    void configure(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros) override
+    void configure(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros, std::string name, std::shared_ptr<nav2_util::LifecycleNode> node) override
     {
+        (void)name;  // Suppress unused parameter warning
+        (void)node;  // Suppress unused parameter warning
         configured_ = true;
         costmap_ros_ = explore_costmap_ros;
     }
@@ -125,7 +129,7 @@ protected:
         }
         
         // Create CostAssigner instance
-        cost_assigner_ = std::make_unique<CostAssigner>(costmap_ros_);
+        cost_assigner_ = std::make_unique<CostAssigner>(costmap_ros_, node_);
     }
     
     void TearDown() override
@@ -535,7 +539,7 @@ TEST_F(CostAssignerTest, PopulateFrontierCostsDifferentStartPose)
 TEST_F(CostAssignerTest, Destructor)
 {
     // Create a new CostAssigner instance
-    auto temp_cost_assigner = std::make_unique<CostAssigner>(costmap_ros_);
+    auto temp_cost_assigner = std::make_unique<CostAssigner>(costmap_ros_, node_);
     
     // Destroy it
     ASSERT_NO_THROW({
