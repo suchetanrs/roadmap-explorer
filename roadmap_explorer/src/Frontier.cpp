@@ -1,3 +1,24 @@
+/**
+    Copyright 2025 Suchetan Saravanan.
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+*/
+
 // Include necessary headers
 #include <roadmap_explorer/Frontier.hpp>
 
@@ -22,19 +43,16 @@ Frontier::Frontier()
 void Frontier::setUID(size_t uid)
 {
   setValue(unique_id, uid);
-  // unique_id = std::make_shared<size_t>(uid);
 }
 
 void Frontier::setSize(int sz)
 {
   setValue(size, sz);
-  // size = std::make_shared<int>(sz);
 }
 
 void Frontier::setGoalPoint(geometry_msgs::msg::Point gp)
 {
   setValue(goal_point, gp);
-  // goal_point = std::make_shared<geometry_msgs::msg::Point>(gp);
 }
 
 void Frontier::setGoalPoint(double x, double y)
@@ -43,57 +61,47 @@ void Frontier::setGoalPoint(double x, double y)
   pnt.x = x;
   pnt.y = y;
   setValue(goal_point, pnt);
-  // goal_point = std::make_shared<geometry_msgs::msg::Point>(pnt);
 }
 
 void Frontier::setGoalOrientation(double theta)
 {
   setValue(theta_s_star, theta);
-  // theta_s_star = std::make_shared<double>(theta);
   setValue(best_orientation, nav2_util::geometry_utils::orientationAroundZAxis(theta));
-  // best_orientation = std::make_shared<geometry_msgs::msg::Quaternion>(nav2_util::geometry_utils::orientationAroundZAxis(theta));
 }
 
 void Frontier::setArrivalInformation(double info)
 {
   setValue(information, info);
-  // information = std::make_shared<double>(info);
 }
 
 void Frontier::setPathLength(double pl)
 {
   setValue(path_length, pl);
-  // path_length = std::make_shared<double>(pl);
 }
 
 void Frontier::setPathLengthInM(double pl)
 {
   setValue(path_length_m, pl);
-  // path_length_m = std::make_shared<double>(pl);
 }
 
 void Frontier::setPathHeading(double heading_rad)
 {
   setValue(path_heading, heading_rad);
-  // path_heading = std::make_shared<double>(heading_rad);
 }
 
 void Frontier::setCost(std::string costName, double value)
 {
   setMapValue(costs, costName, value);
-  // costs[costName] = value;
 }
 
 void Frontier::setWeightedCost(double cost)
 {
   setValue(weighted_cost, cost);
-  // weighted_cost = std::make_shared<double>(cost);
 }
 
 void Frontier::setAchievability(bool value)
 {
   setValue(is_achievable, value);
-  // is_achievable = value;
 }
 
 void Frontier::setBlacklisted(bool value)
@@ -104,30 +112,13 @@ void Frontier::setBlacklisted(bool value)
 // Equality operator definition
 bool Frontier::operator==(const Frontier & other) const
 {
-  // if (!unique_id)
-  //     throw RoadmapExplorerException("Cannot check equality. unique_id is null");
-  // if (!size)
-  //     throw RoadmapExplorerException("Cannot check equality. size is null");
   if (!goal_point || !other.goal_point) {
     throw RoadmapExplorerException("Cannot check equality. goal_point is null");
   }
-  // if (!best_orientation)
-  //     throw RoadmapExplorerException("Cannot check equality. best_orientation is null");
-
-  // if (*unique_id != *other.unique_id ||
-  //     *size != *other.size)
-  // {
-  //     return false;
-  // }
 
   if (*goal_point != *other.goal_point) {
     return false;
   }
-
-  // if (*best_orientation != *other.best_orientation)
-  // {
-  //     return false;
-  // }
 
   return true;
 }
@@ -135,8 +126,8 @@ bool Frontier::operator==(const Frontier & other) const
 size_t Frontier::getUID() const
 {
   if (unique_id == nullptr) {
-    LOG_CRITICAL("is null for: " << getGoalPoint().x << ", " << getGoalPoint().y);
-    throw RoadmapExplorerException("Goal uid frontier property is null");
+    LOG_CRITICAL("unique_id is null for frontier at: " << getGoalPoint().x << ", " << getGoalPoint().y);
+    throw RoadmapExplorerException("unique_id frontier property is null");
   }
   return *unique_id;
 }

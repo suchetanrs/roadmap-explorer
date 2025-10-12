@@ -1,3 +1,24 @@
+/**
+    Copyright 2025 Suchetan Saravanan.
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+*/
+
 #include <roadmap_explorer/frontier_search/PluginBFSearch.hpp>
 
 namespace roadmap_explorer
@@ -134,7 +155,7 @@ FrontierSearchResult FrontierBFSearch::searchFrom(
     }
   }
   output_frontier_list = frontier_list;
-  
+
   // Check for duplicates
   if (findDuplicates(frontier_list).size() > 0) {
     throw RoadmapExplorerException("Duplicate frontiers found.");
@@ -291,15 +312,12 @@ bool FrontierBFSearch::isNewFrontierCell(unsigned int idx, const std::vector<boo
       has_one_lethal_neighbour = true;
     }
   }
+  
+  // Reject cells adjacent to lethal obstacles, otherwise return true if adjacent to free space
   if (has_one_lethal_neighbour) {
     return false;
-  } else if (has_one_free_neighbour) {
-    return true;
-  } else {
-    return false;
   }
-
-  return false;
+  return has_one_free_neighbour;
 }
 
 std::vector<std::vector<double>> FrontierBFSearch::getAllFrontiers()
@@ -370,7 +388,7 @@ std::vector<FrontierPtr> FrontierBFSearch::findDuplicates(const std::vector<Fron
   return duplicates;
 }
 
-}
+}  // namespace roadmap_explorer
 
 #include <pluginlib/class_list_macros.hpp>
 // Register the plugin

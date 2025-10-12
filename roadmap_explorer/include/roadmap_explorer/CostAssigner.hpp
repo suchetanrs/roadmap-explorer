@@ -1,3 +1,24 @@
+/**
+    Copyright 2025 Suchetan Saravanan.
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+*/
+
 #ifndef COST_ASSIGNER_HPP_
 #define COST_ASSIGNER_HPP_
 
@@ -43,6 +64,10 @@
 namespace roadmap_explorer
 {
 
+/**
+ * @struct CalculateFrontierCostsRequest
+ * @brief Request data structure for frontier cost calculation.
+ */
 struct CalculateFrontierCostsRequest
 {
   geometry_msgs::msg::PoseStamped start_pose;
@@ -51,6 +76,25 @@ struct CalculateFrontierCostsRequest
   std::vector<FrontierPtr> prohibited_frontiers;
 };
 
+/**
+ * @class CostAssigner
+ * @brief Assigns costs to exploration frontiers using pluggable planner and information gain modules.
+ *
+ * The CostAssigner class is responsible for evaluating and assigning costs to frontiers
+ * discovered during exploration. It uses a plugin architecture to support different
+ * planning algorithms (e.g., A*, NavFn, FrontierRoadmap) and information gain metrics
+ * (e.g., count-based gain) to compute path costs and information value for each frontier.
+ *
+ * The class handles:
+ * - Plugin initialization and management for planners and information gain calculators
+ * - Frontier blacklist management for previously attempted or unreachable frontiers
+ * - Boundary polygon constraints for exploration area
+ * - Normalization of cost metrics across multiple frontiers
+ * - Thread-safe blacklist operations
+ *
+ * This component is crucial for intelligent exploration by enabling the system to
+ * prioritize frontiers based on both reachability and expected information gain.
+ */
 class CostAssigner
 {
 public:

@@ -1,7 +1,38 @@
+/**
+    Copyright 2025 Suchetan Saravanan.
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+*/
+
 #include "roadmap_explorer/information_gain/CountBasedGain.hpp"
 
 namespace roadmap_explorer
 {
+
+CountBasedGain::CountBasedGain()
+{
+  LOG_INFO("CountBasedGain::CountBasedGain");
+}
+
+CountBasedGain::~CountBasedGain()
+{
+  LOG_INFO("CountBasedGain::~CountBasedGain()");
+}
 
 void CountBasedGain::configure(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros, std::string name, std::shared_ptr<nav2_util::LifecycleNode> node)
 {
@@ -29,11 +60,11 @@ void CountBasedGain::configure(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> ex
     node->get_parameter(name + ".delta_theta").as_double();
   CAMERA_FOV =
     node->get_parameter(name + ".camera_fov").as_double();
-  factor_of_max_is_min = node->get_parameter(
+  FACTOR_OF_MAX_IS_MIN_ = node->get_parameter(
     name + ".factor_of_max_is_min").as_double();
 
   LOG_DEBUG(
-    "CountBasedGain: MAX_CAMERA_DEPTH: " << MAX_CAMERA_DEPTH << ", DELTA_THETA: " << DELTA_THETA << ", CAMERA_FOV: " << CAMERA_FOV << ", factor_of_max_is_min: " << factor_of_max_is_min);
+    "CountBasedGain: MAX_CAMERA_DEPTH: " << MAX_CAMERA_DEPTH << ", DELTA_THETA: " << DELTA_THETA << ", CAMERA_FOV: " << CAMERA_FOV << ", FACTOR_OF_MAX_IS_MIN_: " << FACTOR_OF_MAX_IS_MIN_);
 
   setArrivalInformationLimits();
 }
@@ -187,7 +218,6 @@ double CountBasedGain::setArrivalInformationLimits()
       LOG_ERROR("Max length is: " << max_length);
       throw RoadmapExplorerException(
               "Error in raytracing. Cannot set arrival information limits.");
-      return 0;
     }
 
     auto info_addition = cell_gatherer.getCells();
@@ -223,7 +253,7 @@ double CountBasedGain::setArrivalInformationLimits()
   arrival_info_limits_set_ = true;
   max_arrival_info_gt_ = maxValue * 1.2;
   LOG_WARN("Max arrival cost GT: " << max_arrival_info_gt_);
-  min_arrival_info_gt_ = factor_of_max_is_min * max_arrival_info_gt_;
+  min_arrival_info_gt_ = FACTOR_OF_MAX_IS_MIN_ * max_arrival_info_gt_;
   LOG_WARN("Min arrival cost GT: " << min_arrival_info_gt_);
   return maxValue;
 }

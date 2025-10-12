@@ -1,3 +1,24 @@
+/**
+    Copyright 2025 Suchetan Saravanan.
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+*/
+
 #ifndef FRONTIER_SEARCH_BASE_HPP_
 #define FRONTIER_SEARCH_BASE_HPP_
 
@@ -21,7 +42,7 @@ enum class FrontierSearchResult
   ROBOT_OUT_OF_BOUNDS = 0,        ///< Robot position is outside the costmap bounds
   CANNOT_FIND_CELL_TO_SEARCH = 1, ///< No valid cells found to start the search
   SUCCESSFUL_SEARCH = 2,           ///< Search completed successfully
-  NO_FRONTIERS_FOUND = 3
+  NO_FRONTIERS_FOUND = 3           ///< No frontiers detected in the search area
 };
 
 /**
@@ -46,7 +67,8 @@ public:
 
   /**
    * @brief Configure the frontier search with a costmap
-   * @param costmap Pointer to the costmap for frontier detection.
+   * @param explore_costmap_ros Shared pointer to the costmap ROS wrapper for frontier detection
+   * @param name Name prefix for parameter namespace
    * @param node Shared pointer to the lifecycle node for parameter management
    */
   virtual void configure(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> explore_costmap_ros, std::string name, std::shared_ptr<nav2_util::LifecycleNode> node) = 0;
@@ -62,6 +84,7 @@ public:
    * @brief Search for frontiers from a given position
    * @param position The starting position for the search in world coordinates
    * @param output_frontier_list Output vector to store found "clustered" frontiers (will be cleared and populated)
+   * @param max_frontier_search_distance Maximum distance to search for frontiers from the starting position
    * @return Result of the search operation indicating success or failure reason
    */
   virtual FrontierSearchResult searchFrom(
