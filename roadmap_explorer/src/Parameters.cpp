@@ -176,17 +176,7 @@ void ParameterHandler::makeParameters(std::shared_ptr<nav2_util::LifecycleNode> 
 
 void ParameterHandler::sanityCheckParameters()
 {
-  if (getValue<bool>("goalHysteresis.use_euclidean_distance") == true &&
-    getValue<bool>("goalHysteresis.use_roadmap_planner_distance") == true)
-  {
-    throw RoadmapExplorerException(
-            "Both use_euclidean_distance and use_roadmap_planner_distance are set to true. Please set only one of them to true.");
-  } else if (getValue<bool>("goalHysteresis.use_euclidean_distance") == false &&
-    getValue<bool>("goalHysteresis.use_roadmap_planner_distance") == false)
-  {
-    throw RoadmapExplorerException(
-            "Both use_euclidean_distance and use_roadmap_planner_distance are set to false. Please set only one of them to true.");
-  }
+  // currently there are no sanity checks
 }
 
 rcl_interfaces::msg::SetParametersResult ParameterHandler::dynamicReconfigureCallback(
