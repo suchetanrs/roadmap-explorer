@@ -36,6 +36,7 @@ namespace roadmap_explorer
         LOG_INFO("Using robot pose: " << robotP.pose.position.x << ", " << robotP.pose.position.y);
         std::vector<FrontierPtr> frontier_list;
         auto current_frontier_search_distance = config().blackboard->get<double>("current_frontier_search_distance");
+        LOG_HIGHLIGHT("Current frontier search distance: " << current_frontier_search_distance);
         auto searchResult = frontierSearchPtr_->searchFrom(robotP.pose.position, frontier_list, current_frontier_search_distance);
         if (searchResult != FrontierSearchResult::SUCCESSFUL_SEARCH)
         {

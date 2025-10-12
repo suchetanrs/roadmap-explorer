@@ -85,7 +85,7 @@ bool RoadmapExplorationBT::incrementFrontierSearchDistance()
   double increment_value = parameterInstance.getValue<double>("frontierSearch.increment_search_distance_by");
   LOG_WARN("Incrementing frontier search distance by " << increment_value);
   auto distance_to_set = current_frontier_search_distance + increment_value;
-  if (distance_to_set > parameterInstance.getValue<double>("frontierSearch.max_permissible_frontier_search_distance")) {
+  if (distance_to_set > parameterInstance.getValue<double>("frontierSearch.max_permissable_frontier_search_distance")) {
     return false;
   }
   blackboard->set<double>("current_frontier_search_distance", distance_to_set);

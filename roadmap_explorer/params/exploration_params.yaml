@@ -42,10 +42,6 @@ roadmap_explorer_node:
       add_yaw_to_tsp: false
       add_distance_to_robot_to_tsp: false 
 
-    goalHysteresis:
-      use_euclidean_distance: false
-      use_roadmap_planner_distance: true
-
     explorationBT:
       bt_sleep_ms: 70
       exploration_boundary: [310.0, 260.0, 310.0, -120.0, -70.0, -120.0, -70.0, 260.0]
