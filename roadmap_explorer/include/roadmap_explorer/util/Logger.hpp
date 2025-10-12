@@ -1,3 +1,24 @@
+/**
+    Copyright 2025 Suchetan Saravanan.
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+*/
+
 #ifndef LOGGER_HPP_
 #define LOGGER_HPP_
 
@@ -48,6 +69,28 @@ Attributes	        Foreground color	   Background color
                     96 = turquoise         105 = light purple
                                            106 = turquoise
 **/
+
+// ======================== Logger Configuration ========================
+// These macros control logging behavior at compile time.
+// To override, define them before including this header or via compiler flags.
+//
+// LOG_LEVEL: Controls which log messages are compiled in
+//   5 = TRACE   (most verbose - all messages)
+//   4 = DEBUG   (debugging information)
+//   3 = INFO    (general information)
+//   2 = WARN    (warnings only) [DEFAULT]
+//   1 = ERROR   (errors and critical messages only)
+//   0 = FATAL   (only fatal errors)
+//
+// TIME_LEVEL: Controls which timing logs are shown
+//   2 = Show all timing logs (EVENT, SUBMODULE, MODULE, ITERATION)
+//   1 = Show SUBMODULE, MODULE, and ITERATION timing logs
+//   0 = Show MODULE and ITERATION timing logs only [DEFAULT]
+//
+// USE_MODULE_FLOW: Enable/disable module flow tracking logs
+//   true  = Show module flow logs [DEFAULT]
+//   false = Hide module flow logs
+// ======================================================================
 
 #define LOG_LEVEL 2
 #define TIME_LEVEL 0
@@ -231,4 +274,4 @@ public:
   }
 };
 
-#endif // COLOR_H
+#endif // LOGGER_HPP_

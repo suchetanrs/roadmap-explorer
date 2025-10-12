@@ -1,3 +1,24 @@
+/**
+    Copyright 2025 Suchetan Saravanan.
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+*/
+
 #ifndef EVENT_LOGGER_HPP_
 #define EVENT_LOGGER_HPP_
 
@@ -65,7 +86,9 @@ public:
   {
     planningCount++;
     std::ofstream outFile(csvFilename, std::ios::out | std::ios::app);
-    outFile << ++serialNumber << "," << "planning_iteration" << "," << planningCount << "\n";
+    if (!outFile) {
+      outFile << ++serialNumber << "," << "planning_iteration" << "," << planningCount << "\n";
+    }
   }
 
   int getPlanningCount() const
@@ -82,12 +105,12 @@ private:
   static std::unique_ptr<EventLogger> EventLoggerPtr_;
   static std::mutex instanceMutex_;
   std::unordered_map<std::string, std::chrono::high_resolution_clock::time_point> startTimes;
-  std::string csvFilename;
-  bool logToCSV;
   int serialNumber;
   std::string baseFilename;
-  std::mutex mapMutex;
+  std::string csvFilename;
+  bool logToCSV;
   int planningCount;
+  std::mutex mapMutex;
 };
 
 #define EventLoggerInstance (EventLogger::getInstance())
@@ -108,7 +131,6 @@ public:
 
 private:
   std::string functionName;
-  std::chrono::time_point<std::chrono::high_resolution_clock> start;
 };
 
 #define PROFILE_FUNCTION Profiler profiler_instance(__func__);

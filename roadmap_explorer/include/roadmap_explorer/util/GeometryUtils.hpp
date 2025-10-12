@@ -1,3 +1,24 @@
+/**
+    Copyright 2025 Suchetan Saravanan.
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+*/
+
 #ifndef GEOMETRYUTILS_HPP_
 #define GEOMETRYUTILS_HPP_
 
@@ -17,7 +38,7 @@
 namespace roadmap_explorer
 {
 
-inline std::vector<double> quatToEuler(geometry_msgs::msg::Quaternion & quat)
+inline std::vector<double> quatToEuler(const geometry_msgs::msg::Quaternion & quat)
 {
   tf2::Quaternion tf2_quaternion(
     quat.x, quat.y, quat.z, quat.w);
@@ -46,12 +67,14 @@ inline geometry_msgs::msg::Quaternion eulerToQuat(double roll, double pitch, dou
   return quat_msg;
 }
 
-inline std::vector<double> getDifferenceInRPY(std::vector<double> rpy1, std::vector<double> rpy2)
+inline std::vector<double> getDifferenceInRPY(
+  const std::vector<double> & rpy1,
+  const std::vector<double> & rpy2)
 {
   std::vector<double> rpy = {0, 0, 0};
-  rpy[0] = abs(rpy1[0] - rpy2[0]);
-  rpy[1] = abs(rpy1[1] - rpy2[1]);
-  rpy[2] = abs(rpy1[2] - rpy2[2]);
+  rpy[0] = std::fabs(rpy1[0] - rpy2[0]);
+  rpy[1] = std::fabs(rpy1[1] - rpy2[1]);
+  rpy[2] = std::fabs(rpy1[2] - rpy2[2]);
   if (rpy[0] > M_PI) {rpy[0] = 2 * M_PI - rpy[0];}
   if (rpy[1] > M_PI) {rpy[1] = 2 * M_PI - rpy[1];}
   if (rpy[2] > M_PI) {rpy[2] = 2 * M_PI - rpy[2];}
@@ -72,7 +95,7 @@ inline geometry_msgs::msg::Quaternion yawToQuat(double yaw)
   return quat_msg;
 }
 
-inline Eigen::Affine3f getTransformFromPose(geometry_msgs::msg::Pose & pose)
+inline Eigen::Affine3f getTransformFromPose(const geometry_msgs::msg::Pose & pose)
 {
   // Extract translation and rotation from the pose message
   Eigen::Vector3f translation(pose.position.x, pose.position.y, pose.position.z);

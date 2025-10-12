@@ -4,7 +4,7 @@ std::unique_ptr<EventLogger> EventLogger::EventLoggerPtr_ = nullptr;
 std::mutex EventLogger::instanceMutex_;
 
 EventLogger::EventLogger(bool logToCSV)
-: serialNumber(0), baseFilename("event_log")
+: serialNumber(0), baseFilename("event_log"), logToCSV(logToCSV), planningCount(0)
 {
 
   if (logToCSV) {
@@ -70,8 +70,10 @@ void EventLogger::endEvent(const std::string & key, int eventLevel)
 
     // Write to CSV file
     if (logToCSV) {
-      std::ofstream outFile(csvFilename, std::ios::out | std::ios::app);
-      outFile << ++serialNumber << "," << key << "," << duration.count() << "\n";
+      std::ofstream outFile(csvFilename, std::ios::app);
+      if (outFile) {
+        outFile << ++serialNumber << "," << key << "," << duration.count() << "\n";
+      }
     }
 
     startTimes.erase(key);
