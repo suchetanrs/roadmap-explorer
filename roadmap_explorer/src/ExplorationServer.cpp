@@ -75,7 +75,7 @@ nav2_util::CallbackReturn ExplorationServer::on_activate(const rclcpp_lifecycle:
 #ifdef ROS_DISTRO_HUMBLE
     rmw_qos_profile_services_default,
 #elif ROS_DISTRO_JAZZY || ROS_DISTRO_KILTED
-    rclcpp::QoS(rclcpp::ServicesQoSProfile()),
+    rclcpp::ServicesQoS(),
 #else
     #error "Unsupported ROS distro"
 #endif
