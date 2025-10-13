@@ -103,6 +103,10 @@ void ParameterHandler::makeParameters(std::shared_ptr<nav2_util::LifecycleNode> 
     node,
     "fullPathOptimizer.add_distance_to_robot_to_tsp", rclcpp::ParameterValue(
       false));
+  nav2_util::declare_parameter_if_not_declared(
+    node,
+    "fullPathOptimizer.goal_hysteresis_threshold", rclcpp::ParameterValue(
+      0.15));
 
   parameter_map_["fullPathOptimizer.num_frontiers_in_local_area"] = node->get_parameter(
     "fullPathOptimizer.num_frontiers_in_local_area").as_double();
@@ -112,6 +116,8 @@ void ParameterHandler::makeParameters(std::shared_ptr<nav2_util::LifecycleNode> 
     "fullPathOptimizer.add_yaw_to_tsp").as_bool();
   parameter_map_["fullPathOptimizer.add_distance_to_robot_to_tsp"] = node->get_parameter(
     "fullPathOptimizer.add_distance_to_robot_to_tsp").as_bool();
+  parameter_map_["fullPathOptimizer.goal_hysteresis_threshold"] = node->get_parameter(
+    "fullPathOptimizer.goal_hysteresis_threshold").as_double();
 
   // --- explorationBT ---
   nav2_util::declare_parameter_if_not_declared(

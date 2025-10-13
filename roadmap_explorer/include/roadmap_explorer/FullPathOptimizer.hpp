@@ -187,6 +187,14 @@ private:
   bool add_yaw_to_tsp = false;
   bool add_distance_to_robot_to_tsp = false;
 
+  // Goal hysteresis variables to prevent frequent goal switching
+  FrontierPtr current_committed_goal_;  // The goal we're currently committed to
+  double current_goal_path_cost_;       // Path cost to the current goal
+  bool has_committed_goal_ = false;     // Whether we have a committed goal
+  
+  // Hysteresis parameters
+  double goal_hysteresis_threshold_ = 0.15;  // New goal must be 15% better to switch
+  
   // Constants for path optimization
   static constexpr double PATH_NOT_FOUND_PENALTY_MULTIPLIER = 100000.0;
   static constexpr double YAW_COST_WEIGHT = 2.3;

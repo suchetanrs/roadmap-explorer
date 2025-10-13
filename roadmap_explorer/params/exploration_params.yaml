@@ -40,7 +40,8 @@ roadmap_explorer_node:
       num_frontiers_in_local_area: 5.0
       local_frontier_search_radius: 12.0
       add_yaw_to_tsp: false
-      add_distance_to_robot_to_tsp: false 
+      add_distance_to_robot_to_tsp: false
+      goal_hysteresis_threshold: 0.15  # New goal must be 15% better to switch (0.0 = always switch, 1.0 = never switch) 
 
     explorationBT:
       bt_sleep_ms: 70
