@@ -72,7 +72,13 @@ nav2_util::CallbackReturn ExplorationServer::on_activate(const rclcpp_lifecycle:
     "save_map_and_roadmap",
     std::bind(&ExplorationServer::handle_save_map_and_roadmap, this, 
               std::placeholders::_1, std::placeholders::_2),
+#ifdef ROS_DISTRO_HUMBLE
     rmw_qos_profile_services_default,
+#elif ROS_DISTRO_JAZZY || ROS_DISTRO_KILTED
+    rclcpp::QoS(rclcpp::ServicesQoSProfile()),
+#else
+    #error "Unsupported ROS distro"
+#endif
     service_cb_group_);
   
   LOG_INFO("Created save_map_and_roadmap service");

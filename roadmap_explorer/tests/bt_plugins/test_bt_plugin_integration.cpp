@@ -155,7 +155,13 @@ TEST_F(BTPluginIntegrationTest, DirectInstantiationIntegration)
   
   // Test execution
   size_t initial_count = EventLoggerInstance.getPlanningCount();
+#ifdef ROS_DISTRO_HUMBLE
   BT::NodeStatus status = tree.tickRoot();
+#elif ROS_DISTRO_JAZZY || ROS_DISTRO_KILTED
+  BT::NodeStatus status = tree.tickOnce();
+#else
+  #error "Unsupported ROS distro"
+#endif
   
   EXPECT_EQ(status, BT::NodeStatus::SUCCESS);
   EXPECT_EQ(EventLoggerInstance.getPlanningCount(), initial_count + 1);
@@ -222,7 +228,13 @@ TEST_F(BTPluginIntegrationTest, BehaviorTreeCreation)
   
   // Test tree execution
   size_t initial_count = EventLoggerInstance.getPlanningCount();
+#ifdef ROS_DISTRO_HUMBLE
   BT::NodeStatus status = tree.tickRoot();
+#elif ROS_DISTRO_JAZZY || ROS_DISTRO_KILTED
+  BT::NodeStatus status = tree.tickOnce();
+#else
+  #error "Unsupported ROS distro"
+#endif
   
   EXPECT_EQ(status, BT::NodeStatus::SUCCESS);
   EXPECT_EQ(EventLoggerInstance.getPlanningCount(), initial_count + 1);
@@ -258,7 +270,13 @@ TEST_F(BTPluginIntegrationTest, MultipleBTNodes)
   
   // Test tree execution - should increment counter 3 times
   size_t initial_count = EventLoggerInstance.getPlanningCount();
+#ifdef ROS_DISTRO_HUMBLE
   BT::NodeStatus status = tree.tickRoot();
+#elif ROS_DISTRO_JAZZY || ROS_DISTRO_KILTED
+  BT::NodeStatus status = tree.tickOnce();
+#else
+  #error "Unsupported ROS distro"
+#endif
   
   EXPECT_EQ(status, BT::NodeStatus::SUCCESS);
   EXPECT_EQ(EventLoggerInstance.getPlanningCount(), initial_count + 3);
@@ -316,7 +334,13 @@ TEST_F(BTPluginIntegrationTest, DifferentNodeConfigurations)
   
   // Test execution
   size_t initial_count = EventLoggerInstance.getPlanningCount();
+#ifdef ROS_DISTRO_HUMBLE
   BT::NodeStatus status = tree.tickRoot();
+#elif ROS_DISTRO_JAZZY || ROS_DISTRO_KILTED
+  BT::NodeStatus status = tree.tickOnce();
+#else
+  #error "Unsupported ROS distro"
+#endif
   
   EXPECT_EQ(status, BT::NodeStatus::SUCCESS);
   EXPECT_EQ(EventLoggerInstance.getPlanningCount(), initial_count + 2);
@@ -387,7 +411,13 @@ TEST_F(BTPluginIntegrationTest, ConcurrentFactoryAccess)
   const int num_executions = 5;
   
   for (int i = 0; i < num_executions; ++i) {
+#ifdef ROS_DISTRO_HUMBLE
     BT::NodeStatus status = tree.tickRoot();
+#elif ROS_DISTRO_JAZZY || ROS_DISTRO_KILTED
+    BT::NodeStatus status = tree.tickOnce();
+#else
+    #error "Unsupported ROS distro"
+#endif
     EXPECT_EQ(status, BT::NodeStatus::SUCCESS);
   }
   

@@ -233,7 +233,13 @@ TEST_F(LogIterationPluginTest, DifferentNodeNames)
   
   // Test tree execution
   size_t initial_count = EventLoggerInstance.getPlanningCount();
+#ifdef ROS_DISTRO_HUMBLE
   BT::NodeStatus status = tree.tickRoot();
+#elif ROS_DISTRO_JAZZY || ROS_DISTRO_KILTED
+  BT::NodeStatus status = tree.tickOnce();
+#else
+  #error "Unsupported ROS distro"
+#endif
   
   EXPECT_EQ(status, BT::NodeStatus::SUCCESS);
   // Should have executed both nodes, so count should increase by 2
@@ -339,7 +345,13 @@ TEST_F(LogIterationPluginTest, BasicThreadSafety)
   size_t initial_count = EventLoggerInstance.getPlanningCount();
   
   // Execute the tree (which runs both nodes in parallel)
+#ifdef ROS_DISTRO_HUMBLE
   BT::NodeStatus status = tree.tickRoot();
+#elif ROS_DISTRO_JAZZY || ROS_DISTRO_KILTED
+  BT::NodeStatus status = tree.tickOnce();
+#else
+  #error "Unsupported ROS distro"
+#endif
   
   EXPECT_EQ(status, BT::NodeStatus::SUCCESS);
   
