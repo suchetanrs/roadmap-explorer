@@ -31,6 +31,10 @@
 #include <iomanip>
 #include <mutex>
 #include <queue>
+#include <fstream>
+#include <filesystem>
+
+#include <nlohmann/json.hpp>
 
 #include <rclcpp/rclcpp.hpp>
 
@@ -119,6 +123,10 @@ public:
   void publishPlan(
     const std::vector<std::shared_ptr<Node>> & plan, float r, float g,
     float b) const;
+
+  void saveRoadmapData(const std::string & base_path, const std::string & session_name);
+
+  void loadRoadmapData(const std::string & base_path, const std::string & session_name);
 
 private:
   void mapDataCallback(const roadmap_explorer_msgs::msg::MapData & mapData);

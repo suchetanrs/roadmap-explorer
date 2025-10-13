@@ -19,6 +19,9 @@
     under the License.
 */
 
+#ifndef ROADMAP_EXPLORER__BT_PLUGINS__BT_CONTEXT_HPP_
+#define ROADMAP_EXPLORER__BT_PLUGINS__BT_CONTEXT_HPP_
+
 #include <memory>
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
@@ -93,3 +96,4 @@ struct BTContext
 
 }  // namespace roadmap_explorer
 
+#endif  // ROADMAP_EXPLORER__BT_PLUGINS__BT_CONTEXT_HPP_

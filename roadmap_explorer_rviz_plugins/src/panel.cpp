@@ -16,7 +16,7 @@ ExplorationPanel::ExplorationPanel(QWidget * parent)
   stop_button_(new QPushButton("Stop exploration", this)),
   node_(std::make_shared<rclcpp::Node>("roadmap_explorer_rviz_panel")),
   action_client_(rclcpp_action::create_client<Explore>(node_, "roadmap_explorer")),
-  save_map_client_(node_->create_client<roadmap_explorer_msgs::srv::SaveMapAndRoadmap>("save_map"))
+  save_map_client_(node_->create_client<roadmap_explorer_msgs::srv::SaveMapAndRoadmap>("save_map_and_roadmap"))
 {
   // Basic UI
   auto * layout = new QVBoxLayout;
@@ -136,12 +136,12 @@ void ExplorationPanel::spinnerOnGUI()
     goal_handle_.reset();
     panel_active_ = false;
   }
-  // else if (!save_map_client_->wait_for_service(0ms)) {
-  //   updateButtons(ButtonSetting::IN_PROCESS);
-  //   setLog("Save roadmap service unavailable", true);
-  //   goal_handle_.reset();
-  //   panel_active_ = false;
-  // }
+  if (!save_map_client_->wait_for_service(0ms)) {
+    updateButtons(ButtonSetting::IN_PROCESS);
+    setLog("Save roadmap service unavailable", true);
+    goal_handle_.reset();
+    panel_active_ = false;
+  }
   /**
    *  this is set to GOAL_INACTIVE only if panel is not active because if it's active
    * then the button states are handled based on action request / results.
@@ -182,10 +182,13 @@ void ExplorationPanel::sendGoal()
   Explore::Goal goal_msg;
   goal_msg.exploration_bringup_mode = this->currentMode();
   if (this->currentMode() == Explore::Goal::CONTINUE_FROM_SAVED_SESSION) {
+    std_msgs::msg::String base_path;
+    base_path.data = load_base_path_edit_->text().toStdString();
+    goal_msg.load_from_folder = base_path;
+
     std_msgs::msg::String session_name;
-    session_name.data = load_base_path_edit_->text().toStdString() +
-      session_name_edit_->text().toStdString();
-    goal_msg.load_from_folder = session_name;
+    session_name.data = session_name_edit_->text().toStdString();
+    goal_msg.session_name = session_name;
   }
 
   auto goal_options = rclcpp_action::Client<Explore>::SendGoalOptions();

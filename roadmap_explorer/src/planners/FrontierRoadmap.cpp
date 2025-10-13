@@ -21,6 +21,7 @@
 
 #include "roadmap_explorer/planners/FrontierRoadmap.hpp"
 #include "roadmap_explorer/util/GeometryUtils.hpp"
+#include <ctime>
 
 std::unique_ptr<roadmap_explorer::FrontierRoadMap> roadmap_explorer::FrontierRoadMap::
 frontierRoadmapPtr = nullptr;
@@ -869,5 +870,183 @@ void FrontierRoadMap::publishPlan(
 
   // Publish the markers
   marker_pub_plan_->publish(marker_array);
+}
+
+void FrontierRoadMap::saveRoadmapData(
+  const std::string & base_path,
+  const std::string & session_name)
+{
+  using json = nlohmann::json;
+  
+  LOG_INFO("Saving spatial hash map data to: " << base_path << "/" << session_name);
+
+  // Create directory if it doesn't exist
+  std::filesystem::path dir_path(base_path + "/" + session_name);
+  if (!std::filesystem::exists(dir_path)) {
+    std::filesystem::create_directories(dir_path);
+  }
+
+  // Create filename with session name
+  std::string filename = base_path + "/" + session_name + "/spatial_hashmap.json";
+
+  // Lock mutex to ensure data consistency while saving
+  std::lock_guard<std::mutex> spatial_lock(spatial_hash_map_mutex_);
+
+  json j;
+  
+  // Save spatial_hash_map_
+  for (const auto & [grid_cell, frontiers] : spatial_hash_map_) {
+    json cell_data;
+    cell_data["grid_x"] = grid_cell.first;
+    cell_data["grid_y"] = grid_cell.second;
+    cell_data["frontiers"] = json::array();
+    
+    for (const auto & frontier : frontiers) {
+      auto goal_point = frontier->getGoalPoint();
+      cell_data["frontiers"].push_back({
+        {"uid", frontier->getUID()},
+        {"x", goal_point.x},
+        {"y", goal_point.y},
+        {"z", goal_point.z}
+      });
+    }
+    
+    j["spatial_hash_map"].push_back(cell_data);
+  }
+  
+  // Calculate total frontiers for metadata
+  size_t total_frontiers = 0;
+  for (const auto & [_, frontiers] : spatial_hash_map_) {
+    total_frontiers += frontiers.size();
+  }
+  
+  // Save metadata
+  j["metadata"] = {
+    {"session_name", session_name},
+    {"timestamp", std::time(nullptr)},
+    {"total_spatial_cells", spatial_hash_map_.size()},
+    {"total_frontiers", total_frontiers},
+    {"grid_cell_size", GRID_CELL_SIZE}
+  };
+
+  // Write to file with pretty printing
+  std::ofstream output_file(filename);
+  if (!output_file.is_open()) {
+    LOG_ERROR("Failed to open file for writing: " << filename);
+    return;
+  }
+  
+  output_file << j.dump(2);  // 2-space indentation
+  output_file.close();
+
+  // Print metadata
+  LOG_INFO("*********************************************************");
+  LOG_INFO("Session name: " << session_name);
+  LOG_INFO("Timestamp: " << std::time(nullptr));
+  LOG_INFO("Total spatial cells: " << spatial_hash_map_.size());
+  LOG_INFO("Total frontiers: " << total_frontiers);
+  LOG_INFO("Grid cell size: " << GRID_CELL_SIZE);
+  LOG_INFO("*********************************************************");
+  LOG_INFO("Spatial hash map data saved successfully to: " << filename);
+}
+
+void FrontierRoadMap::loadRoadmapData(
+  const std::string & base_path,
+  const std::string & session_name)
+{
+  using json = nlohmann::json;
+  
+  LOG_INFO("Loading spatial hash map data from: " << base_path << "/" << session_name);
+
+  std::string filename = base_path + "/" + session_name + "/spatial_hashmap.json";
+  std::ifstream input_file(filename);
+
+  if (!input_file.is_open()) {
+    LOG_ERROR("Failed to open file for reading: " << filename);
+    return;
+  }
+
+  // Parse JSON
+  json j;
+  try {
+    input_file >> j;
+  } catch (const json::parse_error & e) {
+    LOG_ERROR("JSON parse error: " << e.what());
+    input_file.close();
+    return;
+  }
+  input_file.close();
+
+  // Clear existing spatial hash map
+  {
+    std::lock_guard<std::mutex> spatial_lock(spatial_hash_map_mutex_);
+    LOG_INFO("Clearing existing spatial hash map data...");
+    spatial_hash_map_.clear();
+  }
+
+  // Map to store frontiers by UID for reconstruction
+  std::unordered_map<size_t, FrontierPtr> uid_to_frontier_map;
+
+  LOG_INFO("Parsing spatial_hash_map...");
+  
+  // Parse spatial_hash_map
+  {
+    std::lock_guard<std::mutex> spatial_lock(spatial_hash_map_mutex_);
+
+    if (j.contains("spatial_hash_map") && j["spatial_hash_map"].is_array()) {
+      for (const auto & cell_data : j["spatial_hash_map"]) {
+        int grid_x = cell_data["grid_x"];
+        int grid_y = cell_data["grid_y"];
+        
+        std::vector<FrontierPtr> frontiers;
+        
+        if (cell_data.contains("frontiers") && cell_data["frontiers"].is_array()) {
+          for (const auto & frontier_data : cell_data["frontiers"]) {
+            size_t uid = frontier_data["uid"];
+            double x = frontier_data["x"];
+            double y = frontier_data["y"];
+            // z is stored but not used for 2D operations
+            
+            // Check if we already created this frontier
+            FrontierPtr frontier;
+            if (uid_to_frontier_map.count(uid) > 0) {
+              frontier = uid_to_frontier_map[uid];
+            } else {
+              frontier = std::make_shared<Frontier>();
+              frontier->setGoalPoint(x, y);
+              frontier->setUID(uid);
+              uid_to_frontier_map[uid] = frontier;
+            }
+            
+            frontiers.push_back(frontier);
+          }
+        }
+        
+        spatial_hash_map_[std::make_pair(grid_x, grid_y)] = frontiers;
+      }
+    }
+  }
+  
+  LOG_INFO("Loaded " << spatial_hash_map_.size() << " spatial hash map cells");
+
+  // print full loaded meta data
+  LOG_INFO("*********************************************************");
+  LOG_INFO("Loaded metadata:");
+  LOG_INFO("Session name: " << session_name);
+  LOG_INFO("Timestamp: " << j["metadata"]["timestamp"]);
+  LOG_INFO("Total spatial cells: " << j["metadata"]["total_spatial_cells"]);
+  LOG_INFO("Total frontiers: " << j["metadata"]["total_frontiers"]);
+  LOG_INFO("Grid cell size: " << j["metadata"]["grid_cell_size"]);
+  LOG_INFO("*********************************************************");
+
+  size_t total_frontiers = 0;
+  for (const auto & [_, frontiers] : spatial_hash_map_) {
+    total_frontiers += frontiers.size();
+  }
+  
+  LOG_INFO(
+    "Spatial hash map data loaded successfully. Total unique frontiers: " <<
+    uid_to_frontier_map.size());
+  LOG_INFO("Total frontiers in cells: " << total_frontiers);
 }
 } // namespace roadmap_explorer

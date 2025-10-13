@@ -88,8 +88,26 @@ void SensorSimulator::cleanupMap()
 bool SensorSimulator::saveMap(std::string instance_name, std::string base_path)
 {
   std::lock_guard<std::recursive_mutex> lock(map_mutex_);
+
+  // Create directory if it doesn't exist
+  namespace fs = std::filesystem;
+  std::string dir = base_path + "/" + instance_name;
+  std::error_code ec;
+  if (!fs::exists(dir, ec)) {
+    fs::create_directories(dir, ec);  // mkdir -p
+    if (ec) {
+      LOG_ERROR("Failed to create directory: " << dir << ": " << ec.message().c_str());
+      return false;
+    }
+  }
+
   nav2_map_server::SaveParameters save_params;
-  save_params.map_file_name = base_path + "/" + instance_name + "/" + instance_name;
+  save_params.map_file_name = dir + "/" + instance_name;
+  save_params.image_format = "pgm";
+  save_params.mode = nav2_map_server::MapMode::Raw;
+  save_params.free_thresh = 0.25;
+  save_params.occupied_thresh = 0.65;
+
   if (nav2_map_server::saveMapToFile(*explored_map_, save_params)) {
     LOG_INFO("Map saved successfully");
     return true;
@@ -102,8 +120,18 @@ bool SensorSimulator::saveMap(std::string instance_name, std::string base_path)
 bool SensorSimulator::loadMap(std::string instance_name, std::string base_path)
 {
   std::lock_guard<std::recursive_mutex> lock(map_mutex_);
+  // First ever map - initialize explored map
+  if (!explored_map_) {
+    explored_map_ = std::make_shared<nav_msgs::msg::OccupancyGrid>();
+  }
+
   if(nav2_map_server::loadMapFromYaml(base_path + "/" + instance_name + "/" + instance_name + ".yaml", *explored_map_) == nav2_map_server::LOAD_MAP_STATUS::LOAD_MAP_SUCCESS)
   {
+    explored_map_->header.stamp = node_->now();
+    explored_map_->header.frame_id = explore_costmap_ros_->getGlobalFrameID();
+    auto explored_map_msg = std::make_unique<nav_msgs::msg::OccupancyGrid>(*explored_map_);
+    LOG_DEBUG("Publishing explored map after loading with address" << explored_map_msg.get());
+    explored_pub_->publish(std::move(explored_map_msg));
     return true;
   }
   return false;

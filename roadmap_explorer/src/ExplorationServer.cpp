@@ -1,3 +1,24 @@
+/**
+    Copyright 2025 Suchetan Saravanan.
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+*/
+
 #include "roadmap_explorer/ExplorationServer.hpp"
 
 using namespace std::chrono_literals;
@@ -10,6 +31,11 @@ ExplorationServer::ExplorationServer(const rclcpp::NodeOptions & options)
 {
   LOG_INFO("Created " << get_name());
   server_active_ = false;
+}
+
+ExplorationServer::~ExplorationServer()
+{
+  LOG_WARN("Destroyed!! " << get_name());
 }
 
 nav2_util::CallbackReturn ExplorationServer::on_configure(const rclcpp_lifecycle::State &)
@@ -27,6 +53,7 @@ nav2_util::CallbackReturn ExplorationServer::on_activate(const rclcpp_lifecycle:
   LOG_INFO("Activating " << get_name());
   server_active_ = true;
   action_server_cb_group_ = create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+  service_cb_group_ = create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
 
   action_server_ = rclcpp_action::create_server<ExploreAction>(
     get_node_base_interface(),
@@ -40,6 +67,15 @@ nav2_util::CallbackReturn ExplorationServer::on_activate(const rclcpp_lifecycle:
     rcl_action_server_get_default_options(),
     action_server_cb_group_);
   
+  save_map_service_ = create_service<roadmap_explorer_msgs::srv::SaveMapAndRoadmap>(
+    "save_map_and_roadmap",
+    std::bind(&ExplorationServer::handle_save_map_and_roadmap, this, 
+              std::placeholders::_1, std::placeholders::_2),
+    rmw_qos_profile_services_default,
+    service_cb_group_);
+  
+  LOG_INFO("Created save_map_and_roadmap service");
+  
   // Create bond connection
   createBond();
 
@@ -48,14 +84,22 @@ nav2_util::CallbackReturn ExplorationServer::on_activate(const rclcpp_lifecycle:
 
 nav2_util::CallbackReturn ExplorationServer::on_deactivate(const rclcpp_lifecycle::State &)
 {
-  LOG_INFO("Deactivating " << get_name());
+  LOG_WARN("Deactivating " << get_name());
   server_active_ = false;
   action_server_.reset();
-  if (exploration_bt_) {
-    exploration_bt_->halt();
+  save_map_service_.reset();
+  LOG_WARN("Stopping BT!! " << get_name());
+  {
+    std::lock_guard<std::mutex> lock(exploration_bt_mutex_);
+    if (exploration_bt_) {
+      exploration_bt_->halt();
+    }
+    LOG_WARN("Halted BT!! " << get_name());
+    exploration_bt_.reset();
   }
-  exploration_bt_.reset();
+  LOG_WARN("Destroying bond!! " << get_name());
   destroyBond();
+  LOG_WARN("Deactivated!! " << get_name());
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -88,6 +132,7 @@ rclcpp_action::CancelResponse ExplorationServer::handle_cancel(
 {
   (void)goal_handle;
   LOG_INFO("Cancel requested");
+  std::lock_guard<std::mutex> lock(exploration_bt_mutex_);
   if (!exploration_bt_)
   {
     LOG_WARN("Rejecting cancel request because an instance of exploration is yet to be created.");
@@ -106,10 +151,8 @@ void ExplorationServer::handle_accepted(
 }
 
 void ExplorationServer::publish_feedback(
-  const std::shared_ptr<GoalHandleExplore> & goal_handle,
-  const std::string & message)
+  const std::shared_ptr<GoalHandleExplore> & goal_handle)
 {
-  (void)message;
   auto feedback = std::make_shared<ExploreAction::Feedback>();
   goal_handle->publish_feedback(feedback);
 }
@@ -129,35 +172,49 @@ void ExplorationServer::execute(const std::shared_ptr<GoalHandleExplore> goal_ha
 
     switch (goal_handle->get_goal()->exploration_bringup_mode) {
       case ExploreAction::Goal::NEW_EXPLORATION_SESSION:
-        exploration_bt_.reset();
-        if(!make_exploration_bt(localisation_only_mode_))
         {
-          result->success = false;
-          terminateGoal(ActionTerminalState::ABORT, goal_handle, result);
-          return;
+          std::lock_guard<std::mutex> lock(exploration_bt_mutex_);
+          exploration_bt_.reset();
+          if(!make_exploration_bt(localisation_only_mode_))
+          {
+            result->success = false;
+            terminateGoal(ActionTerminalState::ABORT, goal_handle, result);
+            return;
+          }
         }
         break;
       case ExploreAction::Goal::CONTINUE_FROM_TERMINATED_SESSION:
         LOG_INFO("Continue from terminated session. Nothing to reset.");
-        if(exploration_bt_ == nullptr)
         {
-          LOG_ERROR("Exploration BT not initialized yet to continue from a session. Please start a new session first");
-          throw RoadmapExplorerException("Exploration BT not initialized yet to continue from a session. Please start a new session first");
+          std::lock_guard<std::mutex> lock(exploration_bt_mutex_);
+          if(exploration_bt_ == nullptr)
+          {
+            LOG_ERROR("Exploration BT not initialized yet to continue from a session. Please start a new session first");
+            throw RoadmapExplorerException("Exploration BT not initialized yet to continue from a session. Please start a new session first");
+          }
         }
         break;
       case ExploreAction::Goal::CONTINUE_FROM_SAVED_SESSION:
-        if(!localisation_only_mode_)
+        // LOG_ERROR("Continue from saved session is not implemented yet.");
+        // throw RoadmapExplorerException("Continue from saved session is not implemented yet.");
+        if(localisation_only_mode_)
+        {
+          std::lock_guard<std::mutex> lock(exploration_bt_mutex_);
+          exploration_bt_.reset();
+          if(!make_exploration_bt(localisation_only_mode_))
+          {
+            result->success = false;
+            terminateGoal(ActionTerminalState::ABORT, goal_handle, result);
+            return;
+          }
+          exploration_bt_->loadExplorationMetaData(goal_handle->get_goal()->session_name.data, goal_handle->get_goal()->load_from_folder.data);
+        }
+        else
         {
           LOG_ERROR("You cannot continue from saved session when in mapping mode.");
           throw RoadmapExplorerException("You cannot continue from saved session when in mapping mode.");
         }
-        else
-        {
-          // To be implemented
-          LOG_ERROR("Continue from saved session is not implemented yet.");
-          throw RoadmapExplorerException("Continue from saved session is not implemented yet.");
-          return;
-        }
+        break;
       default:
         throw RoadmapExplorerException("Unknown exploration_bringup_mode value");
     }
@@ -208,9 +265,12 @@ void ExplorationServer::terminateGoal(
     const std::shared_ptr<GoalHandleExplore> goal_handle,
     std::shared_ptr<ExploreAction::Result> result)
 {
-  if(exploration_bt_)
   {
-    exploration_bt_->halt();
+    std::lock_guard<std::mutex> lock(exploration_bt_mutex_);
+    if(exploration_bt_)
+    {
+      exploration_bt_->halt();
+    }
   }
 
   switch (terminal_state) {
@@ -223,6 +283,42 @@ void ExplorationServer::terminateGoal(
     case ActionTerminalState::CANCEL:
       goal_handle->canceled(result);
       break;
+  }
+}
+
+void ExplorationServer::handle_save_map_and_roadmap(
+  const std::shared_ptr<roadmap_explorer_msgs::srv::SaveMapAndRoadmap::Request> request,
+  std::shared_ptr<roadmap_explorer_msgs::srv::SaveMapAndRoadmap::Response> response)
+{
+  LOG_INFO("Received save_map_and_roadmap service request");
+  LOG_INFO("Base path: " << request->base_path);
+  LOG_INFO("Session name: " << request->session_name);
+
+  std::lock_guard<std::mutex> lock(exploration_bt_mutex_);
+  
+  if (!exploration_bt_) {
+    LOG_ERROR("Cannot save exploration data: exploration_bt is not initialized");
+    response->success = false;
+    response->status_message = "Exploration BT not initialized";
+    return;
+  }
+
+  try {
+    bool result = exploration_bt_->saveExplorationMetaData(request->session_name, request->base_path);
+    
+    if (result) {
+      LOG_INFO("Successfully saved exploration metadata");
+      response->success = true;
+      response->status_message = "Exploration metadata saved successfully";
+    } else {
+      LOG_ERROR("Failed to save exploration metadata");
+      response->success = false;
+      response->status_message = "Failed to save exploration metadata";
+    }
+  } catch (const std::exception& e) {
+    LOG_ERROR("Exception while saving exploration metadata: " << e.what());
+    response->success = false;
+    response->status_message = std::string("Exception: ") + e.what();
   }
 }
 

@@ -92,7 +92,7 @@ Attributes	        Foreground color	   Background color
 //   false = Hide module flow logs
 // ======================================================================
 
-#define LOG_LEVEL 2
+#define LOG_LEVEL 3
 #define TIME_LEVEL 0
 #define USE_MODULE_FLOW true
 

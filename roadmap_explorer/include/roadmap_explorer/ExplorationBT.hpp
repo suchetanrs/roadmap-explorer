@@ -63,6 +63,10 @@ public:
 
   bool resetFrontierSearchDistance();
 
+  bool saveExplorationMetaData(const std::string& session_name, const std::string& base_path);
+
+  bool loadExplorationMetaData(const std::string& session_name, const std::string& base_path);
+
 private:
   std::shared_ptr<nav2_util::LifecycleNode> bt_node_;
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
