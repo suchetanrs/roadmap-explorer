@@ -127,8 +127,46 @@ ExplorationPanel::ExplorationPanel(QWidget * parent)
   ros_timer_->start();
 }
 
+ExplorationPanel::~ExplorationPanel()
+{
+  // Stop the timer first to prevent any further ROS calls
+  if (ros_timer_) {
+    ros_timer_->stop();
+  }
+
+  // Cancel any active goals before shutting down
+  if (goal_handle_) {
+    try {
+      // Don't wait for response during shutdown
+      action_client_->async_cancel_goal(goal_handle_);
+    } catch (const std::exception & e) {
+      // Ignore exceptions during shutdown
+    }
+    goal_handle_.reset();
+  }
+
+  // Clean up ROS clients before the node
+  if (action_client_) {
+    action_client_.reset();
+  }
+
+  if (save_map_client_) {
+    save_map_client_.reset();
+  }
+
+  // Finally, clean up the node
+  if (node_) {
+    node_.reset();
+  }
+}
+
 void ExplorationPanel::spinnerOnGUI()
 {
+  // Safety check: if node is being destroyed, don't proceed
+  if (!node_ || !rclcpp::ok()) {
+    return;
+  }
+
   rclcpp::spin_some(node_);
   if (!action_client_->wait_for_action_server(0ms)) {
     updateButtons(ButtonSetting::IN_PROCESS);

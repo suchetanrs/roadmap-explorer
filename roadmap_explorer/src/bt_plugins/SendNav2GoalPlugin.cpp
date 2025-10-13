@@ -107,7 +107,7 @@ namespace roadmap_explorer
 
     void onHalted()
     {
-        LOG_WARN("SendNav2Goal onHalted");
+        LOG_INFO("SendNav2Goal onHalted");
         return;
     }
 

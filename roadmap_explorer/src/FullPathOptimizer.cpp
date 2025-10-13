@@ -386,7 +386,7 @@ bool FullPathOptimizer::getNextGoal(
     // LOG_ERROR("Could not find local frontiers. Returning a zero frontiers. The program may crash if goal point is checked...");
     if (sortedFrontiers.global_frontiers.size() >= 1) {
       LOG_WARN(
-        "Could not find local frontiers. Returning the best global frontier.");
+        "Global repositioning!! -> Could not find local frontiers. Returning the best global frontier.");
       nextFrontier = sortedFrontiers.closest_global_frontier;
 
       nav_msgs::msg::Path globalReposPath;

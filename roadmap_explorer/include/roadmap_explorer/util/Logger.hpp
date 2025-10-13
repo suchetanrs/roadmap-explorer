@@ -81,20 +81,22 @@ Attributes	        Foreground color	   Background color
 //   2 = WARN    (warnings only) [DEFAULT]
 //   1 = ERROR   (errors and critical messages only)
 //   0 = FATAL   (only fatal errors)
+//  -1 = HIDE   (hide all logs)
 //
 // TIME_LEVEL: Controls which timing logs are shown
 //   2 = Show all timing logs (EVENT, SUBMODULE, MODULE, ITERATION)
 //   1 = Show SUBMODULE, MODULE, and ITERATION timing logs
 //   0 = Show MODULE and ITERATION timing logs only [DEFAULT]
+//  -1 = Hide all timing logs 
 //
 // USE_MODULE_FLOW: Enable/disable module flow tracking logs
 //   true  = Show module flow logs [DEFAULT]
 //   false = Hide module flow logs
 // ======================================================================
 
-#define LOG_LEVEL 3
-#define TIME_LEVEL 0
-#define USE_MODULE_FLOW true
+#define LOG_LEVEL 2
+#define TIME_LEVEL -1
+#define USE_MODULE_FLOW false
 
 ////////////////////////////////////////////////////////////////////////////////////////
 

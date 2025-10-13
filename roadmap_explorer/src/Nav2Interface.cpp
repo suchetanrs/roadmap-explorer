@@ -92,7 +92,7 @@ bool Nav2Interface<ActionT>::sendCancelWaitForResponse(
   // Wait for cancel response with timeout (ROS2 recommended approach)
   const int timeout_seconds = 5;
   int elapsed_seconds = 0;
-  while (cancel_future.wait_for(std::chrono::seconds(1)) != std::future_status::ready) {
+  while (cancel_future.wait_for(std::chrono::seconds(1)) != std::future_status::ready && rclcpp::ok()) {
     elapsed_seconds++;
     LOG_WARN("Waiting for cancel response (" << elapsed_seconds << "/" << timeout_seconds << " seconds)");
     
@@ -106,7 +106,7 @@ bool Nav2Interface<ActionT>::sendCancelWaitForResponse(
 
   // Wait until the cancel request has been accepted or an error occurs.
   auto result = cancel_future.get();
-  LOG_WARN("Got cancel response");
+  LOG_INFO("Got cancel response");
   if (!result) {
     LOG_ERROR("The future response is null");
     return false;
@@ -123,7 +123,7 @@ void Nav2Interface<ActionT>::cancelAllGoals()
   action_msgs::srv::CancelGoal::Response response;
   if (sendCancelWaitForResponse(response)) {
     if (response.return_code == action_msgs::srv::CancelGoal::Response::ERROR_NONE) {
-      LOG_ERROR("Cancellation request accepted by nav2 server. Will cancel the goal.");
+      LOG_INFO("Cancellation request accepted by nav2 server. Will cancel the goal.");
       nav2_goal_state_ = NavGoalStatus::CANCELLING;
     } else if (response.return_code == action_msgs::srv::CancelGoal::Response::ERROR_REJECTED) {
       LOG_INFO("Cancellation request rejected by Nav2 action server, not cancelling goal");

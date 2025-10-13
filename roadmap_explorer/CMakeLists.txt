@@ -55,6 +55,7 @@ set(dependencies
   eigen3_cmake_module
   Eigen3
   nav2_behavior_tree
+  nlohmann_json
 )
 
 ####################### GET ROS DISTRO ##########################
@@ -259,14 +260,3 @@ if(ament_cmake_gtest_FOUND)
 endif()
 
 ament_package()
-
-# ${PROJECT_NAME}_frontier 
-# ${PROJECT_NAME}_utils 
-# ${PROJECT_NAME}_frontier_search_plugins 
-# ${PROJECT_NAME}_information_gain_plugins
-# ${PROJECT_NAME}_planner_plugins 
-# ${PROJECT_NAME}_core
-
-# TODO
-# ${PROJECT_NAME}_bt_plugins 
-# ${PROJECT_NAME}_bt 

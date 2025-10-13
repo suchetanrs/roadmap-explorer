@@ -42,7 +42,8 @@ nav2_util::CallbackReturn ExplorationServer::on_configure(const rclcpp_lifecycle
 {
   LOG_INFO("Configured " << get_name());
   node_ = shared_from_this();
-  node_->declare_parameter("localisation_only_mode", false);
+
+  nav2_util::declare_parameter_if_not_declared(node_, "localisation_only_mode", rclcpp::ParameterValue(false));
   node_->get_parameter("localisation_only_mode", localisation_only_mode_);
 
   return nav2_util::CallbackReturn::SUCCESS;

@@ -252,9 +252,9 @@ double CountBasedGain::setArrivalInformationLimits()
   }
   arrival_info_limits_set_ = true;
   max_arrival_info_gt_ = maxValue * 1.2;
-  LOG_WARN("Max arrival cost GT: " << max_arrival_info_gt_);
+  LOG_INFO("Max arrival cost GT: " << max_arrival_info_gt_);
   min_arrival_info_gt_ = FACTOR_OF_MAX_IS_MIN_ * max_arrival_info_gt_;
-  LOG_WARN("Min arrival cost GT: " << min_arrival_info_gt_);
+  LOG_INFO("Min arrival cost GT: " << min_arrival_info_gt_);
   return maxValue;
 }
 } // namespace roadmap_explorer

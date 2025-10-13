@@ -43,7 +43,7 @@ class ExplorationPanel : public rviz_common::Panel
 
 public:
   explicit ExplorationPanel(QWidget * parent = nullptr);
-  ~ExplorationPanel() override = default;
+  ~ExplorationPanel() override;
 
 private Q_SLOTS:
   void onStartClicked();
