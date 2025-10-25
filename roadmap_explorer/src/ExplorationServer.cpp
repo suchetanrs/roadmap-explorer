@@ -72,7 +72,9 @@ nav2_util::CallbackReturn ExplorationServer::on_activate(const rclcpp_lifecycle:
     "save_map_and_roadmap",
     std::bind(&ExplorationServer::handle_save_map_and_roadmap, this, 
               std::placeholders::_1, std::placeholders::_2),
-#ifdef ROS_DISTRO_HUMBLE || ROS_DISTRO_HUMBLE_MAIN
+#ifdef ROS_DISTRO_HUMBLE
+    rmw_qos_profile_services_default,
+#elif ROS_DISTRO_HUMBLE_MAIN
     rmw_qos_profile_services_default,
 #elif ROS_DISTRO_JAZZY || ROS_DISTRO_KILTED
     rclcpp::ServicesQoS(),
