@@ -5,7 +5,7 @@ roadmap_explorer_node:
     
     frontierSearch:
       frontier_search_distance: 25.0 # This should be equal to the parameter frontier_search_distance in frontier_roadmap_node
-      max_permissable_frontier_search_distance: 140.0
+      max_permissable_frontier_search_distance: 25.0
       plugin_name: "GridBasedBFS"
       GridBasedBFS:
         plugin_type: "roadmap_explorer::FrontierBFSearch"
