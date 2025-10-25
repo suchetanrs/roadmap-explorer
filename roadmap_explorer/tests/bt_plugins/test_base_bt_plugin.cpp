@@ -6,7 +6,7 @@
 
 #ifdef ROS_DISTRO_HUMBLE
   #include <behaviortree_cpp_v3/bt_factory.h>
-#elif ROS_DISTRO_JAZZY || ROS_DISTRO_KILTED
+#elif ROS_DISTRO_JAZZY || ROS_DISTRO_KILTED || ROS_DISTRO_HUMBLE_MAIN
   #include <behaviortree_cpp/bt_factory.h>
 #else
   #error "Unsupported ROS distro"

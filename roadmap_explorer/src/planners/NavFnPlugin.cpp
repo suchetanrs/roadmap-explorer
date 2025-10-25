@@ -150,7 +150,7 @@ void PluginNavFn::setPlanForFrontier(
     goal_point_w->setPathHeading(std::numeric_limits<double>::max());
     return;
   }
-#elif ROS_DISTRO_JAZZY || ROS_DISTRO_KILTED
+#elif ROS_DISTRO_JAZZY || ROS_DISTRO_KILTED || ROS_DISTRO_HUMBLE_MAIN
   // Run the A* search to compute the navigation function.
   std::function<bool()> cancelChecker = []()
     {

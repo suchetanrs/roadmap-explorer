@@ -7,7 +7,7 @@
 
 #ifdef ROS_DISTRO_HUMBLE
   #include <behaviortree_cpp_v3/bt_factory.h>
-#elif ROS_DISTRO_JAZZY || ROS_DISTRO_KILTED
+#elif ROS_DISTRO_JAZZY || ROS_DISTRO_KILTED || ROS_DISTRO_HUMBLE_MAIN
   #include <behaviortree_cpp/bt_factory.h>
 #else
   #error "Unsupported ROS distro"
@@ -157,7 +157,7 @@ TEST_F(BTPluginIntegrationTest, DirectInstantiationIntegration)
   size_t initial_count = EventLoggerInstance.getPlanningCount();
 #ifdef ROS_DISTRO_HUMBLE
   BT::NodeStatus status = tree.tickRoot();
-#elif ROS_DISTRO_JAZZY || ROS_DISTRO_KILTED
+#elif ROS_DISTRO_JAZZY || ROS_DISTRO_KILTED || ROS_DISTRO_HUMBLE_MAIN
   BT::NodeStatus status = tree.tickOnce();
 #else
   #error "Unsupported ROS distro"
@@ -230,7 +230,7 @@ TEST_F(BTPluginIntegrationTest, BehaviorTreeCreation)
   size_t initial_count = EventLoggerInstance.getPlanningCount();
 #ifdef ROS_DISTRO_HUMBLE
   BT::NodeStatus status = tree.tickRoot();
-#elif ROS_DISTRO_JAZZY || ROS_DISTRO_KILTED
+#elif ROS_DISTRO_JAZZY || ROS_DISTRO_KILTED || ROS_DISTRO_HUMBLE_MAIN
   BT::NodeStatus status = tree.tickOnce();
 #else
   #error "Unsupported ROS distro"
@@ -272,7 +272,7 @@ TEST_F(BTPluginIntegrationTest, MultipleBTNodes)
   size_t initial_count = EventLoggerInstance.getPlanningCount();
 #ifdef ROS_DISTRO_HUMBLE
   BT::NodeStatus status = tree.tickRoot();
-#elif ROS_DISTRO_JAZZY || ROS_DISTRO_KILTED
+#elif ROS_DISTRO_JAZZY || ROS_DISTRO_KILTED || ROS_DISTRO_HUMBLE_MAIN
   BT::NodeStatus status = tree.tickOnce();
 #else
   #error "Unsupported ROS distro"
@@ -336,7 +336,7 @@ TEST_F(BTPluginIntegrationTest, DifferentNodeConfigurations)
   size_t initial_count = EventLoggerInstance.getPlanningCount();
 #ifdef ROS_DISTRO_HUMBLE
   BT::NodeStatus status = tree.tickRoot();
-#elif ROS_DISTRO_JAZZY || ROS_DISTRO_KILTED
+#elif ROS_DISTRO_JAZZY || ROS_DISTRO_KILTED || ROS_DISTRO_HUMBLE_MAIN
   BT::NodeStatus status = tree.tickOnce();
 #else
   #error "Unsupported ROS distro"
@@ -413,7 +413,7 @@ TEST_F(BTPluginIntegrationTest, ConcurrentFactoryAccess)
   for (int i = 0; i < num_executions; ++i) {
 #ifdef ROS_DISTRO_HUMBLE
     BT::NodeStatus status = tree.tickRoot();
-#elif ROS_DISTRO_JAZZY || ROS_DISTRO_KILTED
+#elif ROS_DISTRO_JAZZY || ROS_DISTRO_KILTED || ROS_DISTRO_HUMBLE_MAIN
     BT::NodeStatus status = tree.tickOnce();
 #else
     #error "Unsupported ROS distro"

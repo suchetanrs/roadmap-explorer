@@ -64,7 +64,7 @@ bool computePathBetweenPoints(
     LOG_WARN("Planner failed to compute the navigation function.");
     return false;
   }
-#elif ROS_DISTRO_JAZZY || ROS_DISTRO_KILTED
+#elif ROS_DISTRO_JAZZY || ROS_DISTRO_KILTED || ROS_DISTRO_HUMBLE_MAIN
   // Run the A* search to compute the navigation function.
   std::function<bool()> cancelChecker = []() {
       return !rclcpp::ok();

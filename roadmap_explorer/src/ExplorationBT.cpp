@@ -33,7 +33,7 @@ RoadmapExplorationBT::RoadmapExplorationBT(std::shared_ptr<nav2_util::LifecycleN
 #elif ROS_DISTRO_JAZZY
   explore_costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "roadmap_explorer_costmap", "", "roadmap_explorer_costmap", node->get_parameter("use_sim_time").as_bool());
-#elif ROS_DISTRO_KILTED
+#elif ROS_DISTRO_KILTED || ROS_DISTRO_HUMBLE_MAIN
   explore_costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "roadmap_explorer_costmap", "", node->get_parameter("use_sim_time").as_bool());
 #else
@@ -246,7 +246,7 @@ uint16_t RoadmapExplorationBT::tickOnceWithSleep()
 
 #ifdef ROS_DISTRO_HUMBLE
   auto status = behaviour_tree.tickRoot();
-#elif ROS_DISTRO_JAZZY || ROS_DISTRO_KILTED
+#elif ROS_DISTRO_JAZZY || ROS_DISTRO_KILTED || ROS_DISTRO_HUMBLE_MAIN
   auto status = behaviour_tree.tickOnce();
 #else
   #error Unsupported ROS DISTRO
