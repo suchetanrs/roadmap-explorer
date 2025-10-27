@@ -84,6 +84,9 @@ private:
   // action buttons
   QPushButton * start_button_;
   QPushButton * stop_button_;
+  
+  // continuous exploration
+  QCheckBox * continuous_exploration_checkbox_;
 
   // save ui
   QLineEdit * save_base_path_edit_;

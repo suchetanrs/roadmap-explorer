@@ -76,6 +76,11 @@ ExplorationPanel::ExplorationPanel(QWidget * parent)
   connect(start_button_, &QPushButton::clicked, this, &ExplorationPanel::onStartClicked);
   layout->addWidget(stop_button_);
   connect(stop_button_, &QPushButton::clicked, this, &ExplorationPanel::onStopClicked);
+  
+  // Continuous exploration checkbox
+  continuous_exploration_checkbox_ = new QCheckBox("Re-explore once finished exploring", this);
+  continuous_exploration_checkbox_->setChecked(true);  // Checked by default
+  layout->addWidget(continuous_exploration_checkbox_);
 
   auto * separator = new QFrame(this);
   separator->setFrameShape(QFrame::HLine);
@@ -268,6 +273,7 @@ void ExplorationPanel::updateButtons(ButtonSetting setting)
 
     start_button_->setEnabled(false);
     stop_button_->setEnabled(false);
+    continuous_exploration_checkbox_->setEnabled(false);
 
     save_base_path_edit_->setEnabled(false);
     save_map_name_edit_->setEnabled(false);
@@ -281,6 +287,7 @@ void ExplorationPanel::updateButtons(ButtonSetting setting)
 
     start_button_->setEnabled(setting == ButtonSetting::GOAL_INACTIVE);
     stop_button_->setEnabled(setting == ButtonSetting::GOAL_ACTIVE);
+    continuous_exploration_checkbox_->setEnabled(true);
 
     save_base_path_edit_->setEnabled(setting == ButtonSetting::GOAL_INACTIVE);
     save_map_name_edit_->setEnabled(setting == ButtonSetting::GOAL_INACTIVE);
@@ -347,6 +354,18 @@ void ExplorationPanel::actionResultCallback(const GoalHandle::WrappedResult & re
       RCLCPP_INFO(
         node_->get_logger(), "Exploration finished successfully: %s",
         result.result->success ? "true" : "false");
+      
+      // Check if continuous exploration is enabled and result was successful
+      if (continuous_exploration_checkbox_->isChecked() && result.result->success) {
+        RCLCPP_INFO(node_->get_logger(), "Continuous exploration enabled, starting new session...");
+        // Set mode to "New exploration session"
+        rb_new_session_->setChecked(true);
+        // Reset goal handle before sending new goal
+        goal_handle_.reset();
+        // Send a new exploration goal
+        sendGoal();
+        return;  // Early return to prevent resetting the goal handle and updating buttons
+      }
       break;
 
     case rclcpp_action::ResultCode::ABORTED:
