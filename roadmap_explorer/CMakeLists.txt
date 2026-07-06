@@ -68,6 +68,16 @@ string(TOUPPER "$ENV{ROS_DISTRO}" ROS_DISTRO_UPPER)
 message(STATUS "Building for ROS distro: ${ROS_DISTRO_UPPER}")
 add_compile_definitions(ROS_DISTRO_${ROS_DISTRO_UPPER})
 
+if(ROS_DISTRO_UPPER STREQUAL "HUMBLE")
+  find_package(behaviortree_cpp_v3 REQUIRED)
+  list(APPEND dependencies behaviortree_cpp_v3)
+elseif(ROS_DISTRO_UPPER STREQUAL "JAZZY" OR ROS_DISTRO_UPPER STREQUAL "KILTED")
+  find_package(behaviortree_cpp REQUIRED)
+  list(APPEND dependencies behaviortree_cpp)
+else()
+  message(FATAL_ERROR "Unsupported ROS distro: ${ROS_DISTRO_UPPER}")
+endif()
+
 # add_compile_definitions(
 #   USE_RCLCPP_LOGGER
 # )
